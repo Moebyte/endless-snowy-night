@@ -167,11 +167,20 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 
   window.Game = window.Game || {};
 
+  function migrateState(g) {
+    if (!g) return g;
+    if (!g.metCharacters) g.metCharacters = {};
+    if (!g.characterReveals) g.characterReveals = {};
+    if (!g.revealed) g.revealed = {};
+    if (!g.visitedLocations) g.visitedLocations = {};
+    return g;
+  }
+
   function ensureState() {
     if (!State.variables.game) {
       State.variables.game = GameState.create();
     }
-    return State.variables.game;
+    return migrateState(State.variables.game);
   }
 
 Game.addItem = function (id, count) {
@@ -744,24 +753,27 @@ Game.getStatus = function () {
 
   Game.meetCharacter = function (charId) {
     var g = ensureState();
+    if (!g.metCharacters) g.metCharacters = {};
     g.metCharacters[charId] = true;
+    if (!g.characterReveals) g.characterReveals = {};
     if (!g.characterReveals[charId]) g.characterReveals[charId] = {};
   };
 
   Game.hasMetCharacter = function (charId) {
     var g = ensureState();
-    return !!g.metCharacters[charId];
+    return !!(g.metCharacters && g.metCharacters[charId]);
   };
 
   Game.revealCharacterAspect = function (charId, aspect) {
     var g = ensureState();
+    if (!g.characterReveals) g.characterReveals = {};
     if (!g.characterReveals[charId]) g.characterReveals[charId] = {};
     g.characterReveals[charId][aspect] = true;
   };
 
   Game.hasRevealedCharacterAspect = function (charId, aspect) {
     var g = ensureState();
-    return !!(g.characterReveals[charId] && g.characterReveals[charId][aspect]);
+    return !!(g.characterReveals && g.characterReveals[charId] && g.characterReveals[charId][aspect]);
   };
 
   Game.witchBroken = function () {
@@ -771,6 +783,17 @@ Game.getStatus = function () {
   Game.knightWeakened = function () {
     return (ensureState().godSkills.knight.weakenedDays || 0) > 0;
   };
+
+  // migrate old saves that lack newer state fields
+  if (window.Config && Config.saves) {
+    var _origOnLoad = Config.saves.onLoad;
+    Config.saves.onLoad = function (save) {
+      if (save && save.state && save.state.variables && save.state.variables.game) {
+        migrateState(save.state.variables.game);
+      }
+      if (_origOnLoad) _origOnLoad.apply(this, arguments);
+    };
+  }
 })();
 
 
@@ -4817,7 +4840,8 @@ Game.resetGodSkillsLoop = function () {
   <tw-passagedata pid="108" name="Common_Characters" tags="" position="100,100" size="100,100">&lt;h2&gt;人物档案&lt;/h2&gt;
 &lt;p class=&quot;system-hint&quot;&gt;你目前掌握的人物信息。对外身份默认可见，深层性格、特长与不可告人的秘密需要剧情解锁。&lt;/p&gt;
 
-&lt;&lt;set _chars = Object.keys($game.metCharacters).filter(function (k) { return $game.metCharacters[k]; })&gt;&gt;
+&lt;&lt;set _met = $game.metCharacters || {}&gt;&gt;
+&lt;&lt;set _chars = Object.keys(_met).filter(function (k) { return _met[k]; })&gt;&gt;
 &lt;&lt;if _chars.length == 0&gt;&gt;
 &lt;p&gt;你还没有遇到过可以记录的人。&lt;/p&gt;
 &lt;&lt;else&gt;&gt;
@@ -4834,7 +4858,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;if Game.hasRevealedCharacterAspect(_cid, &quot;talent&quot;)&gt;&gt;
 &lt;p class=&quot;character-desc&quot;&gt;特长：&lt;&lt;print _p.talent&gt;&gt;&lt;/p&gt;
 &lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasRevealedCharacterAspect(_cid, &quot;secret&quot;)&gt;&gt;
+&lt;&lt;if Game.hasRevealedCharacterAspect(_cid, &quot;secret&quot;) &amp;&amp; _p.secret&gt;&gt;
 &lt;p class=&quot;danger&quot;&gt;不能说的秘密：&lt;&lt;print _p.secret&gt;&gt;&lt;/p&gt;
 &lt;&lt;/if&gt;&gt;
 
@@ -5880,7 +5904,8 @@ _HIST
   <tw-passagedata pid="138" name="StoryCaption" tags="" position="100,100" size="100,100">&lt;&lt;set _status to Game.getStatus()&gt;&gt;
 &lt;&lt;set _sanClass to _status.san &gt; 60 ? &#39;safe&#39; : (_status.san &gt; 30 ? &#39;&#39; : &#39;danger&#39;)&gt;&gt;
 &lt;&lt;set _breaking to Game.trueEndingProgress()&gt;&gt;
-&lt;&lt;set _metCount to Object.keys($game.metCharacters).filter(function (k) { return $game.metCharacters[k]; }).length&gt;&gt;
+&lt;&lt;set _met = $game.metCharacters || {}&gt;&gt;
+&lt;&lt;set _metCount to Object.keys(_met).filter(function (k) { return _met[k]; }).length&gt;&gt;
 &lt;div class=&quot;status-panel&quot;&gt;
   &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;轮回&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;第 &lt;&lt;print _status.loop&gt;&gt; 轮&lt;/span&gt;&lt;/div&gt;
   &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;天数&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;第 &lt;&lt;print _status.day&gt;&gt; 天&lt;/span&gt;&lt;/div&gt;

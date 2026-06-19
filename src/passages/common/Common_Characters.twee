@@ -2,7 +2,8 @@
 <h2>人物档案</h2>
 <p class="system-hint">你目前掌握的人物信息。对外身份默认可见，深层性格、特长与不可告人的秘密需要剧情解锁。</p>
 
-<<set _chars = Object.keys($game.metCharacters).filter(function (k) { return $game.metCharacters[k]; })>>
+<<set _met = $game.metCharacters || {}>>
+<<set _chars = Object.keys(_met).filter(function (k) { return _met[k]; })>>
 <<if _chars.length == 0>>
 <p>你还没有遇到过可以记录的人。</p>
 <<else>>
@@ -19,7 +20,7 @@
 <<if Game.hasRevealedCharacterAspect(_cid, "talent")>>
 <p class="character-desc">特长：<<print _p.talent>></p>
 <</if>>
-<<if Game.hasRevealedCharacterAspect(_cid, "secret")>>
+<<if Game.hasRevealedCharacterAspect(_cid, "secret") && _p.secret>>
 <p class="danger">不能说的秘密：<<print _p.secret>></p>
 <</if>>
 

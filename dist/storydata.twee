@@ -9,11 +9,20 @@
 
   window.Game = window.Game || {};
 
+  function migrateState(g) {
+    if (!g) return g;
+    if (!g.metCharacters) g.metCharacters = {};
+    if (!g.characterReveals) g.characterReveals = {};
+    if (!g.revealed) g.revealed = {};
+    if (!g.visitedLocations) g.visitedLocations = {};
+    return g;
+  }
+
   function ensureState() {
     if (!State.variables.game) {
       State.variables.game = GameState.create();
     }
-    return State.variables.game;
+    return migrateState(State.variables.game);
   }
 
 Game.addItem = function (id, count) {
@@ -586,24 +595,27 @@ Game.getStatus = function () {
 
   Game.meetCharacter = function (charId) {
     var g = ensureState();
+    if (!g.metCharacters) g.metCharacters = {};
     g.metCharacters[charId] = true;
+    if (!g.characterReveals) g.characterReveals = {};
     if (!g.characterReveals[charId]) g.characterReveals[charId] = {};
   };
 
   Game.hasMetCharacter = function (charId) {
     var g = ensureState();
-    return !!g.metCharacters[charId];
+    return !!(g.metCharacters && g.metCharacters[charId]);
   };
 
   Game.revealCharacterAspect = function (charId, aspect) {
     var g = ensureState();
+    if (!g.characterReveals) g.characterReveals = {};
     if (!g.characterReveals[charId]) g.characterReveals[charId] = {};
     g.characterReveals[charId][aspect] = true;
   };
 
   Game.hasRevealedCharacterAspect = function (charId, aspect) {
     var g = ensureState();
-    return !!(g.characterReveals[charId] && g.characterReveals[charId][aspect]);
+    return !!(g.characterReveals && g.characterReveals[charId] && g.characterReveals[charId][aspect]);
   };
 
   Game.witchBroken = function () {
@@ -613,6 +625,17 @@ Game.getStatus = function () {
   Game.knightWeakened = function () {
     return (ensureState().godSkills.knight.weakenedDays || 0) > 0;
   };
+
+  // migrate old saves that lack newer state fields
+  if (window.Config && Config.saves) {
+    var _origOnLoad = Config.saves.onLoad;
+    Config.saves.onLoad = function (save) {
+      if (save && save.state && save.state.variables && save.state.variables.game) {
+        migrateState(save.state.variables.game);
+      }
+      if (_origOnLoad) _origOnLoad.apply(this, arguments);
+    };
+  }
 })();
 
 
@@ -5013,7 +5036,8 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <h2>人物档案</h2>
 <p class="system-hint">你目前掌握的人物信息。对外身份默认可见，深层性格、特长与不可告人的秘密需要剧情解锁。</p>
 
-<<set _chars = Object.keys($game.metCharacters).filter(function (k) { return $game.metCharacters[k]; })>>
+<<set _met = $game.metCharacters || {}>>
+<<set _chars = Object.keys(_met).filter(function (k) { return _met[k]; })>>
 <<if _chars.length == 0>>
 <p>你还没有遇到过可以记录的人。</p>
 <<else>>
@@ -5030,7 +5054,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <<if Game.hasRevealedCharacterAspect(_cid, "talent")>>
 <p class="character-desc">特长：<<print _p.talent>></p>
 <</if>>
-<<if Game.hasRevealedCharacterAspect(_cid, "secret")>>
+<<if Game.hasRevealedCharacterAspect(_cid, "secret") && _p.secret>>
 <p class="danger">不能说的秘密：<<print _p.secret>></p>
 <</if>>
 
@@ -6156,7 +6180,8 @@ _HIST
 <<set _status to Game.getStatus()>>
 <<set _sanClass to _status.san > 60 ? 'safe' : (_status.san > 30 ? '' : 'danger')>>
 <<set _breaking to Game.trueEndingProgress()>>
-<<set _metCount to Object.keys($game.metCharacters).filter(function (k) { return $game.metCharacters[k]; }).length>>
+<<set _met = $game.metCharacters || {}>>
+<<set _metCount to Object.keys(_met).filter(function (k) { return _met[k]; }).length>>
 <div class="status-panel">
   <div class="row"><span class="status-label">轮回</span><span class="status-value">第 <<print _status.loop>> 轮</span></div>
   <div class="row"><span class="status-label">天数</span><span class="status-value">第 <<print _status.day>> 天</span></div>

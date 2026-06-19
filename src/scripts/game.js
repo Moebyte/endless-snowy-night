@@ -8,11 +8,20 @@
 
   window.Game = window.Game || {};
 
+  function migrateState(g) {
+    if (!g) return g;
+    if (!g.metCharacters) g.metCharacters = {};
+    if (!g.characterReveals) g.characterReveals = {};
+    if (!g.revealed) g.revealed = {};
+    if (!g.visitedLocations) g.visitedLocations = {};
+    return g;
+  }
+
   function ensureState() {
     if (!State.variables.game) {
       State.variables.game = GameState.create();
     }
-    return State.variables.game;
+    return migrateState(State.variables.game);
   }
 
 Game.addItem = function (id, count) {
@@ -585,24 +594,27 @@ Game.getStatus = function () {
 
   Game.meetCharacter = function (charId) {
     var g = ensureState();
+    if (!g.metCharacters) g.metCharacters = {};
     g.metCharacters[charId] = true;
+    if (!g.characterReveals) g.characterReveals = {};
     if (!g.characterReveals[charId]) g.characterReveals[charId] = {};
   };
 
   Game.hasMetCharacter = function (charId) {
     var g = ensureState();
-    return !!g.metCharacters[charId];
+    return !!(g.metCharacters && g.metCharacters[charId]);
   };
 
   Game.revealCharacterAspect = function (charId, aspect) {
     var g = ensureState();
+    if (!g.characterReveals) g.characterReveals = {};
     if (!g.characterReveals[charId]) g.characterReveals[charId] = {};
     g.characterReveals[charId][aspect] = true;
   };
 
   Game.hasRevealedCharacterAspect = function (charId, aspect) {
     var g = ensureState();
-    return !!(g.characterReveals[charId] && g.characterReveals[charId][aspect]);
+    return !!(g.characterReveals && g.characterReveals[charId] && g.characterReveals[charId][aspect]);
   };
 
   Game.witchBroken = function () {
@@ -612,4 +624,15 @@ Game.getStatus = function () {
   Game.knightWeakened = function () {
     return (ensureState().godSkills.knight.weakenedDays || 0) > 0;
   };
+
+  // migrate old saves that lack newer state fields
+  if (window.Config && Config.saves) {
+    var _origOnLoad = Config.saves.onLoad;
+    Config.saves.onLoad = function (save) {
+      if (save && save.state && save.state.variables && save.state.variables.game) {
+        migrateState(save.state.variables.game);
+      }
+      if (_origOnLoad) _origOnLoad.apply(this, arguments);
+    };
+  }
 })();

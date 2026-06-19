@@ -2,7 +2,8 @@
 <<set _status to Game.getStatus()>>
 <<set _sanClass to _status.san > 60 ? 'safe' : (_status.san > 30 ? '' : 'danger')>>
 <<set _breaking to Game.trueEndingProgress()>>
-<<set _metCount to Object.keys($game.metCharacters).filter(function (k) { return $game.metCharacters[k]; }).length>>
+<<set _met = $game.metCharacters || {}>>
+<<set _metCount to Object.keys(_met).filter(function (k) { return _met[k]; }).length>>
 <div class="status-panel">
   <div class="row"><span class="status-label">轮回</span><span class="status-value">第 <<print _status.loop>> 轮</span></div>
   <div class="row"><span class="status-label">天数</span><span class="status-value">第 <<print _status.day>> 天</span></div>
