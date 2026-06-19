@@ -1,4 +1,4 @@
-:: Explore_Kitchen
+:: Explore_Kitchen [location]
 <<run Game.visitLocation('kitchen')>>
 <<run Game.addItem('bread')>>
 <<run Game.visit()>>

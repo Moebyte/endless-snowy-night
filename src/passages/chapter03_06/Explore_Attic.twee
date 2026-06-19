@@ -1,4 +1,4 @@
-:: Explore_Attic
+:: Explore_Attic [location]
 <<run Game.visitLocation('attic')>>
 <<run Game.addItem('old_photo')>>
 <<run Game.addClue('laozheng_survivor')>>

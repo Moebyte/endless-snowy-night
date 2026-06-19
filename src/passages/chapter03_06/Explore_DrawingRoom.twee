@@ -1,4 +1,4 @@
-:: Explore_DrawingRoom
+:: Explore_DrawingRoom [location]
 <<run Game.visitLocation('drawing_room')>>
 <<run Game.visit()>>
 <h2>会客厅</h2>

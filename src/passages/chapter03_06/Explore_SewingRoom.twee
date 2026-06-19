@@ -1,4 +1,4 @@
-:: Explore_SewingRoom
+:: Explore_SewingRoom [location]
 <<run Game.visitLocation('sewing_room')>>
 <<run Game.addItem('wire')>>
 <<run Game.visit()>>

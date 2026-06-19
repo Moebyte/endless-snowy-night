@@ -1,4 +1,4 @@
-:: Explore_Generator
+:: Explore_Generator [location]
 <<run Game.visitLocation('generator_room')>>
 <<if Game.isAlive('jiang_bai')>>
 <<run Game.addItem('wire')>>

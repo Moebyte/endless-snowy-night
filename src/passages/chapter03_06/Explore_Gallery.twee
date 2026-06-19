@@ -1,4 +1,4 @@
-:: Explore_Gallery
+:: Explore_Gallery [location]
 <<run Game.visitLocation('gallery')>>
 <<run Game.addClue('chenmo_guilt')>>
 <<run Game.changeSan(-5)>>

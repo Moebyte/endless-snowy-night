@@ -171,6 +171,17 @@
     crypt: { name: "地下墓室", desc: "铁门后的岩路，排列着石椁和刻着名字的墙壁。", zone: "underground" },
   };
 
+  // ZONES: zone id -> {name, desc}
+  GameState.ZONES = {
+    main_1f: { name: "主楼一层", desc: "门厅、大厅、餐厅、厨房、储藏室、会客厅、书房、画廊。" },
+    main_2f: { name: "主楼二层", desc: "客房走廊、主卧、儿童房、缝纫室、阳台。" },
+    main_3f: { name: "主楼三层 / 阁楼", desc: "阁楼与档案室。" },
+    east_wing: { name: "东厢房", desc: "图书室、音乐室、温室、广播室。" },
+    west_wing: { name: "西厢房", desc: "配电室、工坊、杂物间、酒窖。" },
+    courtyard: { name: "庭院", desc: "中庭、花园、古井、小教堂。" },
+    underground: { name: "地下空间", desc: "地下铁门、祭祀空间、地下墓穴。" }
+  };
+
   GameState.BACKSTORY_KEYS = {
     chen_mo: 'chenmo_guilt',
     su_wan: 'suwan_resolve',

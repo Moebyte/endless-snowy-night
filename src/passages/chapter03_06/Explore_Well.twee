@@ -1,4 +1,4 @@
-:: Explore_Well
+:: Explore_Well [location]
 <<run Game.visitLocation('well')>>
 <<run Game.addClue('system_origin')>>
 <<run Game.changeSan(-5)>>

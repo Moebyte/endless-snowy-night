@@ -562,11 +562,44 @@ Game.visitLocation = function (locId) {
 
 Game.hasVisitedLocation = function (locId) {
 
-    var g = ensureState();
+   var g = ensureState();
 
-    return !!(g.visitedLocations && g.visitedLocations[locId]);
+   return !!(g.visitedLocations && g.visitedLocations[locId]);
 
-  }
+ }
+
+ Game.getLocationsByZone = function (zoneId) {
+   var result = [];
+   var map = GameState.MAP;
+   Object.keys(map).forEach(function (id) {
+     if (map[id].zone === zoneId) {
+       result.push({ id: id, name: map[id].name, desc: map[id].desc });
+     }
+   });
+   return result;
+ }
+
+ Game.isZoneDiscovered = function (zoneId) {
+   var g = ensureState();
+   var visited = g.visitedLocations || {};
+   var map = GameState.MAP;
+   return Object.keys(visited).some(function (locId) {
+     return visited[locId] && map[locId] && map[locId].zone === zoneId;
+   });
+ }
+
+ Game.getVisitedLocationsInZone = function (zoneId) {
+   var g = ensureState();
+   var visited = g.visitedLocations || {};
+   var map = GameState.MAP;
+   var result = [];
+   Object.keys(visited).forEach(function (locId) {
+     if (visited[locId] && map[locId] && map[locId].zone === zoneId) {
+       result.push({ id: locId, name: map[locId].name, desc: map[locId].desc });
+     }
+   });
+   return result;
+ }
 
 Game.getStatus = function () {
 

@@ -1,4 +1,4 @@
-:: Explore_Crypt
+:: Explore_Crypt [location]
 <<run Game.visitLocation('crypt')>>
 <<run Game.addClue('recruitment_tablet')>>
 <<run Game.changeSan(-10)>>

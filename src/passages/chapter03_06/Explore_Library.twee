@@ -1,4 +1,4 @@
-:: Explore_Library
+:: Explore_Library [location]
 <<run Game.visitLocation('library')>>
 <<run Game.addItem('guest_register')>>
 <<run Game.addClue('old_guests')>>

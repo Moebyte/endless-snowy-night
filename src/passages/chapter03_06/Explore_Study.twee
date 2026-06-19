@@ -1,4 +1,4 @@
-:: Explore_Study
+:: Explore_Study [location]
 <<run Game.visitLocation('study')>>
 <<run Game.addItem('lighter')>>
 <<run Game.addClue('laozheng_knowledge')>>

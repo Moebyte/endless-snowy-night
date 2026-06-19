@@ -1,4 +1,4 @@
-:: Explore_MasterBedroom
+:: Explore_MasterBedroom [location]
 <<run Game.visitLocation('master_bedroom')>>
 <<run Game.addItem('syringe')>>
 <<run Game.visit()>>

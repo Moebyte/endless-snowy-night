@@ -1,16 +1,4 @@
-:: Map_Underground
+﻿:: Map_Underground
 <<run Game.visit()>>
-<h2>地下空间</h2>
-<p class="system-hint">你用旧钥匙打开酒窖深处的铁门，走下潮湿的楼梯。空气里有血腥味和某种古老的气息。</p>
-<div class="choice-list">
-<<if not Game.hasClue('ritual_tablet')>>
-[[深入酒窖|Explore_Cellar]]
-<</if>>
-<<if Game.hasClue('cellar_door')>>
-[[前往祭祀空间|Explore_Altar]]
-<</if>>
-<<if Game.hasClue('ritual_tablet')>>
-[[探索地下墓穴|Explore_Crypt]]
-<</if>>
-[[返回地图|Common_Map]]
-</div>
+<<set _zoneId to 'underground'>>
+<<include "Common_ZoneMap">>

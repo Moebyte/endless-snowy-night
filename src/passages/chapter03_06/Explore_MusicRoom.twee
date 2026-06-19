@@ -1,4 +1,4 @@
-:: Explore_MusicRoom
+:: Explore_MusicRoom [location]
 <<run Game.visitLocation('music_room')>>
 <<run Game.visit()>>
 <h2>音乐室</h2>

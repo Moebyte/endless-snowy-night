@@ -1,4 +1,4 @@
-:: Explore_Balcony
+:: Explore_Balcony [location]
 <<run Game.visitLocation('balcony')>>
 <<run Game.addClue('locked_doors')>>
 <<run Game.visit()>>

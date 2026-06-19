@@ -1,4 +1,4 @@
-:: Explore_Courtyard
+:: Explore_Courtyard [location]
 <<run Game.visitLocation('courtyard')>>
 <<run Game.addClue('mirror_exit')>>
 <<run Game.visit()>>

@@ -1,4 +1,4 @@
-:: Explore_Garden
+:: Explore_Garden [location]
 <<run Game.visitLocation('garden')>>
 <<run Game.visit()>>
 <h2>花园</h2>

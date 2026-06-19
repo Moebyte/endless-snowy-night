@@ -1,4 +1,4 @@
-:: Explore_WineCellar
+:: Explore_WineCellar [location]
 <<run Game.visitLocation('wine_cellar')>>
 <<run Game.addClue('cellar_blood')>>
 <<run Game.visit()>>

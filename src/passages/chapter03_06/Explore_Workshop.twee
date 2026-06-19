@@ -1,4 +1,4 @@
-:: Explore_Workshop
+:: Explore_Workshop [location]
 <<run Game.visitLocation('workshop')>>
 <<run Game.addItem('wire')>>
 <<run Game.addItem('flashlight')>>

@@ -1,4 +1,4 @@
-:: Explore_Pantry
+:: Explore_Pantry [location]
 <<run Game.visitLocation('pantry')>>
 <<run Game.addItem('compass')>>
 <<run Game.visit()>>

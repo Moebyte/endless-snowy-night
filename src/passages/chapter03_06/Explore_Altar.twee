@@ -1,4 +1,4 @@
-:: Explore_Altar
+:: Explore_Altar [location]
 <<run Game.visitLocation('altar')>>
 <<run Game.addClue('ritual_tablet')>>
 <<run Game.addClue('recruitment_tablet')>>

@@ -1,4 +1,4 @@
-:: Explore_GrandHall
+:: Explore_GrandHall [location]
 <<run Game.visitLocation('grand_hall')>>
 <<run Game.visit()>>
 <h2>大厅</h2>

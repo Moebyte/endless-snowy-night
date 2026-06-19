@@ -1,4 +1,4 @@
-:: Explore_ChildrenRoom
+:: Explore_ChildrenRoom [location]
 <<run Game.visitLocation('children_room')>>
 <<run Game.addClue('tangxiaotang_trauma')>>
 <<run Game.changeSan(-5)>>

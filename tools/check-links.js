@@ -50,7 +50,10 @@ function extractLinks(content) {
     /\[\[([^\]|]+?)\](?:\[[^\]]*\])?\]/g,
    /<<goto\s+["']([^"']+)["']>>/g,
    /<<link\s+["'][^"']*["']\s*["']([^"']+)["']>>/g,
-   /<<button\s+["'][^"']*["']\s*["']([^"']+)["']>>/g
+   /<<button\s+["'][^"']*["']\s*["']([^"']+)["']>>/g,
+   /<<link\s+["'][^"']*["']>><<goto\s+["']([^"']+)["']>><<\/link>>/g,
+   /<<link\s+["'][^"']*["']\s*["']([^"']+)["']>><<\/link>>/g,
+   /<<include\s+["']([^"']+)["']>>/g
  ];
   patterns.forEach(re => {
     let m;
@@ -123,7 +126,8 @@ function main() {
     if (incoming[n].length > 0) return false;
     if (special.includes(n)) return false;
     if (n.startsWith('Common_Night') || n.startsWith('Pursuit_')) return false;
-    if (passages.get(n).tags.includes('widget')) return false;
+    var t = passages.get(n).tags || [];
+    if (t.includes('widget') || t.includes('utility') || t.includes('location')) return false;
     return true;
   });
 
@@ -164,3 +168,4 @@ function main() {
 }
 
 main();
+

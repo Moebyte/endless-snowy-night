@@ -1,11 +1,4 @@
-:: Map_Courtyard
+﻿:: Map_Courtyard
 <<run Game.visit()>>
-<h2>庭院</h2>
-<p class="system-hint">刺骨的风雪。你只能在中庭短暂停留。枯死的花园尽头有一口古井和一座废弃的小教堂。</p>
-<div class="choice-list">
-[[前往中庭|Explore_Courtyard]]
-[[前往花园|Explore_Garden]]
-[[查看古井|Explore_Well]]
-[[进入小教堂|Explore_Chapel]]
-[[返回地图|Common_Map]]
-</div>
+<<set _zoneId to 'courtyard'>>
+<<include "Common_ZoneMap">>

@@ -1,4 +1,4 @@
-:: Explore_Broadcast
+:: Explore_Broadcast [location]
 <<run Game.visitLocation('broadcast_room')>>
 <<run Game.addItem('cassette_tape')>>
 <<run Game.addClue('system_origin')>>

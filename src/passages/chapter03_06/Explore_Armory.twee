@@ -1,4 +1,4 @@
-:: Explore_Armory
+:: Explore_Armory [location]
 <<run Game.visitLocation('armory')>>
 <<run Game.addItem('first_aid_kit')>>
 <<run Game.visit()>>

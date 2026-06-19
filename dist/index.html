@@ -104,7 +104,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 		<div id="init-lacking"><p>Browser lacks capabilities required to play.</p><p>Upgrade or switch to another browser.</p></div>
 		<div id="init-loading"><div>Loading&hellip;</div></div>
 	</div>
-	<tw-storydata name="无尽雪夜" startnode="138" creator="Twine" creator-version="2.10.0" ifid="75844B93-430E-E599-4D6B-E878828384A7" format="SugarCube" format-version="2.37.3" options="" hidden>
+	<tw-storydata name="无尽雪夜" startnode="139" creator="Twine" creator-version="2.10.0" ifid="75844B93-430E-E599-4D6B-E878828384A7" format="SugarCube" format-version="2.37.3" options="" hidden>
   <style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">:root { --bg-color: #1a1a1d; --panel-color: #242428; --text-color: #e8e6e3; --muted-color: #a8a4a0; --accent-color: #c0392b; --accent-hover: #e74c3c; --link-color: #5dade2; --border-color: #3a3a3e; --danger-color: #e74c3c; --safe-color: #58d68d; --font-body: &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;Hiragino Sans GB&quot;, sans-serif; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-family: var(--font-body); font-size: 16px; line-height: 1.8; -webkit-font-smoothing: antialiased; }
@@ -156,6 +156,29 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 
 .warning { color: #f39c12; }
 .danger { color: var(--danger-color); font-weight: bold; }
+
+/* progressive map: zone + location cards */
+.zone-list { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1rem; }
+.zone-card { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.8rem 1rem; }
+.zone-card.known { border-left: 3px solid var(--accent-color); }
+.zone-card.unknown { border-left: 3px solid var(--border-color); opacity: 0.7; }
+.zone-card h3 { font-size: 1.1rem; color: var(--accent-color); margin: 0 0 0.3rem; border-bottom: none; padding-bottom: 0; }
+.zone-card.unknown h3 { color: var(--muted-color); }
+.zone-card .muted { font-size: 0.85rem; margin: 0.15rem 0; }
+.zone-card a { display: inline-block; margin-top: 0.4rem; }
+
+.location-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+.location-card { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.7rem 0.9rem; }
+.location-card.known { border-left: 3px solid var(--link-color); }
+.location-card.unknown { border-left: 3px solid var(--border-color); opacity: 0.65; }
+.location-card h4 { font-size: 1rem; margin: 0 0 0.25rem; color: var(--text-color); }
+.location-card.unknown h4 { color: var(--muted-color); letter-spacing: 0.1em; }
+.location-card .muted { font-size: 0.82rem; margin: 0; }
+
+@media (max-width: 600px) {
+  .location-list { grid-template-columns: 1fr; }
+  .zone-card { padding: 0.7rem 0.8rem; }
+}
 </style>
   <script role="script" id="twine-user-script" type="text/twine-javascript">/*
  * game.js
@@ -721,11 +744,44 @@ Game.visitLocation = function (locId) {
 
 Game.hasVisitedLocation = function (locId) {
 
-    var g = ensureState();
+   var g = ensureState();
 
-    return !!(g.visitedLocations && g.visitedLocations[locId]);
+   return !!(g.visitedLocations && g.visitedLocations[locId]);
 
-  }
+ }
+
+ Game.getLocationsByZone = function (zoneId) {
+   var result = [];
+   var map = GameState.MAP;
+   Object.keys(map).forEach(function (id) {
+     if (map[id].zone === zoneId) {
+       result.push({ id: id, name: map[id].name, desc: map[id].desc });
+     }
+   });
+   return result;
+ }
+
+ Game.isZoneDiscovered = function (zoneId) {
+   var g = ensureState();
+   var visited = g.visitedLocations || {};
+   var map = GameState.MAP;
+   return Object.keys(visited).some(function (locId) {
+     return visited[locId] && map[locId] && map[locId].zone === zoneId;
+   });
+ }
+
+ Game.getVisitedLocationsInZone = function (zoneId) {
+   var g = ensureState();
+   var visited = g.visitedLocations || {};
+   var map = GameState.MAP;
+   var result = [];
+   Object.keys(visited).forEach(function (locId) {
+     if (visited[locId] && map[locId] && map[locId].zone === zoneId) {
+       result.push({ id: locId, name: map[locId].name, desc: map[locId].desc });
+     }
+   });
+   return result;
+ }
 
 Game.getStatus = function () {
 
@@ -2100,6 +2156,17 @@ Game.magicianResetDaily = function () {
     cellar_door: { name: "地下铁门", desc: "酒窖深处的铁门，门上写着天黑请闭眼。", zone: "underground" },
     altar: { name: "祭祀空间", desc: "石阶、镜子、骨刀。轮回的真相所在。", zone: "underground" },
     crypt: { name: "地下墓室", desc: "铁门后的岩路，排列着石椁和刻着名字的墙壁。", zone: "underground" },
+  };
+
+  // ZONES: zone id -> {name, desc}
+  GameState.ZONES = {
+    main_1f: { name: "主楼一层", desc: "门厅、大厅、餐厅、厨房、储藏室、会客厅、书房、画廊。" },
+    main_2f: { name: "主楼二层", desc: "客房走廊、主卧、儿童房、缝纫室、阳台。" },
+    main_3f: { name: "主楼三层 / 阁楼", desc: "阁楼与档案室。" },
+    east_wing: { name: "东厢房", desc: "图书室、音乐室、温室、广播室。" },
+    west_wing: { name: "西厢房", desc: "配电室、工坊、杂物间、酒窖。" },
+    courtyard: { name: "庭院", desc: "中庭、花园、古井、小教堂。" },
+    underground: { name: "地下空间", desc: "地下铁门、祭祀空间、地下墓穴。" }
   };
 
   GameState.BACKSTORY_KEYS = {
@@ -4257,7 +4324,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[去大厅做最后的部署|Chapter06_Hall]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="65" name="Explore_Altar" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;altar&#39;)&gt;&gt;
+  <tw-passagedata pid="65" name="Explore_Altar" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;altar&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;ritual_tablet&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;recruitment_tablet&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;god_kill_method&#39;)&gt;&gt;
@@ -4275,7 +4342,7 @@ Game.resetGodSkillsLoop = function () {
 [[探索地下墓穴|Explore_Crypt]]
 [[返回|Map_Underground]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="66" name="Explore_ArchiveRoom" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;archive_room&#39;)&gt;&gt;
+  <tw-passagedata pid="66" name="Explore_ArchiveRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;archive_room&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;old_photo&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;shenshen_identity&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4287,7 +4354,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Main3F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="67" name="Explore_Armory" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;armory&#39;)&gt;&gt;
+  <tw-passagedata pid="67" name="Explore_Armory" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;armory&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;first_aid_kit&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;杂物间&lt;/h2&gt;
@@ -4299,7 +4366,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_WestWing]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="68" name="Explore_Attic" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;attic&#39;)&gt;&gt;
+  <tw-passagedata pid="68" name="Explore_Attic" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;attic&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;old_photo&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;laozheng_survivor&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;bible&#39;)&gt;&gt;
@@ -4314,7 +4381,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Main3F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="69" name="Explore_Balcony" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;balcony&#39;)&gt;&gt;
+  <tw-passagedata pid="69" name="Explore_Balcony" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;balcony&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;locked_doors&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;阳台&lt;/h2&gt;
@@ -4325,7 +4392,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Main2F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="70" name="Explore_Broadcast" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;broadcast_room&#39;)&gt;&gt;
+  <tw-passagedata pid="70" name="Explore_Broadcast" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;broadcast_room&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;cassette_tape&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;system_origin&#39;)&gt;&gt;
 &lt;&lt;run Game.changeSan(-5)&gt;&gt;
@@ -4339,7 +4406,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_EastWing]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="71" name="Explore_Cellar" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;cellar_door&#39;)&gt;&gt;
+  <tw-passagedata pid="71" name="Explore_Cellar" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;cellar_door&#39;)&gt;&gt;
 &lt;&lt;if not Game.hasClue(&#39;ritual_tablet&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;cellar_door&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;cellar_blood&#39;)&gt;&gt;
@@ -4360,7 +4427,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;/if&gt;&gt;
 [[返回|Map_Underground]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="72" name="Explore_Chapel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;chapel&#39;)&gt;&gt;
+  <tw-passagedata pid="72" name="Explore_Chapel" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;chapel&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;bible&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;laozheng_survivor&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4373,7 +4440,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Courtyard]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="73" name="Explore_ChildrenRoom" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;children_room&#39;)&gt;&gt;
+  <tw-passagedata pid="73" name="Explore_ChildrenRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;children_room&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;tangxiaotang_trauma&#39;)&gt;&gt;
 &lt;&lt;run Game.changeSan(-5)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4387,7 +4454,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Main2F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="74" name="Explore_Conservatory" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;conservatory&#39;)&gt;&gt;
+  <tw-passagedata pid="74" name="Explore_Conservatory" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;conservatory&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;mirror_exit&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;温室&lt;/h2&gt;
@@ -4403,7 +4470,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_EastWing]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="75" name="Explore_Courtyard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;courtyard&#39;)&gt;&gt;
+  <tw-passagedata pid="75" name="Explore_Courtyard" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;courtyard&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;mirror_exit&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;中庭&lt;/h2&gt;
@@ -4415,7 +4482,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Courtyard]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="76" name="Explore_Crypt" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;crypt&#39;)&gt;&gt;
+  <tw-passagedata pid="76" name="Explore_Crypt" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;crypt&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;recruitment_tablet&#39;)&gt;&gt;
 &lt;&lt;run Game.changeSan(-10)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4430,7 +4497,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回祭祀空间|Explore_Altar]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="77" name="Explore_DiningRoom" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;dining_room&#39;)&gt;&gt;
+  <tw-passagedata pid="77" name="Explore_DiningRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;dining_room&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;餐厅&lt;/h2&gt;
 &lt;p&gt;长条橡木餐桌足有六米长，能轻松坐下二十人。桌上铺着落满灰尘的白布，银质餐具已经发黑。&lt;/p&gt;
@@ -4446,7 +4513,7 @@ Game.resetGodSkillsLoop = function () {
 [[细看肖像画|Search_Portraits]]
 [[返回|Map_Main1F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="78" name="Explore_DrawingRoom" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;drawing_room&#39;)&gt;&gt;
+  <tw-passagedata pid="78" name="Explore_DrawingRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;drawing_room&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;会客厅&lt;/h2&gt;
 &lt;p&gt;壁炉旁的休息区。深色天鹅绒沙发，茶几上摆着一套精致的瓷茶具。角落里有一架旧钢琴，琴盖半开。&lt;/p&gt;
@@ -4457,7 +4524,7 @@ Game.resetGodSkillsLoop = function () {
 [[弹一下钢琴|Search_Piano]]
 [[返回|Map_Main1F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="79" name="Explore_Gallery" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;gallery&#39;)&gt;&gt;
+  <tw-passagedata pid="79" name="Explore_Gallery" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;gallery&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;chenmo_guilt&#39;)&gt;&gt;
 &lt;&lt;run Game.changeSan(-5)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4471,7 +4538,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Main1F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="80" name="Explore_Garden" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;garden&#39;)&gt;&gt;
+  <tw-passagedata pid="80" name="Explore_Garden" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;garden&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;花园&lt;/h2&gt;
 &lt;p&gt;枯死的玫瑰丛被雪覆盖，只露出黑色的荆棘。干涸的喷泉池里结着厚厚的冰。&lt;/p&gt;
@@ -4481,7 +4548,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Courtyard]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="81" name="Explore_Generator" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;generator_room&#39;)&gt;&gt;
+  <tw-passagedata pid="81" name="Explore_Generator" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;generator_room&#39;)&gt;&gt;
 &lt;&lt;if Game.isAlive(&#39;jiang_bai&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;wire&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;flashlight&#39;)&gt;&gt;
@@ -4499,7 +4566,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_WestWing]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="82" name="Explore_GrandHall" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;grand_hall&#39;)&gt;&gt;
+  <tw-passagedata pid="82" name="Explore_GrandHall" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;grand_hall&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;大厅&lt;/h2&gt;
 &lt;p&gt;壁炉里的火劈啪作响。前台是一张沉重的橡木桌，上面挂满了房间钥匙，每把钥匙都系着一条褪色的绸带，编号从 1 到 12。&lt;/p&gt;
@@ -4511,7 +4578,7 @@ Game.resetGodSkillsLoop = function () {
 [[细看那幅油画|Search_Painting]]
 [[返回|Map_Main1F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="83" name="Explore_GuestCorridor" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;guest_corridor&#39;)&gt;&gt;
+  <tw-passagedata pid="83" name="Explore_GuestCorridor" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;guest_corridor&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;客房走廊&lt;/h2&gt;
 &lt;p&gt;十二扇门沿着走廊排开，每扇门上都有一个铜制号码牌。门锁是老式的，从里面用插销锁住。&lt;/p&gt;
@@ -4521,7 +4588,7 @@ Game.resetGodSkillsLoop = function () {
 [[检查落地镜|Search_Mirror2F]]
 [[返回|Map_Main2F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="84" name="Explore_Kitchen" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;kitchen&#39;)&gt;&gt;
+  <tw-passagedata pid="84" name="Explore_Kitchen" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;kitchen&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;bread&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;厨房&lt;/h2&gt;
@@ -4534,7 +4601,7 @@ Game.resetGodSkillsLoop = function () {
 [[前往储藏室|Explore_Pantry]]
 [[返回|Map_Main1F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="85" name="Explore_Library" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;library&#39;)&gt;&gt;
+  <tw-passagedata pid="85" name="Explore_Library" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;library&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;guest_register&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;old_guests&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4547,7 +4614,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_EastWing]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="86" name="Explore_MasterBedroom" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;master_bedroom&#39;)&gt;&gt;
+  <tw-passagedata pid="86" name="Explore_MasterBedroom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;master_bedroom&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;syringe&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;主卧&lt;/h2&gt;
@@ -4563,7 +4630,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Main2F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="87" name="Explore_MusicRoom" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;music_room&#39;)&gt;&gt;
+  <tw-passagedata pid="87" name="Explore_MusicRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;music_room&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;音乐室&lt;/h2&gt;
 &lt;p&gt;三角钢琴占据了大半个房间。琴键落满灰尘，但你按下时，第一个音依然清亮。&lt;/p&gt;
@@ -4573,7 +4640,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_EastWing]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="88" name="Explore_Pantry" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;pantry&#39;)&gt;&gt;
+  <tw-passagedata pid="88" name="Explore_Pantry" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;pantry&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;compass&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;储藏室&lt;/h2&gt;
@@ -4584,7 +4651,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回厨房|Explore_Kitchen]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="89" name="Explore_SewingRoom" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;sewing_room&#39;)&gt;&gt;
+  <tw-passagedata pid="89" name="Explore_SewingRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;sewing_room&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;wire&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;缝纫室&lt;/h2&gt;
@@ -4594,7 +4661,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Main2F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="90" name="Explore_Study" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;study&#39;)&gt;&gt;
+  <tw-passagedata pid="90" name="Explore_Study" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;study&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;lighter&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;laozheng_knowledge&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4608,7 +4675,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Main1F]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="91" name="Explore_Well" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;well&#39;)&gt;&gt;
+  <tw-passagedata pid="91" name="Explore_Well" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;well&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;system_origin&#39;)&gt;&gt;
 &lt;&lt;run Game.changeSan(-5)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4622,7 +4689,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_Courtyard]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="92" name="Explore_WineCellar" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;wine_cellar&#39;)&gt;&gt;
+  <tw-passagedata pid="92" name="Explore_WineCellar" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;wine_cellar&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;cellar_blood&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;酒窖&lt;/h2&gt;
@@ -4637,7 +4704,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Map_WestWing]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="93" name="Explore_Workshop" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;workshop&#39;)&gt;&gt;
+  <tw-passagedata pid="93" name="Explore_Workshop" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;workshop&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;wire&#39;)&gt;&gt;
 &lt;&lt;run Game.addItem(&#39;flashlight&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4913,36 +4980,48 @@ Game.resetGodSkillsLoop = function () {
   <tw-passagedata pid="112" name="Common_Map" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;庄园地图&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;这是一座建造在雪山深处的老式庄园。主楼三层，东西两翼各有厢房，中庭被风雪包围，地下还有未知的空间。点击区域进入探索。&lt;/p&gt;
-
+&lt;p class=&quot;system-hint&quot;&gt;这是一座建造在雪山深处的老式庄园。地图上只标记你已经亲自踏足的区域；尚未探索的地方仍笼罩在风雪之中。&lt;/p&gt;
+&lt;&lt;set _zones to [&#39;main_1f&#39;,&#39;main_2f&#39;,&#39;main_3f&#39;,&#39;east_wing&#39;,&#39;west_wing&#39;,&#39;courtyard&#39;,&#39;underground&#39;]&gt;&gt;
+&lt;&lt;set _zonePassage to {
+  &#39;main_1f&#39;:&#39;Map_Main1F&#39;,
+  &#39;main_2f&#39;:&#39;Map_Main2F&#39;,
+  &#39;main_3f&#39;:&#39;Map_Main3F&#39;,
+  &#39;east_wing&#39;:&#39;Map_EastWing&#39;,
+  &#39;west_wing&#39;:&#39;Map_WestWing&#39;,
+  &#39;courtyard&#39;:&#39;Map_Courtyard&#39;,
+  &#39;underground&#39;:&#39;Map_Underground&#39;
+}&gt;&gt;
 &lt;div class=&quot;zone-list&quot;&gt;
-&lt;h3&gt;主楼一层&lt;/h3&gt;
-&lt;p class=&quot;muted&quot;&gt;门厅、大厅、餐厅、厨房、储藏室、会客厅、书房、画廊&lt;/p&gt;
-&lt;h3&gt;主楼二层&lt;/h3&gt;
-&lt;p class=&quot;muted&quot;&gt;客房走廊、主卧、儿童房、缝纫室、阳台&lt;/p&gt;
-&lt;h3&gt;主楼三层 / 阁楼&lt;/h3&gt;
-&lt;p class=&quot;muted&quot;&gt;阁楼、档案室&lt;/p&gt;
-&lt;h3&gt;东厢房&lt;/h3&gt;
-&lt;p class=&quot;muted&quot;&gt;图书室、音乐室、温室、广播室&lt;/p&gt;
-&lt;h3&gt;西厢房&lt;/h3&gt;
-&lt;p class=&quot;muted&quot;&gt;配电室、工坊、杂物间、酒窖&lt;/p&gt;
-&lt;h3&gt;庭院&lt;/h3&gt;
-&lt;p class=&quot;muted&quot;&gt;中庭、花园、古井、小教堂&lt;/p&gt;
-&lt;h3&gt;地下空间&lt;/h3&gt;
-&lt;p class=&quot;muted&quot;&gt;地下铁门、祭祀空间、地下墓穴&lt;/p&gt;
+&lt;&lt;for _i to 0; _i lt _zones.length; _i++&gt;&gt;
+&lt;&lt;set _zid to _zones[_i]&gt;&gt;
+&lt;&lt;set _zinfo to GameState.ZONES[_zid]&gt;&gt;
+&lt;&lt;set _discovered to Game.isZoneDiscovered(_zid)&gt;&gt;
+&lt;&lt;if _zid == &#39;underground&#39; &amp;&amp; !Game.hasItem(&#39;old_key&#39;)&gt;&gt;
+&lt;&lt;elseif _discovered&gt;&gt;
+&lt;div class=&quot;zone-card known&quot;&gt;
+&lt;h3&gt;_zinfo.name&lt;/h3&gt;
+&lt;p class=&quot;muted&quot;&gt;_zinfo.desc&lt;/p&gt;
+&lt;&lt;set _visitedCount to Game.getVisitedLocationsInZone(_zid).length&gt;&gt;
+&lt;&lt;set _totalCount to Game.getLocationsByZone(_zid).length&gt;&gt;
+&lt;p class=&quot;muted&quot;&gt;已探索 _visitedCount / _totalCount。&lt;/p&gt;
+&lt;&lt;capture _zid&gt;&gt;
+&lt;&lt;link &quot;进入&quot; _zonePassage[_zid]&gt;&gt;&lt;&lt;/link&gt;&gt;
+&lt;&lt;/capture&gt;&gt;
 &lt;/div&gt;
-
-&lt;div class=&quot;choice-list&quot;&gt;
-[[主楼一层|Map_Main1F]]
-[[主楼二层|Map_Main2F]]
-[[阁楼 / 档案室|Map_Main3F]]
-[[东厢房|Map_EastWing]]
-[[西厢房|Map_WestWing]]
-[[庭院|Map_Courtyard]]
-&lt;&lt;if Game.hasItem(&#39;old_key&#39;)&gt;&gt;
-[[地下空间|Map_Underground]]
+&lt;&lt;else&gt;&gt;
+&lt;div class=&quot;zone-card unknown&quot;&gt;
+&lt;h3&gt;？？？&lt;/h3&gt;
+&lt;p class=&quot;muted&quot;&gt;风雪未散，此处尚未发现。&lt;/p&gt;
+&lt;/div&gt;
 &lt;&lt;/if&gt;&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;/div&gt;
+&lt;div class=&quot;choice-list&quot;&gt;
+&lt;&lt;if $returnTarget&gt;&gt;
 [[返回|$returnTarget]]
+&lt;&lt;else&gt;&gt;
+[[返回|Start]]
+&lt;&lt;/if&gt;&gt;
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="113" name="Common_Memory" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
 &lt;&lt;set _memories to $game.memories&gt;&gt;
@@ -5108,7 +5187,38 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;set $returnTarget to _prev&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/widget&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="116" name="God_Knight" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="116" name="Common_ZoneMap" tags="utility" position="100,100" size="100,100">&lt;&lt;set _zone to _zoneId&gt;&gt;
+&lt;&lt;set _zoneInfo to GameState.ZONES[_zone]&gt;&gt;
+&lt;&lt;set _visited to Game.getVisitedLocationsInZone(_zone)&gt;&gt;
+&lt;&lt;set _all to Game.getLocationsByZone(_zone)&gt;&gt;
+&lt;&lt;set _total to _all.length&gt;&gt;
+&lt;&lt;set _found to _visited.length&gt;&gt;
+&lt;h2&gt;_zoneInfo.name&lt;/h2&gt;
+&lt;p class=&quot;system-hint&quot;&gt;_zoneInfo.desc&lt;/p&gt;
+&lt;p class=&quot;muted&quot;&gt;已探索 _found / _total 处。&lt;/p&gt;
+&lt;div class=&quot;location-list&quot;&gt;
+&lt;&lt;for _i to 0; _i lt _all.length; _i++&gt;&gt;
+&lt;&lt;set _loc to _all[_i]&gt;&gt;
+&lt;&lt;if Game.hasVisitedLocation(_loc.id)&gt;&gt;
+&lt;div class=&quot;location-card known&quot;&gt;
+&lt;h4&gt;_loc.name&lt;/h4&gt;
+&lt;p class=&quot;muted&quot;&gt;_loc.desc&lt;/p&gt;
+&lt;/div&gt;
+&lt;&lt;else&gt;&gt;
+&lt;div class=&quot;location-card unknown&quot;&gt;
+&lt;h4&gt;？？？&lt;/h4&gt;
+&lt;p class=&quot;muted&quot;&gt;尚未踏足此处。&lt;/p&gt;
+&lt;/div&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;/div&gt;
+&lt;div class=&quot;choice-list&quot;&gt;
+[[返回地图|Common_Map]]
+&lt;&lt;if $returnTarget &amp;&amp; $returnTarget != &quot;Common_Map&quot;&gt;&gt;
+[[返回剧情|$returnTarget]]
+&lt;&lt;/if&gt;&gt;
+&lt;/div&gt;</tw-passagedata>
+  <tw-passagedata pid="117" name="God_Knight" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;林小满 · 骑士&lt;/h2&gt;
 &lt;&lt;if Game.knightWeakened()&gt;&gt;
 &lt;p class=&quot;danger&quot;&gt;林小满虚弱地靠在墙上，上次行动的消耗还没恢复。她今天无法再做任何事。&lt;/p&gt;
@@ -5132,7 +5242,7 @@ Game.resetGodSkillsLoop = function () {
 [[算了，不打搅她|Start]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="117" name="God_Knight_Duel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="118" name="God_Knight_Duel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;林小满 · 决斗&lt;/h2&gt;
 &lt;p&gt;林小满握紧小刀：&lt;/p&gt;
 &lt;blockquote&gt;林小满：「你如果有目标，就告诉我。但我要提醒你——如果我砍错了人，死的会是我。」&lt;/blockquote&gt;
@@ -5155,7 +5265,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[放弃决斗|God_Knight]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="118" name="God_Knight_Guard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="119" name="God_Knight_Guard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;林小满 · 守卫&lt;/h2&gt;
 &lt;&lt;if Game.knightWeakened()&gt;&gt;
 &lt;p class=&quot;danger&quot;&gt;林小满虚弱地靠在墙上，上次行动的消耗还没恢复。她今天无法行动。&lt;/p&gt;
@@ -5195,7 +5305,7 @@ Game.resetGodSkillsLoop = function () {
 [[算了，返回|God_Knight]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="119" name="God_Knight_Guard_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="120" name="God_Knight_Guard_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _guardResult to $game.godSkills.knight&gt;&gt;
 &lt;h2&gt;守卫&lt;/h2&gt;
 &lt;&lt;set _guardName to GameState.PROFILES[_guardResult.lastGuard].name&gt;&gt;
@@ -5207,7 +5317,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="120" name="God_Knight_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="121" name="God_Knight_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _result to $game.godSkills.knight&gt;&gt;
 &lt;h2&gt;决斗&lt;/h2&gt;
 &lt;&lt;if not Game.isAlive(&#39;lin_xiaoman&#39;)&gt;&gt;
@@ -5223,7 +5333,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="121" name="God_Magician" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="122" name="God_Magician" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;沈慎 · 魔术师&lt;/h2&gt;
 &lt;&lt;set _remaining to Game.magicianSwapsRemaining()&gt;&gt;
 &lt;&lt;set _currentSwap to Game.getMagicianSwap()&gt;&gt;
@@ -5414,7 +5524,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回神职面板|God_Panel]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="122" name="God_Magician_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="123" name="God_Magician_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _swap to Game.getMagicianSwap()&gt;&gt;
 &lt;h2&gt;交换已设置&lt;/h2&gt;
 &lt;p&gt;沈慎微微点头，手中的扑克牌无声地翻转。&lt;/p&gt;
@@ -5424,7 +5534,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回神职面板|God_Panel]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="123" name="God_Panel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="124" name="God_Panel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;if Game.hasFlag(&#39;god_panel_unlocked&#39;)&gt;&gt;
 &lt;h2&gt;神职联络&lt;/h2&gt;
 &lt;p class=&quot;system-hint&quot;&gt;你可以联络已确认的神职，请他们使用能力。神职能力来源于村民，&lt;strong&gt;白天和夜晚均可发动&lt;/strong&gt;。&lt;/p&gt;
@@ -5473,7 +5583,7 @@ Game.resetGodSkillsLoop = function () {
 [[返回|Start]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="124" name="God_Prophet" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="125" name="God_Prophet" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;方衡 · 预言家&lt;/h2&gt;
 &lt;p&gt;方衡站在窗边，目光扫过大厅里的每一个人。&lt;/p&gt;
 &lt;blockquote&gt;方衡：「我能感知到一个人身上的气息。但我看到的不是身份，是意象——雾气、火焰、空洞、涟漪。怎么解读，取决于你自己。」&lt;/blockquote&gt;
@@ -5531,7 +5641,7 @@ _SHOW
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="125" name="God_Prophet_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="126" name="God_Prophet_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _results to Game.prophetResults()&gt;&gt;
 &lt;&lt;set _last to _results[_results.length - 1]&gt;&gt;
 &lt;&lt;set _targetName to GameState.PROFILES[_last.target].name&gt;&gt;
@@ -5557,7 +5667,7 @@ _HIST
 [[继续探查|God_Prophet]]
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="126" name="God_Witch" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="127" name="God_Witch" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;叶知秋 · 女巫&lt;/h2&gt;
 &lt;&lt;set _remaining to Game.witchRemaining()&gt;&gt;
 &lt;&lt;set _uses to Game.witchUses()&gt;&gt;
@@ -5679,7 +5789,7 @@ _HIST
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回神职面板|God_Panel]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="127" name="God_Witch_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="128" name="God_Witch_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;if Game.witchBroken()&gt;&gt;
 &lt;h2&gt;精神崩溃&lt;/h2&gt;
 &lt;p class=&quot;danger&quot;&gt;叶知秋施完最后一次能力后，整个人像被抽空了。她的瞳孔涣散，嘴角不受控制地抽搐。&lt;/p&gt;
@@ -5694,86 +5804,28 @@ _HIST
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回女巫面板|God_Witch]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="128" name="Map_Courtyard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;庭院&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;刺骨的风雪。你只能在中庭短暂停留。枯死的花园尽头有一口古井和一座废弃的小教堂。&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[前往中庭|Explore_Courtyard]]
-[[前往花园|Explore_Garden]]
-[[查看古井|Explore_Well]]
-[[进入小教堂|Explore_Chapel]]
-[[返回地图|Common_Map]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="129" name="Map_EastWing" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;东厢房&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;长廊连接着图书室、音乐室、温室和广播室。玻璃窗外的风雪把走廊照得惨白。&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[前往图书室|Explore_Library]]
-[[前往音乐室|Explore_MusicRoom]]
-[[前往温室|Explore_Conservatory]]
-[[前往广播室|Explore_Broadcast]]
-[[返回地图|Common_Map]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="130" name="Map_Main1F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;主楼一层&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;庄园的核心区域。壁炉的火光能照到门厅，所有人的房间钥匙都挂在前台的木架上。&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[前往大厅|Explore_GrandHall]]
-[[前往餐厅|Explore_DiningRoom]]
-[[前往厨房|Explore_Kitchen]]
-[[前往储藏室|Explore_Pantry]]
-[[前往会客厅|Explore_DrawingRoom]]
-[[前往书房|Explore_Study]]
-[[前往画廊|Explore_Gallery]]
-[[返回地图|Common_Map]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="131" name="Map_Main2F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;主楼二层&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;客房区。十二扇门沿着走廊排开，夜间是各自的安全屋。走廊尽头有一面落地镜，镜面发暗。&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[查看客房走廊|Explore_GuestCorridor]]
-[[进入主卧|Explore_MasterBedroom]]
-[[进入儿童房|Explore_ChildrenRoom]]
-[[进入缝纫室|Explore_SewingRoom]]
-[[走上阳台|Explore_Balcony]]
-[[返回地图|Common_Map]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="132" name="Map_Main3F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;阁楼 / 档案室&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;楼梯尽头是一扇低矮的木门。空气里弥漫着灰尘和旧纸的味道。&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[进入阁楼|Explore_Attic]]
-&lt;&lt;if Game.hasItem(&#39;old_key&#39;)&gt;&gt;
-[[进入档案室|Explore_ArchiveRoom]]
-&lt;&lt;/if&gt;&gt;
-[[返回地图|Common_Map]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="133" name="Map_Underground" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;地下空间&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;你用旧钥匙打开酒窖深处的铁门，走下潮湿的楼梯。空气里有血腥味和某种古老的气息。&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-&lt;&lt;if not Game.hasClue(&#39;ritual_tablet&#39;)&gt;&gt;
-[[深入酒窖|Explore_Cellar]]
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasClue(&#39;cellar_door&#39;)&gt;&gt;
-[[前往祭祀空间|Explore_Altar]]
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasClue(&#39;ritual_tablet&#39;)&gt;&gt;
-[[探索地下墓穴|Explore_Crypt]]
-&lt;&lt;/if&gt;&gt;
-[[返回地图|Common_Map]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="134" name="Map_WestWing" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;西厢房&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;这里更冷。配电室的嗡鸣声在走廊里回荡。酒窖的入口在走廊尽头。&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[前往配电室|Explore_Generator]]
-[[前往工坊|Explore_Workshop]]
-[[前往杂物间|Explore_Armory]]
-[[前往酒窖|Explore_WineCellar]]
-[[返回地图|Common_Map]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="135" name="Pursuit_Engine" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="129" name="Map_Courtyard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;set _zoneId to &#39;courtyard&#39;&gt;&gt;
+&lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="130" name="Map_EastWing" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;set _zoneId to &#39;east_wing&#39;&gt;&gt;
+&lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="131" name="Map_Main1F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;set _zoneId to &#39;main_1f&#39;&gt;&gt;
+&lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="132" name="Map_Main2F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;set _zoneId to &#39;main_2f&#39;&gt;&gt;
+&lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="133" name="Map_Main3F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;set _zoneId to &#39;main_3f&#39;&gt;&gt;
+&lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="134" name="Map_Underground" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;set _zoneId to &#39;underground&#39;&gt;&gt;
+&lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="135" name="Map_WestWing" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;set _zoneId to &#39;west_wing&#39;&gt;&gt;
+&lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="136" name="Pursuit_Engine" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _turn to $game.pursuit.turn&gt;&gt;
 &lt;&lt;set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name&gt;&gt;
 &lt;&lt;set _posName to GameState.MAP[$game.pursuit.playerPos].name&gt;&gt;
@@ -5847,7 +5899,7 @@ _HIST
 &lt;&lt;link &quot;前往古井&quot;&gt;&gt;&lt;&lt;run Game.pursuitMove(&#39;well&#39;)&gt;&gt;&lt;&lt;goto &quot;Pursuit_Resolve&quot;&gt;&gt;&lt;&lt;/link&gt;&gt;
 &lt;/div&gt;
 &lt;p class=&quot;muted&quot;&gt;部分地点可能无法到达，游戏会提示移动失败。&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="136" name="Pursuit_Resolve" tags="" position="100,100" size="100,100">&lt;&lt;set _result to Game.pursuitNextTurn()&gt;&gt;
+  <tw-passagedata pid="137" name="Pursuit_Resolve" tags="" position="100,100" size="100,100">&lt;&lt;set _result to Game.pursuitNextTurn()&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name&gt;&gt;
 
@@ -5889,7 +5941,7 @@ _HIST
 [[下一回合|Pursuit_Engine]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="137" name="Pursuit_Start" tags="" position="100,100" size="100,100">&lt;&lt;run Game.startPursuit()&gt;&gt;
+  <tw-passagedata pid="138" name="Pursuit_Start" tags="" position="100,100" size="100,100">&lt;&lt;run Game.startPursuit()&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;夜间追击战&lt;/h2&gt;
 &lt;p&gt;存活的人越来越少了。走廊里只剩下你的脚步声。&lt;/p&gt;
@@ -5902,7 +5954,7 @@ _HIST
 &lt;div class=&quot;choice-list&quot;&gt;
 [[开始逃跑|Pursuit_Engine]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="138" name="Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
+  <tw-passagedata pid="139" name="Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
 &lt;h1&gt;无尽雪夜&lt;/h1&gt;
 &lt;p&gt;窗外是铅灰色的雪幕。风像钝刀，一下下刮着玻璃。&lt;/p&gt;
 &lt;p&gt;陈默睁开眼。天花板有水渍，形状像一张闭眼的人脸。他眨了眨眼，水渍没有变化。&lt;/p&gt;
@@ -5914,7 +5966,7 @@ _HIST
 [[开始游戏|Chapter01_Start]]
 [[查看人物|Common_Characters]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="139" name="StoryCaption" tags="" position="100,100" size="100,100">&lt;&lt;set _status to Game.getStatus()&gt;&gt;
+  <tw-passagedata pid="140" name="StoryCaption" tags="" position="100,100" size="100,100">&lt;&lt;set _status to Game.getStatus()&gt;&gt;
 &lt;&lt;set _sanClass to _status.san &gt; 60 ? &#39;safe&#39; : (_status.san &gt; 30 ? &#39;&#39; : &#39;danger&#39;)&gt;&gt;
 &lt;&lt;set _breaking to Game.trueEndingProgress()&gt;&gt;
 &lt;&lt;set _met = $game.metCharacters || {}&gt;&gt;
@@ -5948,7 +6000,7 @@ _HIST
   &lt;&lt;/if&gt;&gt;
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="140" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;
+  <tw-passagedata pid="141" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;
 &lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
 &lt;&lt;set $returnTarget to &#39;Start&#39;&gt;&gt;</tw-passagedata>
 </tw-storydata>

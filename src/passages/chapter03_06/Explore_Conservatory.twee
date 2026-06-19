@@ -1,4 +1,4 @@
-:: Explore_Conservatory
+:: Explore_Conservatory [location]
 <<run Game.visitLocation('conservatory')>>
 <<run Game.addClue('mirror_exit')>>
 <<run Game.visit()>>

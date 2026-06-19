@@ -1,4 +1,4 @@
-:: Explore_ArchiveRoom
+:: Explore_ArchiveRoom [location]
 <<run Game.visitLocation('archive_room')>>
 <<run Game.addItem('old_photo')>>
 <<run Game.addClue('shenshen_identity')>>

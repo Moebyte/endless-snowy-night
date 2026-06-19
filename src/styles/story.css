@@ -49,3 +49,26 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 
 .warning { color: #f39c12; }
 .danger { color: var(--danger-color); font-weight: bold; }
+
+/* progressive map: zone + location cards */
+.zone-list { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1rem; }
+.zone-card { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.8rem 1rem; }
+.zone-card.known { border-left: 3px solid var(--accent-color); }
+.zone-card.unknown { border-left: 3px solid var(--border-color); opacity: 0.7; }
+.zone-card h3 { font-size: 1.1rem; color: var(--accent-color); margin: 0 0 0.3rem; border-bottom: none; padding-bottom: 0; }
+.zone-card.unknown h3 { color: var(--muted-color); }
+.zone-card .muted { font-size: 0.85rem; margin: 0.15rem 0; }
+.zone-card a { display: inline-block; margin-top: 0.4rem; }
+
+.location-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+.location-card { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.7rem 0.9rem; }
+.location-card.known { border-left: 3px solid var(--link-color); }
+.location-card.unknown { border-left: 3px solid var(--border-color); opacity: 0.65; }
+.location-card h4 { font-size: 1rem; margin: 0 0 0.25rem; color: var(--text-color); }
+.location-card.unknown h4 { color: var(--muted-color); letter-spacing: 0.1em; }
+.location-card .muted { font-size: 0.82rem; margin: 0; }
+
+@media (max-width: 600px) {
+  .location-list { grid-template-columns: 1fr; }
+  .zone-card { padding: 0.7rem 0.8rem; }
+}

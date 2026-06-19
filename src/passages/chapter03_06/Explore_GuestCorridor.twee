@@ -1,4 +1,4 @@
-:: Explore_GuestCorridor
+:: Explore_GuestCorridor [location]
 <<run Game.visitLocation('guest_corridor')>>
 <<run Game.visit()>>
 <h2>客房走廊</h2>

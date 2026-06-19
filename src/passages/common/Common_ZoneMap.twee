@@ -1,0 +1,32 @@
+﻿:: Common_ZoneMap [utility]
+<<set _zone to _zoneId>>
+<<set _zoneInfo to GameState.ZONES[_zone]>>
+<<set _visited to Game.getVisitedLocationsInZone(_zone)>>
+<<set _all to Game.getLocationsByZone(_zone)>>
+<<set _total to _all.length>>
+<<set _found to _visited.length>>
+<h2>_zoneInfo.name</h2>
+<p class="system-hint">_zoneInfo.desc</p>
+<p class="muted">已探索 _found / _total 处。</p>
+<div class="location-list">
+<<for _i to 0; _i lt _all.length; _i++>>
+<<set _loc to _all[_i]>>
+<<if Game.hasVisitedLocation(_loc.id)>>
+<div class="location-card known">
+<h4>_loc.name</h4>
+<p class="muted">_loc.desc</p>
+</div>
+<<else>>
+<div class="location-card unknown">
+<h4>？？？</h4>
+<p class="muted">尚未踏足此处。</p>
+</div>
+<</if>>
+<</for>>
+</div>
+<div class="choice-list">
+[[返回地图|Common_Map]]
+<<if $returnTarget && $returnTarget != "Common_Map">>
+[[返回剧情|$returnTarget]]
+<</if>>
+</div>

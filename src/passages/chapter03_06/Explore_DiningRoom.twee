@@ -1,4 +1,4 @@
-:: Explore_DiningRoom
+:: Explore_DiningRoom [location]
 <<run Game.visitLocation('dining_room')>>
 <<run Game.visit()>>
 <h2>餐厅</h2>

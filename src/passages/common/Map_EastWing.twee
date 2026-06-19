@@ -1,11 +1,4 @@
-:: Map_EastWing
+﻿:: Map_EastWing
 <<run Game.visit()>>
-<h2>东厢房</h2>
-<p class="system-hint">长廊连接着图书室、音乐室、温室和广播室。玻璃窗外的风雪把走廊照得惨白。</p>
-<div class="choice-list">
-[[前往图书室|Explore_Library]]
-[[前往音乐室|Explore_MusicRoom]]
-[[前往温室|Explore_Conservatory]]
-[[前往广播室|Explore_Broadcast]]
-[[返回地图|Common_Map]]
-</div>
+<<set _zoneId to 'east_wing'>>
+<<include "Common_ZoneMap">>

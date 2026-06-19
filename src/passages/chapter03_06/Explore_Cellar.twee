@@ -1,4 +1,4 @@
-:: Explore_Cellar
+:: Explore_Cellar [location]
 <<run Game.visitLocation('cellar_door')>>
 <<if not Game.hasClue('ritual_tablet')>>
 <<run Game.addClue('cellar_door')>>

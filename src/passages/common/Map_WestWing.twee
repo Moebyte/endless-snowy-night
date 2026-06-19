@@ -1,11 +1,4 @@
-:: Map_WestWing
+﻿:: Map_WestWing
 <<run Game.visit()>>
-<h2>西厢房</h2>
-<p class="system-hint">这里更冷。配电室的嗡鸣声在走廊里回荡。酒窖的入口在走廊尽头。</p>
-<div class="choice-list">
-[[前往配电室|Explore_Generator]]
-[[前往工坊|Explore_Workshop]]
-[[前往杂物间|Explore_Armory]]
-[[前往酒窖|Explore_WineCellar]]
-[[返回地图|Common_Map]]
-</div>
+<<set _zoneId to 'west_wing'>>
+<<include "Common_ZoneMap">>
