@@ -3213,6 +3213,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;p class=&quot;system-hint&quot;&gt;你获得了线索：地下酒窖铁门、酒窖血腥味。你注意到周阳行迹可疑。&lt;/p&gt;
 &lt;p&gt;[[回到大厅|Chapter01_Evening]]&lt;/p&gt;</tw-passagedata>
   <tw-passagedata pid="2" name="Chapter01_CheckExit" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addClue(&#39;locked_doors&#39;)&gt;&gt;
+&lt;&lt;run Game.setFlag(&#39;map_unlocked&#39;, true)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;p&gt;你决定先确认自己能不能离开这里。&lt;/p&gt;
 &lt;p&gt;一层的大门被积雪封死，门缝已经结冰。你用力推了推，纹丝不动。窗户也是——不是玻璃的问题，是窗外堆了三米厚的雪，连光线都变得惨白。&lt;/p&gt;
@@ -3287,6 +3288,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;p&gt;[[继续|Chapter01_Cellar]]&lt;/p&gt;</tw-passagedata>
   <tw-passagedata pid="9" name="Chapter01_Hall" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;09:17&#39;&gt;&gt;
 &lt;&lt;run Game.setFlag(&#39;met_everyone&#39;)&gt;&gt;
+&lt;&lt;run Game.setFlag(&#39;map_unlocked&#39;, true)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;Day 1 · 大厅&lt;/h2&gt;
 &lt;p&gt;十二个人围坐在壁炉周围。火是老郑生的，柴不多，他说只够烧两天。&lt;/p&gt;
@@ -5929,7 +5931,9 @@ _HIST
   &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[道具|Common_Inventory]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print Object.keys($game.inventory).length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
   &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[线索|Common_ClueList]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print Object.keys($game.clues).length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
   &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[人物|Common_Characters]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _metCount&gt;&gt;/12&lt;/span&gt;&lt;/div&gt;
+  &lt;&lt;if Game.hasFlag(&#39;map_unlocked&#39;) || Object.keys($game.visitedLocations || {}).length &gt; 0&gt;&gt;
   &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[地图|Common_Map]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;查看&lt;/span&gt;&lt;/div&gt;
+  &lt;&lt;/if&gt;&gt;
   &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[记忆|Common_Memory]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print $game.memories.length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
   &lt;&lt;if Game.hasFlag(&#39;god_panel_unlocked&#39;)&gt;&gt;
   &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[神职|God_Panel]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;技能&lt;/span&gt;&lt;/div&gt;

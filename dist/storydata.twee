@@ -3115,6 +3115,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 
 :: Chapter01_CheckExit
 <<run Game.addClue('locked_doors')>>
+<<run Game.setFlag('map_unlocked', true)>>
 <<run Game.visit()>>
 <p>你决定先确认自己能不能离开这里。</p>
 <p>一层的大门被积雪封死，门缝已经结冰。你用力推了推，纹丝不动。窗户也是——不是玻璃的问题，是窗外堆了三米厚的雪，连光线都变得惨白。</p>
@@ -3224,6 +3225,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 :: Chapter01_Hall
 <<set $game.time to '09:17'>>
 <<run Game.setFlag('met_everyone')>>
+<<run Game.setFlag('map_unlocked', true)>>
 <<run Game.visit()>>
 <h2>Day 1 · 大厅</h2>
 <p>十二个人围坐在壁炉周围。火是老郑生的，柴不多，他说只够烧两天。</p>
@@ -6208,7 +6210,9 @@ _HIST
   <div class="row"><span class="status-label">[[道具|Common_Inventory]]</span><span class="status-value"><<print Object.keys($game.inventory).length>></span></div>
   <div class="row"><span class="status-label">[[线索|Common_ClueList]]</span><span class="status-value"><<print Object.keys($game.clues).length>></span></div>
   <div class="row"><span class="status-label">[[人物|Common_Characters]]</span><span class="status-value"><<print _metCount>>/12</span></div>
+  <<if Game.hasFlag('map_unlocked') || Object.keys($game.visitedLocations || {}).length > 0>>
   <div class="row"><span class="status-label">[[地图|Common_Map]]</span><span class="status-value">查看</span></div>
+  <</if>>
   <div class="row"><span class="status-label">[[记忆|Common_Memory]]</span><span class="status-value"><<print $game.memories.length>></span></div>
   <<if Game.hasFlag('god_panel_unlocked')>>
   <div class="row"><span class="status-label">[[神职|God_Panel]]</span><span class="status-value">技能</span></div>

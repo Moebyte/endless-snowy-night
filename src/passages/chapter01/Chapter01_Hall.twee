@@ -1,6 +1,7 @@
 :: Chapter01_Hall
 <<set $game.time to '09:17'>>
 <<run Game.setFlag('met_everyone')>>
+<<run Game.setFlag('map_unlocked', true)>>
 <<run Game.visit()>>
 <h2>Day 1 · 大厅</h2>
 <p>十二个人围坐在壁炉周围。火是老郑生的，柴不多，他说只够烧两天。</p>

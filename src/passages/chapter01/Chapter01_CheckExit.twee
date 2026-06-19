@@ -1,5 +1,6 @@
 :: Chapter01_CheckExit
 <<run Game.addClue('locked_doors')>>
+<<run Game.setFlag('map_unlocked', true)>>
 <<run Game.visit()>>
 <p>你决定先确认自己能不能离开这里。</p>
 <p>一层的大门被积雪封死，门缝已经结冰。你用力推了推，纹丝不动。窗户也是——不是玻璃的问题，是窗外堆了三米厚的雪，连光线都变得惨白。</p>
