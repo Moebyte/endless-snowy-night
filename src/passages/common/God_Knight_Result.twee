@@ -1,0 +1,17 @@
+:: God_Knight_Result
+<<run Game.visit()>>
+<<set _result to $game.godSkills.knight>>
+<h2>决斗</h2>
+<<if not Game.isAlive('lin_xiaoman')>>
+<p class="danger">林小满倒下了。她砍错了人，骑士的代价是自己的命。</p>
+<blockquote>林小满（最后的话）：「棠棠……对不起……」</blockquote>
+<p class="system-hint">林小满死亡。骑士能力消失。好人阵营失去了唯一的武力淘汰手段。</p>
+<<else>>
+<p>林小满擦掉刀上的血，面无表情地看着倒下的尸体。</p>
+<blockquote>林小满：「它果然是狼。干得漂亮，陈默。」</blockquote>
+<p class="system-hint">一只狼被斩杀。但林小满现在很虚弱，明天无法行动。</p>
+<p class="danger">如果是狼王，林小满会与之同归于尽。</p>
+<</if>>
+<div class="choice-list">
+[[返回|Start]]
+</div>

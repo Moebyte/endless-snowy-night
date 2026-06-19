@@ -1,0 +1,14 @@
+:: Pursuit_Start
+<<run Game.startPursuit()>>
+<<run Game.visit()>>
+<h2>夜间追击战</h2>
+<p>存活的人越来越少了。走廊里只剩下你的脚步声。</p>
+<p>突然，大厅方向传来沉重的脚步声——不是人的脚步，是某种东西用前掌着地行走。</p>
+<p>狼人不再遵守"一晚一间"的规则了。它们开始主动猎杀。</p>
+<p class="system-hint">追击战开始。你需要撑过 5 个回合直到天亮。选择行动谨慎。</p>
+<<set _wolf to Game.getPursuitWolf()>>
+<<set _wolfName to GameState.PROFILES[_wolf].name>>
+<p class="danger">追击你的是：<strong><<print _wolfName>></strong></p>
+<div class="choice-list">
+[[开始逃跑|Pursuit_Engine]]
+</div>

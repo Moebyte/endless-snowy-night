@@ -1,0 +1,27 @@
+:: StoryCaption
+<<set _status to Game.getStatus()>>
+<<set _sanClass to _status.san > 60 ? 'safe' : (_status.san > 30 ? '' : 'danger')>>
+<<set _breaking to Game.trueEndingProgress()>>
+<div class="status-panel">
+  <div class="row"><span class="status-label">??</span><span class="status-value">? <<print _status.loop>> ?</span></div>
+  <div class="row"><span class="status-label">??</span><span class="status-value">? <<print _status.day>> ?</span></div>
+  <div class="row"><span class="status-label">??</span><span class="status-value"><<print _status.time>></span></div>
+  <div class="row"><span class="status-label">??</span><span class="status-value"><<print _status.san>>/100</span></div>
+  <div class="bar"><div class="bar-fill <<print _sanClass>>" style="width: <<print _status.san>>%"></div></div>
+  <div class="row" style="margin-top:0.6rem;"><span class="status-label">??</span><span class="status-value"><<print _status.aliveCount>>/12</span></div>
+</div>
+<div class="status-panel">
+  <div class="row"><span class="status-label">[[??|Common_Inventory]]</span><span class="status-value"><<print Object.keys($game.inventory).length>></span></div>
+  <div class="row"><span class="status-label">[[??|Common_ClueList]]</span><span class="status-value"><<print Object.keys($game.clues).length>></span></div>
+  <div class="row"><span class="status-label">[[??|Common_Characters]]</span><span class="status-value">12</span></div>
+  <div class="row"><span class="status-label">[[??|Common_Map]]</span><span class="status-value">??</span></div>
+  <div class="row"><span class="status-label">[[??|Common_Memory]]</span><span class="status-value"><<print $game.memories.length>></span></div>
+  <div class="row"><span class="status-label">[[??|God_Panel]]</span><span class="status-value">??</span></div>
+</div>
+<div class="status-panel">
+  <div class="row"><span class="status-label">????</span><span class="status-value"><<print _breaking.collected>>/<<print _breaking.total>></span></div>
+  <div class="bar"><div class="bar-fill" style="width: <<print Math.round(_breaking.collected / _breaking.total * 100)>>%"></div></div>
+  <<if $game.flags.breaking_ready>>
+  <p class="system-hint" style="margin-top:0.4rem;">??????????????????</p>
+  <</if>>
+</div>

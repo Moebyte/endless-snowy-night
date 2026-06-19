@@ -1,0 +1,11 @@
+:: Search_Portraits
+<<run Game.addClue('old_guests')>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<h2>肖像画</h2>
+<p>十二幅肖像画，每幅画的右下角都有签名和年份。最早的一幅是 1903 年，最新的一幅是去年。</p>
+<p>你发现了一件令人不安的事：每幅画中人的眼睛，都似乎在跟随着你移动。当你仔细凝视其中一幅时，画中人的嘴角似乎微微上扬。</p>
+<p class="system-hint">肖像画引发不安。理智 -5。你更确信这座庄园有自己的意志。</p>
+<div class="choice-list">
+[[返回餐厅|Explore_DiningRoom]]
+</div>

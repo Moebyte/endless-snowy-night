@@ -1,0 +1,25 @@
+:: God_Knight
+<<run Game.visit()>>
+<h2>林小满 · 骑士</h2>
+<<if Game.knightWeakened()>>
+<p class="danger">林小满虚弱地靠在墙上，上次行动的消耗还没恢复。她今天无法再做任何事。</p>
+<div class="choice-list">
+[[返回|Start]]
+</div>
+<<else>>
+<p>林小满正在擦拭她的折叠小刀。看到你走近，她挑了挑眉：</p>
+<blockquote>林小满：「说吧，今晚想怎么做？是让我去盯着谁，还是直接上去砍人？」</blockquote>
+<p class="system-hint">骑士有两种能力，<strong>每次只能选一种</strong>，使用后进入虚弱状态（明日无法行动）：</p>
+<ul>
+<li><strong>决斗</strong>：指认一人为狼。若真是狼则斩杀；若不是则林小满自己死。狼王同归于尽。</li>
+<li><strong>守卫</strong>：保护一人，今晚狼人袭击该人时被挡下。不可连续两晚守同一人。与女巫救人冲突时互相抵消。</li>
+</ul>
+
+<div class="choice-list">
+<<link "决斗——指认某人">><<goto 'God_Knight_Duel'>><</link>>
+<<link "守卫——保护某人">><<goto 'God_Knight_Guard'>><</link>>
+</div>
+<div class="choice-list">
+[[算了，不打搅她|Start]]
+</div>
+<</if>>

@@ -1,0 +1,20 @@
+:: Chapter03_ShenShen
+<<set $game.time to '11:00'>>
+<<run Game.visit()>>
+<h2>Day 3 · 与沈慎对话</h2>
+<p>沈慎坐在大厅壁炉最远的角落，手里拿着一张皱巴巴的扑克牌——红桃 Q。</p>
+<p>你在他旁边坐下。他没有看你，只是反复翻转那张牌。</p>
+<p>"你紧张的时候会玩牌？"你问。</p>
+<p>"不。我想事情的时候需要手上有东西。"他把红桃 Q 插进袖口，再抽出来时变成了黑桃 3。"变戏法。小时候学的。"</p>
+<p>你没有笑。他也不像是开玩笑。</p>
+<p>"昨晚你睡得好吗？"你问了一个安全的问题。</p>
+<p>沈慎终于看了你一眼。他的眼睛很沉，像是见过很多事情："你确定你睡得好？"</p>
+<p>这句话让你后背一凉。他是什么意思——他知道你记得昨天的事？</p>
+<p class="thought">陈默（内心）：他在试探我。还是他真的知道什么？</p>
+<<run Game.setFlag('talked_shenshen_day3')>>
+<<run Game.changeTrust('shen_shen', 3)>>
+<p class="system-hint">沈慎似乎话中有话，但你没有足够的依据追问。</p>
+<div class="choice-list">
+[[追问他的话|Chapter03_ShenShen_Probe]]
+[[结束对话，回到大厅|Chapter03_NightReturn]]
+</div>

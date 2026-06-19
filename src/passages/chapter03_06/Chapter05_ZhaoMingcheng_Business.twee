@@ -1,0 +1,13 @@
+:: Chapter05_ZhaoMingcheng_Business
+<<run Game.visit()>>
+<p>"你和方衡来山庄，不是为了旅游吧？"</p>
+<p>赵明城看了你很久。然后说："你很聪明。聪明到危险的程度。"</p>
+<p>他走近一步，声音压得很低："我来这里是为了办一件事。方衡是来确保那件事不被别人发现的。"</p>
+<p>"什么事？"</p>
+<p>"交易。这座山庄的前主人……留下了一些东西。方衡和我，各取所需。"</p>
+<p>他没有说具体是什么。但你从他眼神里读到了警告——不要再问了。</p>
+<<run Game.addClue("zhao_fang_deal")>>
+<p class="system-hint">赵明城承认他和方衡来山庄是为了"取东西"。这座山庄的前主人留下了什么？</p>
+<div class="choice-list">
+[[回大厅|Chapter05_NightReturn]]
+</div>

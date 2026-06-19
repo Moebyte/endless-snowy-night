@@ -1,0 +1,14 @@
+:: Explore_Kitchen
+<<run Game.visitLocation('kitchen')>>
+<<run Game.addItem('bread')>>
+<<run Game.visit()>>
+<h2>厨房</h2>
+<p>厨房很大，能同时供几个厨师工作。但现在炉灶是冷的，只有储物架角落还剩几袋干粮。</p>
+<p>水龙头还在滴水，水流进一个生锈的铁盆。你尝了一口，水是冰的，但没有异味。</p>
+<p>砧板上有一把厨师刀，刀刃还很锋利。</p>
+<div class="choice-list">
+[[拿走干粮和水|Search_KitchenSupplies]]
+[[检查砧板上的刀|Search_Knife]]
+[[前往储藏室|Explore_Pantry]]
+[[返回|Map_Main1F]]
+</div>

@@ -1,0 +1,26 @@
+:: Chapter05_Start
+<<set $game.day to 5>>
+<<set $game.time to '06:00'>>
+<<run Game.visit()>>
+<h2>Day 5 · 饥饿与恐惧</h2>
+<p>第五天。</p>
+<p>你醒来时觉得胃在烧。昨晚那半块面包根本撑不住一个成年男人的代谢。</p>
+<p>走廊里弥漫着一股淡淡的烟味——有人昨晚烧了什么东西。</p>
+<p>你推开门，看到苏晚蹲在楼梯口，面前摆着一小堆灰烬。</p>
+<p>"有人烧了一本笔记。"她说，声音很轻，"我把灰收集起来了。上面还有一些残留的字迹。"</p>
+<p>她摊开手掌——灰烬上隐约能看到几个字："……者笔记……别让人看到……"</p>
+<<run Game.addClue("burned_notebook")>>
+<p class="system-hint">烧毁的笔记碎片。可能是谁在销毁证据？</p>
+<p>你走向大厅，发现今天的人比昨天少了。</p>
+<<if Game.isAlive("zheng_shoushan")>>
+<p>老郑不在。你问江白，他说老郑一大早就去地下室了，说要去检查暖气管道。</p>
+<</if>>
+<<if not Game.isAlive("zheng_shoushan")>>
+<p>老郑的位置空着。没有人坐在那里。像是大家都刻意避开那个角落。</p>
+<</if>>
+<<if Game.isAlive("gu_yan")>>
+<p>顾言也不在餐厅。他的房间门开着，被子叠得整整齐齐——比他前一天更整齐。</p>
+<</if>>
+<div class="choice-list">
+[[去大厅看看今天的情况|Chapter05_Hall]]
+</div>

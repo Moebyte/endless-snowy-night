@@ -1,0 +1,22 @@
+:: Explore_Cellar
+<<run Game.visitLocation('cellar_door')>>
+<<if not Game.hasClue('ritual_tablet')>>
+<<run Game.addClue('cellar_door')>>
+<<run Game.addClue('cellar_blood')>>
+<<run Game.visit()>>
+<h2>地下铁门</h2>
+<p>铁门后的楼梯通向黑暗。空气中弥漫着血腥味和某种古老的气息。</p>
+<p>门上用红漆写着四个字："天黑请闭眼"。</p>
+<p class="thought">陈默（内心）："天黑请闭眼"……这不只是山庄的规矩，这是某种仪式的暗语。</p>
+<p class="system-hint">你获得了线索：地下酒窖铁门、酒窖血腥味。</p>
+<<else>>
+<<run Game.visit()>>
+<h2>地下铁门</h2>
+<p>铁门敞开着。你已经知道门后是什么了。</p>
+<</if>>
+<div class="choice-list">
+<<if Game.hasClue('cellar_door')>>
+[[前往祭祀空间|Explore_Altar]]
+<</if>>
+[[返回|Map_Underground]]
+</div>

@@ -1,0 +1,10 @@
+:: Search_Piano
+<<run Game.changeSan(-3)>>
+<<run Game.visit()>>
+<h2>钢琴</h2>
+<p>你按下琴键。第一个音是准的，但第二个音开始走调，越弹越刺耳，最后几个音完全不像钢琴发出的——更像是某种低沉的呜咽。</p>
+<p>琴谱架上有一本翻开的乐谱，页面上用红笔画满了圈，圈住的音符排列出一个图案：一只眼睛。</p>
+<p class="system-hint">钢琴的异响让你不安。理智 -3。</p>
+<div class="choice-list">
+[[返回会客厅|Explore_DrawingRoom]]
+</div>

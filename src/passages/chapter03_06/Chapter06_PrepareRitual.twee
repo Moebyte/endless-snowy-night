@@ -1,0 +1,26 @@
+:: Chapter06_PrepareRitual
+<<run Game.visit()>>
+<h2>Day 6 · 指认</h2>
+<p>你选择先解决内部问题。</p>
+<p>所有人回到大厅。你站在壁炉前，面对着十一张（或更少的）面孔。</p>
+<p>你知道凶手是狼。但你不能直接说"狼"——没有人会相信你。</p>
+<p>你整理了一下已知的线索：</p>
+<ul>
+<<if Game.hasClue("cellar_door")>><li>地下酒窖的铁门——需要特定形状的钥匙</li><</if>>
+<<if Game.hasClue("fang_and_zhao_known")>><li>方衡和赵明城认识——他们来山庄另有目的</li><</if>>
+<<if Game.hasClue("ye_supernatural_wound")>><li>伤口不是人类能造成的——凶器不是普通刀具</li><</if>>
+<<if Game.hasClue("zhao_invited_gu")>><li>赵明城介绍顾言来山庄——这趟旅行可能被精心安排</li><</if>>
+<<if Game.hasClue("hidden_floor")>><li>山庄存在隐藏夹层——有人在暗中行动</li><</if>>
+</ul>
+<<if Game.hasClue("cellar_door") and Game.hasClue("altar_inscription")>>
+<p>你整合了所有信息，得出一个结论——这座山庄是一个祭坛，每七天需要祭品。狼是执行者，神是看守者，村民是祭品。</p>
+<p>但你说出来的时候，没有人相信你。</p>
+<</if>>
+<p>方衡看着你，眼神复杂："你有什么证据？"</p>
+<p>你没有直接证据。只有推测和记忆。</p>
+<p class="thought">陈默（内心）：我需要更多证据。或者……我需要活过今晚，明天才能揭晓真相。</p>
+<<run Game.changeSan(-10)>>
+<p class="system-hint">指认失败。你没有充足的物证支持你的推理。SAN值 -10。</p>
+<div class="choice-list">
+[[回房间整理思路|Chapter06_NightReturn]]
+</div>

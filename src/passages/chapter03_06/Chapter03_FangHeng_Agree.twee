@@ -1,0 +1,10 @@
+:: Chapter03_FangHeng_Agree
+<<run Game.visit()>>
+<p>"我也觉得不对。"你说，"如果他真想杀我们，没必要等三天。"</p>
+<p>方衡点了点头："你很敏锐。这很好。在这种地方，迟钝的人活不长。"</p>
+<p>他收起烟盒，像是结束了对话："晚上注意安全。如果发现什么不对的——不要声张，先来找我。"</p>
+<<run Game.changeTrust('fang_heng', 8)>>
+<p class="system-hint">方衡信任度 +8。他似乎把你当成了可以合作的对象。</p>
+<div class="choice-list">
+[[回到大厅|Chapter03_NightReturn]]
+</div>

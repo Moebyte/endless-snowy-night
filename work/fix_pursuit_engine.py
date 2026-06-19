@@ -1,0 +1,94 @@
+﻿# -*- coding: utf-8 -*-
+import os
+
+pursuit_dir = 'C:/Users/xhvai/Documents/Codex/2026-06-19/files-mentioned-by-the-user-md/src/passages/common'
+
+# Rewrite Pursuit_Engine to use <<link>> with <<goto>> for dynamic moves
+# This way check-links won't try to resolve them
+engine_content = """:: Pursuit_Engine
+<<run Game.visit()>>
+<<set _turn to $game.pursuit.turn>>
+<<set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name>>
+<<set _posName to GameState.MAP[$game.pursuit.playerPos].name>>
+<<set _wolfPosName to GameState.MAP[$game.pursuit.wolfPos].name>>
+<<set _dist to Game.pursuitDistance($game.pursuit.wolfPos, $game.pursuit.playerPos)>>
+
+<h2>追击战 · 第 <<print _turn>> 回合</h2>
+
+<<if $game.pursuit.playerInjured>>
+<p class="danger">你受伤了。每一步都伴随着剧痛。</p>
+<</if>>
+
+<p>你在<strong><<print _posName>></strong>。<strong><<print _wolfName>></strong>在<strong><<print _wolfPosName>></strong>，距离你 <<print _dist>> 步。</p>
+
+<<if _dist lte 1>>
+<p class="danger">它就在附近！你能闻到它身上的血腥味。</p>
+<<elseif _dist lte 3>>
+<p>脚步声越来越近了。</p>
+<</if>>
+
+<<if Game.canHideAt($game.pursuit.playerPos) and not $game.pursuit.hiding>>
+<p class="system-hint">这里可以躲藏。</p>
+<</if>>
+
+<div class="choice-list">
+<<if Game.canHideAt($game.pursuit.playerPos) and not $game.pursuit.hiding>>
+<<link "躲藏起来">><<set $game.pursuit.hiding to true>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if $game.pursuit.hiding>>
+<<link "继续躲藏">><<goto "Pursuit_Resolve">><</link>>
+<<link "放弃躲藏，继续逃跑">><<set $game.pursuit.hiding to false>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('flashlight')>>
+<<link "用手电筒照狼人">><<run Game.pursuitUseItem('flashlight')>>"<<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('lighter')>>
+<<link "用打火机点燃障碍">><<run Game.pursuitUseItem('lighter')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('wire')>>
+<<link "布下金属丝绊索">><<run Game.pursuitUseItem('wire')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('pocket_knife')>>
+<<link "用折叠小刀反击">><<run Game.pursuitUseItem('pocket_knife')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('ritual_dagger')>>
+<<link "举起祭祀骨刀">><<run Game.pursuitUseItem('ritual_dagger')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('first_aid_kit') and $game.pursuit.playerInjured>>
+<<link "用急救包治疗伤口">><<run Game.pursuitUseItem('first_aid_kit')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+</div>
+
+<hr>
+<p class="muted">移动到相邻区域：</p>
+<div class="choice-list">
+<<link "前往大厅">><<run Game.pursuitMove('grand_hall')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往餐厅">><<run Game.pursuitMove('dining_room')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往厨房">><<run Game.pursuitMove('kitchen')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往储藏室">><<run Game.pursuitMove('pantry')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往会客厅">><<run Game.pursuitMove('drawing_room')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往书房">><<run Game.pursuitMove('study')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往画廊">><<run Game.pursuitMove('gallery')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往主卧">><<run Game.pursuitMove('master_bedroom')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往儿童房">><<run Game.pursuitMove('children_room')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往缝纫室">><<run Game.pursuitMove('sewing_room')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往阳台">><<run Game.pursuitMove('balcony')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往门厅">><<run Game.pursuitMove('foyer')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往中庭">><<run Game.pursuitMove('courtyard')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往花园">><<run Game.pursuitMove('garden')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往小教堂">><<run Game.pursuitMove('chapel')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往古井">><<run Game.pursuitMove('well')>><<goto "Pursuit_Resolve">><</link>>
+</div>
+<p class="muted">部分地点可能无法到达，游戏会提示移动失败。</p>
+"""
+with open(os.path.join(pursuit_dir, 'Pursuit_Engine.twee'), 'w', encoding='utf-8') as f:
+    f.write(engine_content)
+print('Rewrote Pursuit_Engine with link/goto')
+
+# Remove the now-unused move and item passages
+for f in os.listdir(pursuit_dir):
+    if f.startswith('Pursuit_Move_') or f.startswith('Pursuit_Item_'):
+        os.remove(os.path.join(pursuit_dir, f))
+        print('Removed', f)
+
+print('Done.')

@@ -1,0 +1,12 @@
+:: Explore_Pantry
+<<run Game.visitLocation('pantry')>>
+<<run Game.addItem('compass')>>
+<<run Game.visit()>>
+<h2>储藏室</h2>
+<p>储藏室比厨房更深更暗。货架大多空了，只剩罐头和杂物。</p>
+<p>在最底层的角落，你发现一个坏掉的指南针。指针在晃动，最终稳定地指向地下。</p>
+<p class="thought">陈默（内心）：指针指向地下……酒窖？祭祀空间？它到底在指什么？</p>
+<p class="system-hint">你获得了道具：坏掉的指南针。指针永远指向庄园地下。</p>
+<div class="choice-list">
+[[返回厨房|Explore_Kitchen]]
+</div>

@@ -1,0 +1,13 @@
+:: Explore_Armory
+<<run Game.visitLocation('armory')>>
+<<run Game.addItem('first_aid_kit')>>
+<<run Game.visit()>>
+<h2>杂物间</h2>
+<p>堆满旧家具和旅行箱。其中一个旅行箱的锁已经坏了，打开后里面是一套急救用品：绷带、消毒水、止血带。</p>
+<p>旅行箱的夹层里还有一本日记，字迹和书房里管家信件的笔迹一致。最后一页写着：</p>
+<blockquote>"仪式需要十二个人。必须有一个人觉醒，必须有一个人弑神。否则循环不会结束。"</blockquote>
+<p class="thought">陈默（内心）：十二个人，一个觉醒者，一个弑神者。这就是规则的全部。</p>
+<p class="system-hint">你获得了道具：急救包。你更接近真相了。</p>
+<div class="choice-list">
+[[返回|Map_WestWing]]
+</div>

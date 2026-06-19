@@ -1,0 +1,13 @@
+:: Common_ClueList
+<<set _clues to Object.keys($game.clues)>>
+<h2>线索簿</h2>
+<<if _clues.length is 0>>
+<p class="muted">你还没有收集到任何线索。</p>
+<<else>>
+<<for _id range _clues>>
+  <p><strong><<print Game.clueName(_id)>></strong></p>
+  <p class="muted"><<print Game.clueDesc(_id)>></p>
+<</for>>
+<</if>>
+<p>[[返回|passage()]]</p>
+

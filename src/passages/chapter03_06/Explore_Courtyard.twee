@@ -1,0 +1,13 @@
+:: Explore_Courtyard
+<<run Game.visitLocation('courtyard')>>
+<<run Game.addClue('mirror_exit')>>
+<<run Game.visit()>>
+<h2>中庭</h2>
+<p>刺骨的风雪。你只能在中庭短暂停留。</p>
+<p>你掏出坏掉的指南针——指针剧烈转动，最终稳定指向地下的方向，正是祭祀空间的位置。</p>
+<p>中庭中央有一个破碎的镜框，镜面已经不在，但框架的形状与祭坛的镜子完全吻合。似乎庄园的每一面镜子，都连接着同一个出口。</p>
+<p class="thought">陈默（内心）：镜子是出口。打碎所有镜子，也许能打开真正的出口。</p>
+<p class="system-hint">你获得了破局线索：镜子出口。</p>
+<div class="choice-list">
+[[返回|Map_Courtyard]]
+</div>

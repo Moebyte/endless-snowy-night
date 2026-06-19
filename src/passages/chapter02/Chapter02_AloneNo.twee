@@ -1,0 +1,12 @@
+:: Chapter02_AloneNo
+<<run Game.changeTrust('zhou_ye', -5)>>
+<<run Game.setFlag('refused_zhou')>>
+<<run Game.visit()>>
+<p>你摇摇头：“有什么话在这里说。我不想单独跟你走。”</p>
+<p>周阳眯起眼睛：“你在怕我？”</p>
+<p>“我在防你。”你说。</p>
+<p>他冷笑一声，没再坚持。</p>
+<p class="system-hint">周阳信任度 -5。你拒绝了独处。</p>
+<p>[[夜晚降临|Chapter02_NightReturn]]</p>
+
+

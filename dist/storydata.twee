@@ -1,0 +1,6162 @@
+:: StoryJavaScript
+/*
+ * game.js
+ * ???? API???/??/Flag/??/??/??/???/????
+ */
+
+(function () {
+  'use strict';
+
+  window.Game = window.Game || {};
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+Game.addItem = function (id, count) {
+
+    var g = ensureState();
+
+    count = count || 1;
+
+    g.inventory[id] = (g.inventory[id] || 0) + count;
+
+  }
+
+Game.removeItem = function (id, count) {
+
+    var g = ensureState();
+
+    count = count || 1;
+
+    if (!g.inventory[id]) return false;
+
+    g.inventory[id] -= count;
+
+    if (g.inventory[id] <= 0) delete g.inventory[id];
+
+    return true;
+
+  }
+
+Game.hasItem = function (id) {
+
+    var g = ensureState();
+
+    return (g.inventory[id] || 0) > 0;
+
+  }
+
+Game.itemCount = function (id) {
+
+    var g = ensureState();
+
+    return g.inventory[id] || 0;
+
+  }
+
+Game.itemName = function (id) {
+
+    var item = GameState.ITEMS[id];
+
+    return item ? item.name : id;
+
+  }
+
+Game.addClue = function (id) {
+
+    var g = ensureState();
+
+    g.clues[id] = true;
+
+  }
+
+Game.hasClue = function (id) {
+
+    var g = ensureState();
+
+    return !!g.clues[id];
+
+  }
+
+Game.clueName = function (id) {
+
+    var clue = GameState.CLUES[id];
+
+    return clue ? clue.name : id;
+
+  }
+
+Game.clueDesc = function (id) {
+
+    var clue = GameState.CLUES[id];
+
+    return clue ? clue.desc : '';
+
+  }
+
+Game.setFlag = function (id, value) {
+
+    var g = ensureState();
+
+    g.flags[id] = value === undefined ? true : value;
+
+  }
+
+Game.hasFlag = function (id) {
+
+    var g = ensureState();
+
+    return !!g.flags[id];
+
+  }
+
+Game.unlockEnding = function (id) {
+
+    var g = ensureState();
+
+    g.endings[id] = true;
+
+  }
+
+Game.hasEnding = function (id) {
+
+    var g = ensureState();
+
+    return !!g.endings[id];
+
+  }
+
+Game.visit = function (passageName) {
+
+    var g = ensureState();
+
+    passageName = passageName || passage();
+
+    g.visited[passageName] = (g.visited[passageName] || 0) + 1;
+
+  }
+
+Game.hasVisited = function (passageName) {
+
+    var g = ensureState();
+
+    return (g.visited[passageName] || 0) > 0;
+
+  }
+
+Game.visitCount = function (passageName) {
+
+    var g = ensureState();
+
+    return g.visited[passageName] || 0;
+
+  }
+
+Game.isAlive = function (charId) {
+
+    var g = ensureState();
+
+    return !!g.alive[charId];
+
+  }
+
+Game.kill = function (charId) {
+
+    var g = ensureState();
+
+    g.alive[charId] = false;
+
+  }
+
+Game.revive = function (charId) {
+
+    var g = ensureState();
+
+    g.alive[charId] = true;
+
+  }
+
+Game.roleOf = function (charId) {
+
+    var g = ensureState();
+
+    return g.roles[charId] || 'villager';
+
+  }
+
+Game.changeSan = function (delta) {
+
+    var g = ensureState();
+
+    g.stats.san = Math.max(0, Math.min(100, g.stats.san + delta));
+
+  }
+
+Game.san = function () {
+
+    return ensureState().stats.san;
+
+  }
+
+Game.changeTrust = function (charId, delta) {
+
+    var g = ensureState();
+
+    var key = 'trust_' + charId;
+
+    if (g.stats[key] !== undefined) {
+
+      g.stats[key] = Math.max(0, Math.min(100, g.stats[key] + delta));
+
+    }
+
+  }
+
+Game.trust = function (charId) {
+
+    var g = ensureState();
+
+    return g.stats['trust_' + charId] || 0;
+
+  }
+
+Game.nextLoop = function () {
+
+    var g = ensureState();
+
+    // ????????????
+
+    var wasBreakingReady = !!g.flags.breaking_ready;
+
+    var breakingJustCompleted = Game.checkBreakingReady();
+
+    g.loop += 1;
+
+    g.day = 1;
+
+    g.time = '06:00';
+
+    g.chapter = 1;
+
+    // ??????????????????????
+
+    Game.resetLoopState();
+
+    // ?? breaking_ready ???????
+
+    if (wasBreakingReady || breakingJustCompleted) {
+
+      g.flags.breaking_ready = true;
+
+    }
+
+    // ?????? SAN??????????????????
+
+    if (!g.flags.breaking_ready) {
+
+      Game.changeSan(-10);
+
+    }
+
+    Game.addMemory('???? ' + g.loop + ' ????' + (breakingJustCompleted ? '?????????????????????' : ''));
+
+  }
+
+Game.nextDay = function () {
+
+    var g = ensureState();
+
+    g.day += 1;
+
+    g.time = '06:00';
+
+    // 闁哄倹澹嗗▓鎴炵▔閿熻姤寰勯埡鍛缂傚喛鎷烽悗鐟?濠傚伎閻忕偛  婵???
+
+    g.safehouse = { intruded: false, target: null };
+
+    if (g.day > 7) {
+
+      // ??7 濠㈠灈鏅濈划 寮堕悢鍓佺煗闁哄牞鎷烽梺 閸?姣夐柨娑樿嫰瀹搁亶宕氶幆鎵闁稿繈鍎扮粭鍛▔閿???
+
+      Game.nextLoop();
+
+    } else if (g.day === 7) {
+
+      g.stats.hunger = Math.min(100, g.stats.hunger + 50);
+
+    }
+
+  }
+
+Game.resetLoopState = function () {
+
+    var g = ensureState();
+
+    g.alive = {
+
+      chen_mo: true,
+
+      su_wan: true,
+
+      jiang_bai: true,
+
+      fang_heng: true,
+
+      shen_shen: true,
+
+      ye_zhiqiu: true,
+
+      zheng_shoushan: true,
+
+      lin_xiaoman: true,
+
+      gu_yan: true,
+
+      zhou_yang: true,
+
+      tang_xiaotang: true,
+
+      zhao_mingcheng: true
+
+    };
+
+    g.roles = {
+
+      chen_mo: 'memory',
+
+      su_wan: 'villager',
+
+      jiang_bai: 'villager',
+
+      fang_heng: 'prophet',
+
+      shen_shen: 'magician',
+
+      ye_zhiqiu: 'witch',
+
+      zheng_shoushan: 'villager',
+
+      lin_xiaoman: 'knight',
+
+      gu_yan: 'mechanical_wolf',
+
+      zhou_yang: 'wolf_king',
+
+      tang_xiaotang: 'hidden_wolf',
+
+      zhao_mingcheng: 'wolf'
+
+    };
+
+    g.flags = {};
+
+    g.inventory = {};
+
+    g.stats.hunger = 0;
+
+    // 闂佹彃绉堕悿鍡?鐟?濠傚伎閻忕偛  婵???
+
+    g.safehouse = { intruded: false, target: null };
+
+    // 濞ｅ洦绻勯弳  clues闁靛棔娌焑mories闁靛棔韬琻dings
+
+    // 闂佹彃绉堕悿鍡欑矈閻愭湹鎹嶉柟璁规嫹闁艰櫕鏋荤槐娆?韫囨氨鏋傞梺鎻掔Ф閻???
+
+    Game.resetGodSkillsLoop();
+
+  }
+
+Game.advanceDay = function () {
+
+    var g = ensureState();
+
+    var prevLoop = g.loop;
+
+    Game.nextDay();
+
+    return g.loop !== prevLoop;
+
+  }
+
+Game.addMemory = function (text) {
+
+    var g = ensureState();
+
+    g.memories.push({ loop: g.loop, day: g.day, text: text });
+
+  }
+
+Game.isNight = function () {
+
+    return ensureState().time >= '23:00';
+
+  }
+
+Game.canWolfIntrude = function () {
+
+    var g = ensureState();
+
+    return Game.isNight() && !g.safehouse.intruded;
+
+  }
+
+Game.wolfIntrude = function (target) {
+
+    var g = ensureState();
+
+    if (!Game.canWolfIntrude()) return false;
+
+    g.safehouse.intruded = true;
+
+    g.safehouse.target = target || null;
+
+    return true;
+
+  }
+
+Game.getSafehouseTarget = function () {
+
+    return ensureState().safehouse.target;
+
+  }
+
+Game.clearSafehouse = function () {
+
+    var g = ensureState();
+
+    g.safehouse.intruded = false;
+
+    g.safehouse.target = null;
+
+  }
+
+Game.canKillGod = function (charId) {
+
+    var g = ensureState();
+
+    var role = g.roles[charId];
+
+    // 闁绘瑩妫垮Ч澶愬矗閿熻姤绂掗妷 鎼愮紒浣哄剳缁辨瑩寮甸悜姗堟嫹閹?鐎氱偓寰勬ウ鍨幋闁告梹鍐荤槐 
+
+    var wolfRoles = [
+
+      GameState.ROLES.WOLF_KING,
+
+      GameState.ROLES.HIDDEN_WOLF,
+
+      GameState.ROLES.WOLF,
+
+      GameState.ROLES.MECHANICAL_WOLF
+
+    ];
+
+    if (wolfRoles.indexOf(role) !== -1) {
+
+      return true;
+
+    }
+
+    // 闁哄鍨堕惃 濞戞搫鎷烽柛娆欐嫹闁哄牆 鎰?鍙?娑?閹蜂即鎳撴笟 閸庢粓宕ｉ敓鑺ョ閵?鎼愮紒浣哄仜閵囨碍鎷呴敓 
+
+    return charId === GameState.GOD_KILLERS.CHEN_MO || charId === GameState.GOD_KILLERS.LAO_ZHENG;
+
+  }
+
+Game.revealInfo = function (charId, key) {
+
+    var g = ensureState();
+
+    if (!g.revealed) g.revealed = {};
+
+    if (!g.revealed[charId]) g.revealed[charId] = {};
+
+    g.revealed[charId][key] = true;
+
+  }
+
+Game.hasRevealed = function (charId, key) {
+
+    var g = ensureState();
+
+    return !!(g.revealed && g.revealed[charId] && g.revealed[charId][key]);
+
+  }
+
+Game.hasAllBreakingClues = function () {
+
+    return GameState.BREAKING_CLUES.every(function (id) { return !!ensureState().clues[id]; });
+
+  }
+
+Game.trueEndingProgress = function () {
+
+    var g = ensureState(); var t = GameState.BREAKING_CLUES.length;
+
+    var c = GameState.BREAKING_CLUES.filter(function (id) { return !!g.clues[id]; }).length;
+
+    return { collected: c, total: t };
+
+  }
+
+Game.checkBreakingReady = function () {
+
+    var g = ensureState();
+
+    if (Game.hasAllBreakingClues() && !g.flags.breaking_ready) { g.flags.breaking_ready = true; return true; }
+
+    return false;
+
+  }
+
+Game.canReachTrueEnding = function () {
+
+    var g = ensureState();
+
+    return !!g.flags.breaking_ready && g.day >= 7 && Game.isAlive('su_wan');
+
+  }
+
+Game.revealBackstory = function (charId) {
+
+    var cid = GameState.BACKSTORY_KEYS[charId];
+
+    if (cid) Game.addClue(cid);
+
+    Game.revealInfo(charId, 'backstory');
+
+  }
+
+Game.hasBackstory = function (charId) {
+
+    var cid = GameState.BACKSTORY_KEYS[charId];
+
+    return cid ? Game.hasClue(cid) : false;
+
+  }
+
+Game.visitLocation = function (locId) {
+
+    var g = ensureState();
+
+    if (!g.visitedLocations) g.visitedLocations = {};
+
+    g.visitedLocations[locId] = (g.visitedLocations[locId] || 0) + 1;
+
+  }
+
+Game.hasVisitedLocation = function (locId) {
+
+    var g = ensureState();
+
+    return !!(g.visitedLocations && g.visitedLocations[locId]);
+
+  }
+
+Game.getStatus = function () {
+
+    var g = ensureState();
+
+    return {
+
+      loop: g.loop,
+
+      day: g.day,
+
+      time: g.time,
+
+      san: g.stats.san,
+
+      hunger: g.stats.hunger,
+
+      aliveCount: Object.keys(g.alive).filter(function (k) { return g.alive[k]; }).length
+
+    };
+
+  }
+
+  // ---------- ?? ----------
+  Game.getStatus = function () {
+    var g = ensureState();
+    return {
+      loop: g.loop,
+      day: g.day,
+      time: g.time,
+      san: g.stats.san,
+      hunger: g.stats.hunger,
+      aliveCount: Object.keys(g.alive).filter(function (k) { return g.alive[k]; }).length
+    };
+  };
+})();
+
+
+/*
+ * pursuit.js - Night pursuit system: wolf hunts player across the manor map
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  Game.HIDE_SPOTS = ['pantry', 'gallery', 'children_room', 'sewing_room', 'chapel', 'well'];
+
+  Game.PURSUIT_MAP = {
+    guest_corridor: ['grand_hall', 'master_bedroom', 'sewing_room', 'balcony'],
+    grand_hall: ['guest_corridor', 'dining_room', 'kitchen', 'drawing_room', 'foyer'],
+    dining_room: ['grand_hall', 'kitchen'],
+    kitchen: ['grand_hall', 'dining_room', 'pantry'],
+    pantry: ['kitchen'],
+    drawing_room: ['grand_hall', 'study'],
+    study: ['drawing_room', 'gallery'],
+    gallery: ['study'],
+    master_bedroom: ['guest_corridor', 'children_room'],
+    children_room: ['master_bedroom', 'sewing_room'],
+    sewing_room: ['guest_corridor', 'children_room'],
+    balcony: ['guest_corridor'],
+    foyer: ['grand_hall', 'courtyard'],
+    courtyard: ['foyer', 'garden', 'chapel', 'well'],
+    garden: ['courtyard', 'chapel'],
+    chapel: ['courtyard', 'garden'],
+    well: ['courtyard']
+  };
+
+  Game.canTriggerPursuit = function () {
+    var g = ensureState();
+    var alive = Object.keys(g.alive).filter(function (k) { return g.alive[k]; }).length;
+    return alive <= 6 && Game.isNight();
+  };
+
+  Game.startPursuit = function (wolfId) {
+    var g = ensureState();
+    var wolves = ['zhou_yang', 'tang_xiaotang', 'zhao_mingcheng', 'gu_yan'];
+
+    if (!g.pursuit) g.pursuit = {};
+    g.pursuit.active = true;
+    g.pursuit.turn = 1;
+    g.pursuit.playerPos = 'guest_corridor';
+    g.pursuit.wolfPos = 'grand_hall';
+    g.pursuit.wolfId = wolfId || wolves.filter(function (w) { return g.alive[w]; })[0] || 'zhou_yang';
+    g.pursuit.hiding = false;
+    g.pursuit.playerInjured = false;
+    g.pursuit.escaped = false;
+  };
+
+  Game.isPursuitActive = function () {
+    var g = ensureState();
+    if (!g.pursuit) return false;
+    return !!g.pursuit.active;
+  };
+
+  Game.getPursuitWolf = function () {
+    var g = ensureState();
+    return g.pursuit ? g.pursuit.wolfId : null;
+  };
+
+  Game.canHideAt = function (locId) {
+    return Game.HIDE_SPOTS.indexOf(locId) !== -1;
+  };
+
+  Game.pursuitMove = function (locId) {
+    var g = ensureState();
+    if (!g.pursuit) return false;
+    var adj = Game.PURSUIT_MAP[g.pursuit.playerPos] || [];
+    if (adj.indexOf(locId) === -1) return false;
+    g.pursuit.playerPos = locId;
+    g.pursuit.hiding = false;
+    return true;
+  };
+
+  Game.pursuitHide = function () {
+    var g = ensureState();
+    if (!g.pursuit) return false;
+    if (Game.canHideAt(g.pursuit.playerPos)) {
+      g.pursuit.hiding = true;
+      return true;
+    }
+    return false;
+  };
+
+  Game.pursuitUseItem = function (itemId) {
+    if (!Game.hasItem(itemId)) return null;
+
+    var eff = {
+      flashlight: 'The beam stuns the wolf for a moment, buying you distance.',
+      lighter: 'A flare of light startles the wolf, slowing its advance.',
+      wire: 'You trip the wolf with the wire and gain a turn.',
+      pocket_knife: 'You slash back. The wolf recoils, wounded.',
+      ritual_dagger: 'The cursed blade bites deep. The wolf howls and falls back.',
+      first_aid_kit: 'You patch your wounds and steady your nerves.',
+      bread: 'You choke down the dry bread. A little strength returns.',
+      mirror_shard: 'The shard flashes in the dark, confusing the wolf.'
+    };
+
+    Game.removeItem(itemId);
+    return eff[itemId] || 'The item has no noticeable effect.';
+  };
+
+  Game.pursuitDistance = function (from, to) {
+    if (from === to) return 0;
+    var visited = {};
+    var queue = [[from, 0]];
+    visited[from] = true;
+
+    while (queue.length > 0) {
+      var item = queue.shift();
+      var node = item[0];
+      var dist = item[1];
+      var adj = Game.PURSUIT_MAP[node] || [];
+
+      for (var i = 0; i < adj.length; i++) {
+        if (adj[i] === to) return dist + 1;
+        if (!visited[adj[i]]) {
+          visited[adj[i]] = true;
+          queue.push([adj[i], dist + 1]);
+        }
+      }
+
+      if (dist > 10) break;
+    }
+
+    return 99;
+  };
+
+  Game.wolfTurn = function () {
+    var g = ensureState();
+    if (!g.pursuit) return 'inactive';
+
+    var adj = Game.PURSUIT_MAP[g.pursuit.wolfPos] || [];
+    var pp = g.pursuit.playerPos;
+
+    if (g.pursuit.wolfPos === pp) {
+      if (g.pursuit.hiding) {
+        if (Math.random() < 0.4) {
+          g.pursuit.hiding = false;
+          g.pursuit.playerInjured = true;
+          Game.changeSan(-10);
+          return 'found';
+        }
+        return 'missed';
+      }
+      g.pursuit.playerInjured = true;
+      Game.changeSan(-15);
+      return 'attacked';
+    }
+
+    var best = null;
+    var bd = 999;
+    for (var i = 0; i < adj.length; i++) {
+      var d = Game.pursuitDistance(adj[i], pp);
+      if (d < bd) { bd = d; best = adj[i]; }
+    }
+
+    if (best) {
+      g.pursuit.wolfPos = best;
+      if (best === pp && !g.pursuit.hiding) {
+        g.pursuit.playerInjured = true;
+        Game.changeSan(-15);
+        return 'caught_up';
+      }
+      if (best === pp && g.pursuit.hiding && Math.random() < 0.4) {
+        g.pursuit.hiding = false;
+        g.pursuit.playerInjured = true;
+        Game.changeSan(-10);
+        return 'found';
+      }
+    }
+
+    return 'moved';
+  };
+
+  Game.pursuitNextTurn = function () {
+    var g = ensureState();
+    if (!g.pursuit || !g.pursuit.active) return 'inactive';
+
+    g.pursuit.turn += 1;
+    var r = Game.wolfTurn();
+
+    if (g.stats.san <= 0) {
+      g.pursuit.active = false;
+      return 'defeated';
+    }
+
+    if (g.pursuit.turn > 5) {
+      g.pursuit.active = false;
+      g.pursuit.escaped = true;
+      return 'dawn';
+    }
+
+    return r;
+  };
+
+  Game.endPursuit = function () {
+    var g = ensureState();
+    if (g.pursuit) g.pursuit.active = false;
+  };
+
+  Game.isInjured = function () {
+    var g = ensureState();
+    return !!(g.pursuit && g.pursuit.playerInjured);
+  };
+
+  Game.getPursuitMoves = function () {
+    var g = ensureState();
+    if (!g.pursuit) return [];
+    return Game.PURSUIT_MAP[g.pursuit.playerPos] || [];
+  };
+})();
+
+/*
+ * knight.js - Knight (Lin Xiaoman) skills: duel + guard + AI
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+
+  // Knight challenges target to a duel. Kills wolf -> ok. Kills villager -> knight dies.
+  Game.knightDuel = function (targetId) {
+    var g = ensureState();
+    var k = g.godSkills.knight;
+    if ((k.weakenedDays || 0) > 0) return { ok: false, reason: 'weakened' };
+    if (!g.alive['lin_xiaoman']) return { ok: false, reason: 'knight_dead' };
+    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+    if (targetId === 'lin_xiaoman') return { ok: false, reason: 'cannot_duel_self' };
+
+    var targetRole = Game.roleOf(targetId);
+    var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
+
+    if (isWolf) {
+      Game.kill(targetId);
+      if (targetRole === 'wolf_king') {
+        Game.kill('lin_xiaoman');
+        return { ok: true, reason: 'wolf_king_mutual' };
+      }
+      return { ok: true, reason: 'killed_wolf', role: targetRole };
+    } else {
+      Game.kill('lin_xiaoman');
+      return { ok: true, reason: 'innocent_killed', role: targetRole };
+    }
+  };
+
+  Game.knightWeakened = function () {
+    var k = ensureState().godSkills.knight;
+    return (k.weakenedDays || 0) > 0;
+  };
+
+  Game.knightReset = function () {
+    var g = ensureState();
+    var k = g.godSkills.knight;
+    if (k.weakenedDays > 0) k.weakenedDays -= 1;
+    k.currentGuard = null;
+    k.guarding = null;
+  };
+
+  // AI: decide who to duel based on prophet info shared with knight
+  Game.knightAIGetDuelTarget = function () {
+    var g = ensureState();
+    if (!g.alive['lin_xiaoman']) return null;
+    if (Game.knightWeakened()) return null;
+
+    var shared = g.godSkills.prophet.sharedWith;
+    if (!shared || !shared['lin_xiaoman']) return null;
+
+    var enemyInfos = [];
+    var prophetEnemies = [];
+    var transferredEnemies = [];
+
+    for (var i = 0; i < shared['lin_xiaoman'].length; i++) {
+      var info = shared['lin_xiaoman'][i];
+      if (info.alignment === 'enemy') {
+        var isFromProphet = false;
+        // Check if info came directly from prophet
+        if (info.sources) {
+          for (var s = 0; s < info.sources.length; s++) {
+            if (info.sources[s] === 'fang_heng' && !info.faked) {
+              isFromProphet = true;
+              break;
+            }
+          }
+        }
+        if (isFromProphet) {
+          prophetEnemies.push(info.infoTarget);
+        } else {
+          transferredEnemies.push(info.infoTarget);
+        }
+      }
+    }
+
+    // Prefer prophet-confirmed enemies
+    var target = prophetEnemies[0] || transferredEnemies[0];
+    return target || null;
+  };
+
+  // Guard: protect a target for the night (cannot guard self, causes weakness)
+  Game.knightGuard = function (targetId) {
+    var g = ensureState();
+    var k = g.godSkills.knight;
+    if ((k.weakenedDays || 0) > 0) return { ok: false, reason: 'weakened' };
+    if (!g.alive['lin_xiaoman']) return { ok: false, reason: 'knight_dead' };
+    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+    if (targetId === 'lin_xiaoman') return { ok: false, reason: 'cannot_guard_self' };
+
+    // Cannot guard same person two nights in a row
+    if (k.lastGuardTarget === targetId) return { ok: false, reason: 'consecutive_guard' };
+
+    k.guarding = targetId;
+    k.lastGuardTarget = targetId;
+    k.weakenedDays = 2;
+    return { ok: true, reason: 'guarding', target: targetId };
+  };
+
+  Game.knightIsGuarding = function (targetId) {
+    var g = ensureState();
+    if (!g.alive['lin_xiaoman']) return false;
+    if (targetId === undefined) return !!g.godSkills.knight.guarding;
+    return g.godSkills.knight.guarding === targetId;
+  };
+
+  Game.knightClearGuard = function () {
+    var g = ensureState();
+    g.godSkills.knight.guarding = null;
+  };
+
+  // AI: decide who to guard
+  Game.knightAIGetGuardTarget = function () {
+    var g = ensureState();
+    if (!g.alive['lin_xiaoman']) return null;
+    if (Game.knightWeakened()) return null;
+
+    // Prioritize protecting key good guys
+    var candidates = [];
+    var priority = ['su_wan', 'chen_mo', 'fang_heng', 'ye_zhiqiu'];
+    for (var i = 0; i < priority.length; i++) {
+      if (g.alive[priority[i]] && priority[i] !== g.godSkills.knight.lastGuardTarget) {
+        candidates.push(priority[i]);
+      }
+    }
+    return candidates[0] || null;
+  };
+
+})();
+
+ /*
+ * magician
+ * ???????????????????????
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+
+Game.wasInLastSwap = function (charId) {
+
+    var g = ensureState();
+
+    var history = g.godSkills.magician.swapHistory;
+
+    if (history.length === 0) return false;
+
+    var last = history[history.length - 1];
+
+    return last.a === charId || last.b === charId;
+
+  }
+
+Game.magicianSwap = function (charA, charB) {
+
+    var g = ensureState();
+
+    var m = g.godSkills.magician;
+
+    if (m.swapsUsed >= m.maxSwaps) return { ok: false, reason: 'max_reached' };
+
+    if (charA === charB) return { ok: false, reason: 'same_person' };
+
+    if (!Game.isAlive(charA) || !Game.isAlive(charB)) return { ok: false, reason: 'dead' };
+
+    if (Game.wasInLastSwap(charA)) return { ok: false, reason: 'repeated_' + charA };
+
+    if (Game.wasInLastSwap(charB)) return { ok: false, reason: 'repeated_' + charB };
+
+    m.swapsUsed += 1;
+
+    m.currentSwap = { a: charA, b: charB };
+
+    m.swapHistory.push({ day: g.day, a: charA, b: charB });
+
+    return { ok: true, swap: m.currentSwap };
+
+  }
+
+Game.getMagicianSwap = function () {
+
+    return ensureState().godSkills.magician.currentSwap;
+
+  }
+
+Game.resolveSwapTarget = function (charId) {
+
+    var swap = Game.getMagicianSwap();
+
+    if (!swap) return charId;
+
+    if (swap.a === charId) return swap.b;
+
+    if (swap.b === charId) return swap.a;
+
+    return charId;
+
+  }
+
+Game.magicianSwapsRemaining = function () {
+
+    var m = ensureState().godSkills.magician;
+
+    return m.maxSwaps - m.swapsUsed;
+
+  }
+
+Game.magicianResetDaily = function () {
+
+    var g = ensureState();
+
+    g.godSkills.magician.currentSwap = null;
+
+  }
+})();
+
+
+/*
+ * prophet.js - Prophet (Fang Heng) AI: check + aura + share info + AI strategy
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+  var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
+
+  function ensureProphet(g) {
+    var p = g.godSkills.prophet;
+    if (!p.checks) p.checks = [];
+    if (!p.sharedWith) p.sharedWith = {};
+    return p;
+  }
+
+  Game.prophetAICheckNight = function () {
+    var g = ensureState();
+    var pr = ensureProphet(g);
+
+    var enemyChecks = pr.checks.filter(function (c) {
+      return c.alignment === 'enemy';
+    });
+
+    if (enemyChecks.length === 0) return null;
+
+    var candidates = [];
+    Object.keys(g.alive).forEach(function (charId) {
+      if (!g.alive[charId]) return;
+      if (charId === 'fang_heng') return;
+      if (WOLF_ROLES.indexOf(Game.roleOf(charId)) !== -1) return;
+      candidates.push(charId);
+    });
+
+    if (candidates.length === 0) return null;
+
+    var auraHolders = candidates.filter(function (c) { return Game.prophetSenseAura(c); });
+    if (auraHolders.length > 0) {
+      return auraHolders[Math.floor(Math.random() * auraHolders.length)];
+    }
+
+    var silverWater = candidates.filter(function (c) {
+      var w = g.godSkills.witch;
+      return w && w.revivedTargets && w.revivedTargets.indexOf(c) !== -1;
+    });
+
+    if (silverWater.length > 0) {
+      return silverWater[Math.floor(Math.random() * silverWater.length)];
+    }
+
+    return null;
+  };
+
+  Game.prophetAIShareEnemyInfo = function () {
+    var g = ensureState();
+    if (!g.alive['fang_heng']) return null;
+    if (!Game.prophetShouldShare()) return null;
+
+    var pr = ensureProphet(g);
+    var enemyChecks = pr.checks.filter(function (c) {
+      return c.alignment === 'enemy';
+    });
+
+    if (enemyChecks.length === 0) return null;
+
+    var results = [];
+    Object.keys(g.alive).forEach(function (charId) {
+      if (!g.alive[charId]) return;
+      if (charId === 'fang_heng') return;
+      // Only share with aura-bearing allies
+      if (!Game.prophetSenseAura(charId)) return;
+
+      for (var i = 0; i < enemyChecks.length; i++) {
+        var infoTarget = enemyChecks[i].target;
+        if (g.alive[infoTarget] && !Game.prophetReceivedInfo(charId, infoTarget)) {
+          var result = Game.prophetShareInfo(charId, infoTarget);
+          results.push({ target: charId, infoTarget: infoTarget, result: result });
+          break; // one piece of info per recipient
+        }
+      }
+    });
+
+    return results.length > 0 ? results : null;
+  };
+
+  Game.prophetAIShareAllyInfo = function () {
+    var g = ensureState();
+    if (!g.alive['fang_heng']) return null;
+    if (!Game.prophetShouldShare()) return null;
+
+    var pr = ensureProphet(g);
+    var allyChecks = pr.checks.filter(function (c) {
+      return c.alignment === 'ally';
+    });
+
+    if (allyChecks.length === 0) return null;
+
+    var results = [];
+    Object.keys(g.alive).forEach(function (charId) {
+      if (!g.alive[charId]) return;
+      if (charId === 'fang_heng') return;
+      if (!Game.prophetSenseAura(charId)) return;
+
+      for (var i = 0; i < allyChecks.length; i++) {
+        var infoTarget = allyChecks[i].target;
+        if (g.alive[infoTarget] && !Game.prophetReceivedInfo(charId, infoTarget)) {
+          var result = Game.prophetShareInfo(charId, infoTarget);
+          results.push({ target: charId, infoTarget: infoTarget, alignment: 'ally', result: result });
+          break;
+        }
+      }
+    });
+
+    return results.length > 0 ? results : null;
+  };
+
+  Game.isGoldWater = function (charId) {
+    var g = ensureState();
+    var shared = g.godSkills.prophet.sharedWith;
+    if (!shared || !shared['ye_zhiqiu']) return false;
+
+    for (var i = 0; i < shared['ye_zhiqiu'].length; i++) {
+      if (shared['ye_zhiqiu'][i].infoTarget === charId && shared['ye_zhiqiu'][i].alignment === 'ally') {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  Game.prophetCheck = function (targetId) {
+    var g = ensureState();
+    var pr = ensureProphet(g);
+
+    var targetRole = Game.roleOf(targetId);
+    var pool;
+
+    if (targetId === 'chen_mo' && Game.hasFlag('loop_awakened')) {
+      pool = Game.PROPHET_TEXTS.memory_user;
+    } else if (targetId === 'ye_zhiqiu' && Game.witchBroken()) {
+      pool = Game.PROPHET_TEXTS.broken_witch;
+    } else if (targetId === 'chen_mo' || targetId === 'zheng_shoushan') {
+      pool = Game.PROPHET_TEXTS.villager_guilty;
+    } else {
+      pool = Game.PROPHET_TEXTS[targetRole] || Game.PROPHET_TEXTS.villager_calm;
+    }
+
+    if (!pool) pool = ['You sense something faint.'];
+    var text = pool[Math.floor(Math.random() * pool.length)];
+
+    var hiddenWolf = targetRole === 'hidden_wolf';
+    var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
+    var alignment = (isWolf && !hiddenWolf) ? 'enemy' : 'ally';
+
+    var record = {
+      target: targetId,
+      text: text,
+      alignment: alignment,
+      day: g.day,
+      loop: g.loop
+    };
+
+    pr.checks.push(record);
+
+    return { ok: true, perception: text, alignment: alignment, target: targetId };
+  };
+
+  Game.prophetResults = function () {
+    return ensureProphet(ensureState()).checks;
+  };
+
+  Game.prophetLastResult = function (targetId) {
+    var checks = ensureProphet(ensureState()).checks;
+    for (var i = checks.length - 1; i >= 0; i--) {
+      if (checks[i].target === targetId) return checks[i];
+    }
+    return null;
+  };
+
+  // Aura: gods (and hidden wolf hiding among gods) carry a perceptible aura
+  Game.prophetSenseAura = function (targetId) {
+    var g = ensureState();
+    if (!g.alive[targetId]) return false;
+    var role = Game.roleOf(targetId);
+    if (GOD_ROLES.indexOf(role) !== -1) return true;
+    // Hidden wolf masquerades with an aura to blend in with gods
+    if (role === 'hidden_wolf') return true;
+    return false;
+  };
+
+  Game.prophetAuraText = function (targetId) {
+    var role = Game.roleOf(targetId);
+    var pool;
+
+    if (Game.prophetSenseAura(targetId)) {
+      pool = Game.AURA_TEXTS ? Game.AURA_TEXTS.has_aura : null;
+    } else if (role === 'hidden_wolf') {
+      pool = Game.AURA_TEXTS ? Game.AURA_TEXTS.hidden_wolf_aura : null;
+    } else {
+      pool = Game.AURA_TEXTS ? Game.AURA_TEXTS.no_aura : null;
+    }
+
+    if (!pool) pool = ['You sense nothing in particular.'];
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  Game.prophetShouldHide = function () {
+    var g = ensureState();
+    if (!g.alive['fang_heng']) return false;
+
+    var lastKill = g.lastWolfKill;
+    if (!lastKill || !lastKill.killed) return false;
+
+    var actualDead = lastKill.actualTarget;
+    if (!actualDead) return false;
+
+    // If a god role was just killed, the prophet should lay low
+    if (!g.alive[actualDead]) {
+      var deadRole = Game.roleOf(actualDead);
+      if (GOD_ROLES.indexOf(deadRole) !== -1) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  Game.prophetShouldShare = function () {
+    return !Game.prophetShouldHide();
+  };
+
+  Game.prophetAIGetCheckTarget = function () {
+    var g = ensureState();
+    if (!g.alive['fang_heng']) return null;
+
+    var pr = ensureProphet(g);
+    var candidates = [];
+
+    Object.keys(g.alive).forEach(function (charId) {
+      if (!g.alive[charId]) return;
+      if (charId === 'fang_heng') return;
+
+      var alreadyChecked = pr.checks.some(function (c) {
+        return c.target === charId;
+      });
+      if (alreadyChecked) return;
+
+      candidates.push(charId);
+    });
+
+    if (candidates.length === 0) return null;
+
+    // Prefer targets without an aura (possible wolves)
+    var noAura = candidates.filter(function (c) { return !Game.prophetSenseAura(c); });
+    var pool = noAura.length > 0 ? noAura : candidates;
+
+    // First, anyone already flagged as suspicious
+    var suspects = pool.filter(function (c) { return Game.hasFlag('suspect_' + c); });
+    if (suspects.length > 0) return suspects[Math.floor(Math.random() * suspects.length)];
+
+    // Then, anyone showing suspicious behavior
+    var behaviorSus = pool.filter(function (c) {
+      return Game.hasFlag('suspicious_behavior_' + c);
+    });
+    if (behaviorSus.length > 0) return behaviorSus[Math.floor(Math.random() * behaviorSus.length)];
+
+    // Otherwise pick from the untested pool, weighting toward fewest ally-results so far
+    var allyCount = pr.checks.filter(function (c) { return c.alignment === 'ally'; }).length;
+
+    // Default: random from pool (ally count recorded for future weighting)
+    void allyCount;
+    return pool[Math.floor(Math.random() * pool.length)];
+  };
+
+  Game.prophetShareInfo = function (targetId, infoTargetId) {
+    var g = ensureState();
+    if (!g.alive['fang_heng']) return { ok: false, reason: 'prophet_dead' };
+    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+
+    var pr = ensureProphet(g);
+
+    var record = null;
+    for (var i = pr.checks.length - 1; i >= 0; i--) {
+      if (pr.checks[i].target === infoTargetId) {
+        record = pr.checks[i];
+        break;
+      }
+    }
+
+    if (!record) return { ok: false, reason: 'no_info' };
+
+    if (!pr.sharedWith[targetId]) pr.sharedWith[targetId] = [];
+    pr.sharedWith[targetId].push({
+      infoTarget: infoTargetId,
+      alignment: record.alignment,
+      day: g.day,
+      loop: g.loop
+    });
+
+    var targetRole = Game.roleOf(targetId);
+    if (WOLF_ROLES.indexOf(targetRole) !== -1) {
+      return { ok: true, reason: 'leaked', leaked: true };
+    }
+
+    return { ok: true, reason: 'shared', leaked: false };
+  };
+
+  Game.prophetReceivedInfo = function (targetId, infoTargetId) {
+    var g = ensureState();
+    var shared = g.godSkills.prophet.sharedWith;
+    if (!shared || !shared[targetId]) return null;
+
+    for (var i = shared[targetId].length - 1; i >= 0; i--) {
+      if (shared[targetId][i].infoTarget === infoTargetId) {
+        return shared[targetId][i];
+      }
+    }
+    return null;
+  };
+})();
+
+/*
+ * witch.js - Witch (Ye Zhiqiu) AI: sense death + save/curse + potions + AI
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+  var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
+
+  // AI scoring weights for save decisions
+  Game.WITCH_AI_WEIGHTS = {
+    chenmo_proximity: 1.0,
+    role_value: 1.0,
+    threat: 1.2,
+    isolation: 1.0
+  };
+
+  function ensureWitch(g) {
+    var w = g.godSkills.witch;
+    if (!w.curses) w.curses = [];
+    if (!w.materials) w.materials = {};
+    if (!w.potions) w.potions = {};
+    if (typeof w.uses !== 'number') w.uses = 0;
+    if (typeof w.maxUses !== 'number') w.maxUses = 3;
+    if (typeof w.broken !== 'boolean') w.broken = false;
+    return w;
+  }
+
+  Game.witchSenseDeath = function () {
+    var g = ensureState();
+    var w = ensureWitch(g);
+    if (w.broken) return null;
+
+    var lastKill = g.lastWolfKill;
+    if (!lastKill || !lastKill.killed) return null;
+    if (lastKill.special === 'body_removed') return null;
+
+    w.sensedDeath = lastKill.actualTarget;
+    return lastKill.actualTarget;
+  };
+
+  Game.witchGetSensedDeath = function () {
+    var w = ensureState().godSkills.witch;
+    return w.sensedDeath || null;
+  };
+
+  Game.witchClearSensedDeath = function () {
+    var w = ensureWitch(ensureState());
+    w.sensedDeath = null;
+    w.actedTonight = false;
+  };
+
+  Game.witchScoreSave = function (targetId) {
+    var g = ensureState();
+    var score = 0;
+    var w = Game.WITCH_AI_WEIGHTS;
+
+    // Proximity to Chen Mo (protagonist) makes a target worth saving
+    var proximityMap = {
+      su_wan: 10, jiang_bai: 8, zheng_shoushan: 6,
+      lin_xiaoman: 5, fang_heng: 5, shen_shen: 4,
+      ye_zhiqiu: 3, gu_yan: 3, zhou_yang: 1,
+      tang_xiaotang: 1, zhao_mingcheng: 1
+    };
+    score += (proximityMap[targetId] || 3) * w.chenmo_proximity;
+
+    var role = Game.roleOf(targetId);
+    if (GOD_ROLES.indexOf(role) !== -1) {
+      score += 9 * w.role_value;
+    } else if (targetId === 'zheng_shoushan' || targetId === 'chen_mo') {
+      score += 5 * w.role_value;
+    } else {
+      score += 3 * w.role_value;
+    }
+
+    // Exposed/known threats are more valuable to keep alive
+    if (Game.hasRevealed(targetId, 'identity_exposed')) {
+      score += 4 * w.threat;
+    }
+
+    // Random variance
+    score *= (0.85 + Math.random() * 0.3);
+    return Math.round(score);
+  };
+
+  Game.witchScoreCurse = function (targetId) {
+    var g = ensureState();
+    var score = 0;
+    var w = Game.WITCH_AI_WEIGHTS;
+
+    var role = Game.roleOf(targetId);
+    if (WOLF_ROLES.indexOf(role) !== -1) {
+      score += 15 * w.threat;
+    } else {
+      score += 3;
+    }
+
+    // Suspect-flagged characters are prime curse targets
+    if (Game.hasFlag('suspect_' + targetId)) {
+      score += 8 * w.threat;
+    }
+    if (Game.hasFlag('suspicious_behavior_' + targetId)) {
+      score += 5 * w.threat;
+    }
+
+    // Isolated characters are safer curse targets (less fallout)
+    if (Game.hasRevealed(targetId, 'identity_exposed')) {
+      score += 4 * w.isolation;
+    }
+
+    score *= (0.85 + Math.random() * 0.3);
+    return Math.round(score);
+  };
+
+  Game.witchAIShouldSave = function (targetId) {
+    var g = ensureState();
+    if (!g.alive[targetId]) return false;
+    // Always consider saving a sensed death if the target is valuable
+    var score = Game.witchScoreSave(targetId);
+    return score >= 200;
+  };
+
+  Game.witchAIGetCurseTarget = function () {
+    var g = ensureState();
+    var candidates = [];
+
+    Object.keys(g.alive).forEach(function (charId) {
+      if (!g.alive[charId]) return;
+      if (charId === 'ye_zhiqiu') return;
+      candidates.push(charId);
+    });
+
+    if (candidates.length === 0) return null;
+
+    var best = null;
+    var bestScore = 0;
+    candidates.forEach(function (c) {
+      var s = Game.witchScoreCurse(c);
+      if (s > bestScore) { bestScore = s; best = c; }
+    });
+
+    return bestScore >= 220 ? best : null;
+  };
+
+  // Main witch AI: decide between save, curse, or pass for the night
+  Game.witchAIDecide = function () {
+    if (Game.witchRemaining() <= 0) return { action: 'pass' };
+
+    var g = ensureState();
+
+    var saveTarget = null;
+    var saveScore = 0;
+    var curseTarget = null;
+    var curseScore = 0;
+
+    // Consider saving the sensed death
+    var sensed = Game.witchSenseDeath();
+    if (sensed && Game.witchAIShouldSave(sensed)) {
+      saveTarget = sensed;
+      saveScore = Game.witchScoreSave(sensed);
+    }
+
+    curseTarget = Game.witchAIGetCurseTarget();
+    if (curseTarget) {
+      curseScore = Game.witchScoreCurse(curseTarget);
+    }
+
+    var saveMargin = saveTarget ? (saveScore - 200) / 200 : -1;
+    var curseMargin = curseTarget ? (curseScore - 220) / 220 : -1;
+
+    if (saveMargin < 0 && curseMargin < 0) {
+      return { action: 'pass' };
+    }
+
+    if (saveMargin >= curseMargin) {
+      return { action: 'save', target: saveTarget, score: saveScore };
+    } else {
+      return { action: 'curse', target: curseTarget, score: curseScore };
+    }
+  };
+
+  Game.witchUses = function () {
+    return ensureState().godSkills.witch.uses;
+  };
+
+  Game.witchRemaining = function () {
+    var w = ensureState().godSkills.witch;
+    return w.broken ? 0 : (w.maxUses - w.uses);
+  };
+
+  Game.witchBroken = function () {
+    return !!ensureState().godSkills.witch.broken;
+  };
+
+  Game.witchCurse = function (targetId) {
+    var g = ensureState();
+    var w = ensureWitch(g);
+
+    if (w.broken || w.uses >= w.maxUses) return { ok: false, reason: 'broken' };
+    if (w.actedTonight) return { ok: false, reason: 'already_acted' };
+
+    w.actedTonight = true;
+    w.uses += 1;
+    w.curses.push({ target: targetId, type: 'curse' });
+    Game.kill(targetId);
+
+    if (w.uses >= w.maxUses) {
+      w.broken = true;
+      return { ok: true, reason: 'broken' };
+    }
+
+    return { ok: true, reason: 'ok' };
+  };
+
+  Game.witchRevive = function (targetId, witnessed) {
+    var g = ensureState();
+    var w = ensureWitch(g);
+
+    if (w.broken || w.uses >= w.maxUses) return { ok: false, reason: 'broken' };
+    if (g.alive[targetId]) return { ok: false, reason: 'alive' };
+
+    // Guard collision: if the knight is guarding the target, the revive fizzles
+    if (typeof Game.knightIsGuarding === 'function' && Game.knightIsGuarding(targetId)) {
+      w.actedTonight = true;
+      w.uses += 1;
+      return { ok: false, reason: 'guarded' };
+    }
+
+    if (w.actedTonight) return { ok: false, reason: 'already_acted' };
+
+    w.actedTonight = true;
+    w.uses += 1;
+    Game.revive(targetId);
+
+    if (!w.revivedTargets) w.revivedTargets = [];
+    w.revivedTargets.push(targetId);
+    w.sensedDeath = null;
+
+    if (witnessed) {
+      Game.revealInfo('ye_zhiqiu', 'witch_exposed');
+    }
+
+    if (w.uses >= w.maxUses) {
+      w.broken = true;
+      return { ok: true, reason: 'broken' };
+    }
+
+    return { ok: true, reason: 'ok' };
+  };
+
+  Game.witchIsExposed = function () {
+    return Game.hasRevealed('ye_zhiqiu', 'witch_exposed');
+  };
+
+  Game.witchHeal = function (targetId) {
+    var g = ensureState();
+    if (!g.pursuit || !g.pursuit.playerInjured) return { ok: false, reason: 'not_injured' };
+
+    g.pursuit.playerInjured = false;
+    Game.revealInfo('ye_zhiqiu', 'witch_exposed');
+    return { ok: true, reason: 'exposed' };
+  };
+
+  Game.witchAddMaterial = function (materialId) {
+    var g = ensureState();
+    var w = ensureWitch(g);
+    w.materials[materialId] = (w.materials[materialId] || 0) + 1;
+  };
+
+  Game.witchHasMaterial = function (materialId) {
+    var w = ensureState().godSkills.witch;
+    return !!(w.materials && w.materials[materialId]);
+  };
+
+  Game.witchCanCraft = function (potionId) {
+    var w = ensureState().godSkills.witch;
+    if (!GameState.WITCH_POTIONS || !GameState.WITCH_POTIONS[potionId]) return false;
+    var recipe = GameState.WITCH_POTIONS[potionId].recipe;
+    if (!w.materials) return false;
+    for (var mat in recipe) {
+      if (recipe.hasOwnProperty(mat) && (w.materials[mat] || 0) < recipe[mat]) return false;
+    }
+    return true;
+  };
+
+  Game.witchCraftPotion = function (potionId) {
+    var g = ensureState();
+    var w = ensureWitch(g);
+
+    if (!Game.witchCanCraft(potionId)) return { ok: false, reason: 'no_materials' };
+
+    var recipe = GameState.WITCH_POTIONS[potionId].recipe;
+    for (var mat in recipe) {
+      if (recipe.hasOwnProperty(mat)) {
+        w.materials[mat] -= recipe[mat];
+        if (w.materials[mat] <= 0) delete w.materials[mat];
+      }
+    }
+
+    w.potions[potionId] = (w.potions[potionId] || 0) + 1;
+    return { ok: true, potion: potionId };
+  };
+
+  Game.witchHasPotion = function (potionId) {
+    var w = ensureState().godSkills.witch;
+    return !!(w.potions && w.potions[potionId]);
+  };
+
+  Game.witchUsePotion = function (potionId, targetId) {
+    var g = ensureState();
+    var w = ensureWitch(g);
+
+    if (!w.potions || !w.potions[potionId]) return { ok: false, reason: 'no_potion' };
+    if (!GameState.WITCH_POTIONS || !GameState.WITCH_POTIONS[potionId]) return { ok: false, reason: 'unknown_potion' };
+
+    var potion = GameState.WITCH_POTIONS[potionId];
+    w.potions[potionId] -= 1;
+    if (w.potions[potionId] <= 0) delete w.potions[potionId];
+
+    // Record the active effect on the target for later resolution
+    if (!g.flags) g.flags = {};
+    var effectKey = 'potion_effect_' + targetId;
+    g.flags[effectKey] = potion.effect;
+
+    return { ok: true, target: targetId, effect: potion.effect, name: potion.name };
+  };
+
+  Game.witchPotionEffect = function (targetId) {
+    var g = ensureState();
+    if (!g.flags) return null;
+    var effectKey = 'potion_effect_' + targetId;
+    return g.flags[effectKey] || null;
+  };
+})();
+
+/*
+ * state.js
+ * Game state initial structure and constant definitions.
+ * All state hangs on State.variables.game to avoid global pollution.
+ */
+
+(function () {
+  'use strict';
+
+  window.GameState = window.GameState || {};
+
+  // Character IDs
+  GameState.CHARACTERS = {
+    CHEN_MO: 'chen_mo',
+    SU_WAN: 'su_wan',
+    JIANG_BAI: 'jiang_bai',
+    FANG_HENG: 'fang_heng',
+    SHEN_SHEN: 'shen_shen',
+    YE_ZHIQIU: 'ye_zhiqiu',
+    ZHENG_SHOUSHAN: 'zheng_shoushan',
+    LIN_XIAOMAN: 'lin_xiaoman',
+    GU_YAN: 'gu_yan',
+    ZHOU_YANG: 'zhou_yang',
+    TANG_XIAOTANG: 'tang_xiaotang',
+    ZHAO_MINGCHENG: 'zhao_mingcheng'
+  };
+
+  // Role IDs
+  GameState.ROLES = {
+    MEMORY: 'memory',
+    PROPHET: 'prophet',
+    WITCH: 'witch',
+    KNIGHT: 'knight',
+    MAGICIAN: 'magician',
+    VILLAGER: 'villager',
+    WOLF_KING: 'wolf_king',
+    HIDDEN_WOLF: 'hidden_wolf',
+    WOLF: 'wolf',
+    MECHANICAL_WOLF: 'mechanical_wolf'
+  };
+
+  // Ending IDs
+  GameState.ENDINGS = {
+    GOOD: 'good',
+    BAD_STARVATION: 'starvation',
+    HIDDEN_GOD: 'god_of_gods',
+    REFUSE_GOD: 'refuse_god'
+  };
+  // ITEMS: Chinese names + descriptions
+  GameState.ITEMS = {
+    notebook: { name: "笔记本", desc: "陈默用来记录跨轮回情报的笔记本。最后一页写着：不要相信任何人。" },
+    old_key: { name: "旧钥匙", desc: "一把锈迹斑斑的铁钥匙，可能能打开地下酒窖的铁门。" },
+    wolf_knife: { name: "狼牙匕首", desc: "造型狰狞的匕首，刀刃有暗红色痕迹。" },
+    bread: { name: "面包", desc: "山庄厨房仅剩的干粮，硬得能砸核桃。" },
+    compass: { name: "损坏的指南针", desc: "指针一直在转，从不指向同一个方向。" },
+    lighter: { name: "打火机", desc: "老式煤油打火机，还能打火。" },
+    flashlight: { name: "手电筒", desc: "光线已经很微弱了，但还能用一会儿。" },
+    first_aid_kit: { name: "急救箱", desc: "苏晚随身携带的急救箱，里面有纱布、碘伏和止血药。" },
+    syringe: { name: "注射器", desc: "干净的注射器，可用于注射药液。" },
+    pocket_knife: { name: "折叠刀", desc: "江白随身的小刀，刀刃锋利。" },
+    ritual_dagger: { name: "仪式匕首", desc: "祭坛上发现的骨制匕首，刀柄刻满符文。" },
+    mirror_shard: { name: "镜子碎片", desc: "从祭祀空间的镜子上敲下来的碎片，倒影里好像有另一个世界。" },
+    guest_register: { name: "住客登记簿", desc: "前台找到的登记簿，密密麻麻写满了名字，有些被划掉。" },
+    old_photo: { name: "泛黄照片", desc: "二十年前在山庄拍摄的合影，老郑站在最后一排。" },
+    cassette_tape: { name: "磁带", desc: "广播室找到的老式磁带，录音内容是前任祭坛守护者的独白。" },
+    medicine_bottle: { name: "药瓶", desc: "标签被撕掉的药瓶，含化学药剂。" },
+    wire: { name: "铜线", desc: "一段约两米的铜线，可以用于临时电路修复。" },
+    bible: { name: "破旧圣经", desc: "阁楼找到的圣经，扉页写着老郑的忏悔。" },
+    old_note: { name: "发黄的纸条", desc: "铁门门缝里塞的纸条：他们不会让人出去的，不要相信导游。" },
+    ritual_log: { name: "祭祀日志", desc: "神秘房间找到的日志，记载了仪式的规则和历史。" },
+  };
+  // CLUES: Chinese names + descriptions (breaking = key to true ending)
+  GameState.CLUES = {
+    locked_doors: { name: "锁门规律", desc: "每晚23:00后，所有安全屋自动上锁，只有狼能闯入。" },
+    cellar_door: { name: "地下铁门", desc: "酒窖深处的铁门，需要特定形状钥匙才能打开。" },
+    jiangbai_scar: { name: "江白旧疤", desc: "江白右手腕上的疤很整齐，不像玻璃划伤。" },
+    zhouyang_pocket: { name: "周阳插口袋", desc: "周阳的右手始终插在口袋里。" },
+    fang_temperature: { name: "方衡体温异常", desc: "方衡体温偏低，但不像是生病的温度。" },
+    phone_battery: { name: "手机电量异常", desc: "林小满的手机显示被困第三天，电量一直是100%。" },
+    cellar_blood: { name: "酒窖血腥味", desc: "铁门后有明显的血腥味。" },
+    old_guests: { name: "以往的客人", desc: "住客登记簿显示多年来的访客记录，有些人再也没有离开。" },
+    ritual_tablet: { name: "祭祀铭文", desc: "祭坛上的铭文：第七日，祭品满，门开。存者出，亡者留。", breaking: true },
+    recruitment_tablet: { name: "招募铭文", desc: "铭文后半部分：掌祭者即掌生死，存者若取祭者之位，则轮回终，新神立。", breaking: true },
+    shenshen_identity: { name: "沈慎暗示", desc: "沈慎说看所有人都是双重曝光的——他也能感知到轮回的痕迹。", breaking: true },
+    laozheng_survivor: { name: "老郑幸存者身份", desc: "老郑是上一轮轮回的幸存者，他知道部分真相。", breaking: true },
+    god_kill_method: { name: "弑神方法", desc: "取代祭坛的守护者就能终结轮回，但需要等价交换。", breaking: true },
+    fang_heng_theory: { name: "方衡的推测", desc: "狼的杀戮可能有特定目标顺序，而不是随机。" },
+    tang_saw_3f: { name: "唐小棠目击证词", desc: "唐小棠声称昨晚23:00后看到有人上三楼。" },
+    fang_and_zhao_known: { name: "方衡与赵明城相识", desc: "周阳观察到两人交换眼神，顾言证实赵明城介绍他来山庄。" },
+    hidden_floor: { name: "隐藏夹层", desc: "顾言通过建筑结构对称性推算山庄存在隐藏空间。" },
+    burned_notebook: { name: "烧毁的笔记", desc: "有人烧了一本笔记，灰烬上残留着'者笔记别让人看到'字样。" },
+    ye_supernatural_wound: { name: "超自然伤口", desc: "叶知秋验尸确认伤口不是人类能造成的。" },
+    ye_opinion_fang_shen: { name: "叶知秋对方衡和沈慎的评价", desc: "方衡身上有不干净的味道，沈慎对死亡过于熟悉。" },
+    six_digit_lock: { name: "六进制密码锁", desc: "二楼走廊尽头的房间门装有六进制密码锁。" },
+    mystery_room: { name: "神秘房间", desc: "密码锁后面的房间，藏有祭祀日志和关于仪式的书籍。" },
+    zhao_fang_deal: { name: "赵明城与方衡的交易", desc: "两人来山庄是为了取走前主人留下的东西——各取所需。" },
+    altar_inscription: { name: "祭坛铭文", desc: "铁门后的祭坛刻着：第七日，祭品满，门开。存者出，亡者留。" },
+  };
+
+  GameState.BREAKING_CLUES = Object.keys(GameState.CLUES).filter(function (id) {
+    return GameState.CLUES[id].breaking === true;
+  });
+
+  // WITCH_MATERIALS: materials for crafting potions
+  GameState.WITCH_MATERIALS = {
+    medicine_bottle: { name: "药瓶", desc: "标签被撕掉的药瓶，含化学药剂。", sources: ["dining_room"] },
+    syringe: { name: "注射器", desc: "干净的注射器，可用于注射药液。", sources: ["master_bedroom"] },
+    herb_bundle: { name: "草药束", desc: "温室里找到的干燥草药。", sources: ["conservatory"] },
+    chemical_vial: { name: "化学试剂瓶", desc: "工坊里的化学试剂。", sources: ["workshop"] },
+  };
+
+  // WITCH_POTIONS: non-lethal potions (control effects)
+  GameState.WITCH_POTIONS = {
+    sleeping_potion: {
+      name: "安眠药",
+      desc: "让目标当晚深度睡眠，不会醒来，不会目击夜间事件。",
+      recipe: { medicine_bottle: 1 },
+      effect: "sleep"
+    },
+    paralytic: {
+      name: "麻痹剂",
+      desc: "让目标当晚身体无法动弹，无法行动。",
+      recipe: { medicine_bottle: 1, syringe: 1 },
+      effect: "paralyze"
+    },
+    deep_sedative: {
+      name: "强效镇静剂",
+      desc: "同时麻痹和安眠，目标当晚完全失去行动能力。",
+      recipe: { syringe: 1, chemical_vial: 1, herb_bundle: 1 },
+      effect: "deep_sedation"
+    },
+    truth_serum: {
+      name: "吐真剂",
+      desc: "让目标在白天对话中不自觉地吐露真实想法。一次性。",
+      recipe: { chemical_vial: 1, herb_bundle: 1 },
+      effect: "truth"
+    },
+  };
+
+  // MAP: location id -> {name, desc, zone}
+  GameState.MAP = {
+    foyer: { name: "门厅", desc: "庄园正门入口，双开橡木门已被积雪封死。水晶吊灯倾斜悬挂。", zone: "main_1f" },
+    grand_hall: { name: "大厅", desc: "壁炉、前台、通往各处的走廊。所有人白天的聚集地。", zone: "main_1f" },
+    dining_room: { name: "餐厅", desc: "长条橡木餐桌，能坐二十人。墙上有肖像画。", zone: "main_1f" },
+    kitchen: { name: "厨房", desc: "仅剩干粮的地方，也是食物危机的源头。", zone: "main_1f" },
+    pantry: { name: "储藏室", desc: "厨房后方的储藏室，货架大多空了。", zone: "main_1f" },
+    drawing_room: { name: "会客室", desc: "壁炉旁的休息区，沙发和旧钢琴。", zone: "main_1f" },
+    study: { name: "书房", desc: "满墙书架，书桌上有放大镜和信件。", zone: "main_1f" },
+    gallery: { name: "画廊", desc: "挂着历任庄园主人肖像的走廊，画中人的眼睛似乎在追踪你。", zone: "main_1f" },
+    guest_corridor: { name: "客房走廊", desc: "十二间客房，夜间是各自的安全屋。", zone: "main_2f" },
+    master_bedroom: { name: "主卧", desc: "庄园主人曾住的房间，床头的镜子蒙着灰。", zone: "main_2f" },
+    children_room: { name: "儿童房", desc: "积灰的童床和木马，墙上有蜡笔画痕迹。", zone: "main_2f" },
+    sewing_room: { name: "缝纫室", desc: "旧式缝纫机和布料，抽屉里可能有针线。", zone: "main_2f" },
+    balcony: { name: "阳台", desc: "能俯瞰中庭和庭院，风雪很大。", zone: "main_2f" },
+    attic: { name: "阁楼", desc: "布满灰尘，能找到泛黄的照片和二十年前的物件。", zone: "main_3f" },
+    archive_room: { name: "档案室", desc: "庄园二十年的文件和账本，锁着的铁柜里有秘密。", zone: "main_3f" },
+    library: { name: "图书室", desc: "满架旧书，藏着山庄的历史和往届住客的记录。", zone: "east_wing" },
+    music_room: { name: "音乐室", desc: "三角钢琴和大提琴，琴键落满灰尘。", zone: "east_wing" },
+    conservatory: { name: "温室", desc: "玻璃已碎，枯死的植物在雪中僵立。", zone: "east_wing" },
+    broadcast_room: { name: "广播室", desc: "老旧的广播设备，磁带里录着前任神的独白。", zone: "east_wing" },
+    generator_room: { name: "配电室", desc: "庄园的电力来源，江白能在这里发挥作用。", zone: "west_wing" },
+    workshop: { name: "工坊", desc: "木工和金工工具，能制作简易武器和工具。", zone: "west_wing" },
+    armory: { name: "杂物间", desc: "堆满旧家具和旅行箱，可能藏着前任住客的遗物。", zone: "west_wing" },
+    wine_cellar: { name: "酒窖", desc: "酒架大多空了，最深处通向地下铁门。", zone: "west_wing" },
+    courtyard: { name: "中庭", desc: "被风雪包围的露天区域，指南针在这里会剧烈转动。", zone: "courtyard" },
+    garden: { name: "花园", desc: "枯萎的玫瑰丛和干涸的喷泉，雪下有墓碑。", zone: "courtyard" },
+    well: { name: "古井", desc: "井口结冰，扔下去能听到微弱的回声。", zone: "courtyard" },
+    chapel: { name: "小教堂", desc: "废弃的家庭礼拜堂，十字架歪斜，圣经散落。", zone: "courtyard" },
+    cellar_door: { name: "地下铁门", desc: "酒窖深处的铁门，门上写着天黑请闭眼。", zone: "underground" },
+    altar: { name: "祭祀空间", desc: "石阶、镜子、骨刀。轮回的真相所在。", zone: "underground" },
+    crypt: { name: "地下墓室", desc: "铁门后的岩路，排列着石椁和刻着名字的墙壁。", zone: "underground" },
+  };
+
+  GameState.BACKSTORY_KEYS = {
+    chen_mo: 'chenmo_guilt',
+    su_wan: 'suwan_resolve',
+    jiang_bai: 'jiangbai_origin',
+    fang_heng: 'fang_corruption',
+    shen_shen: 'shenshen_debt',
+    ye_zhiqiu: 'yezhiqiu_malpractice',
+    zheng_shoushan: 'laozheng_knowledge',
+    lin_xiaoman: 'linxiaoman_devotion',
+    zhou_yang: 'zhouyang_arrogance',
+    tang_xiaotang: 'tangxiaotang_trauma',
+    zhao_mingcheng: 'zhaomingcheng_network',
+    gu_yan: 'guyan_ambition'
+  };
+
+  // (comment)
+  GameState.FLAGS = {
+    MET_EVERYONE: 'met_everyone',
+    SAW_LAOZHENG_DIE: 'saw_laozheng_die',
+    LOOP_AWAKENED: 'loop_awakened',
+    JIANGBAI_TRUSTS: 'jiangbai_trusts',
+    ZHOU_SUSPICIOUS: 'zhou_suspicious',
+    TANG_SUSPICIOUS: 'tang_suspicious',
+    SHENSHEN_REVEALED: 'shenshen_revealed',
+    FANG_REVEALED: 'fang_revealed',
+    FANG_ZHAO_CONNECTION: 'fang_zhao_connection', // (comment)
+    DOOR_OPENED: 'door_opened',
+    MIRROR_BROKEN: 'mirror_broken'
+  };
+
+  
+  // PROFILES: name + age + job + personality + talent
+  GameState.PROFILES = {
+    chen_mo: { name: "陈默", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，不善表达，有负罪感", talent: "逻辑分析、记笔记、观察系统漏洞" },
+    su_wan: { name: "苏晚", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔倔强，医者仁心", talent: "急救、诊断中毒/伤势、安抚他人" },
+    jiang_bai: { name: "江白", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具" },
+    fang_heng: { name: "方衡", age: 35, job: "市刑警支队副队长", personality: "沉稳世故，表面温和，内心算计", talent: "读微表情、审讯、栽赃、追踪" },
+    shen_shen: { name: "沈慎", age: 38, job: "地下赌场荷官兼老千", personality: "沉默寡言，动作利落，赌徒心态", talent: "出千、致幻布置、冷读术" },
+    ye_zhiqiu: { name: "叶知秋", age: 32, job: "前医学院学生，现为殡仪馆入殓师", personality: "沉静温柔，对生死淡漠", talent: "验尸、保存尸体证据、配药/下毒" },
+    zheng_shoushan: { name: "郑守山", age: 58, job: "退休旅行团导游", personality: "圆滑谨慎，知道太多又不敢说", talent: "熟悉山庄结构、野外生存、隐藏通道" },
+    lin_xiaoman: { name: "林小满", age: 20, job: "艺术学院绘画专业学生，唐小棠同校闺蜜", personality: "冲动仗义，护短，外刚内软", talent: "打架、保护他人、观察色彩/细节" },
+    zhou_yang: { name: "周阳", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好，实则好胜", talent: "奔跑/追逐、体能压制、煽动气氛" },
+    tang_xiaotang: { name: "唐小棠", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强，精神脆弱", talent: "读文字/暗号、察言观色、情感操控" },
+    zhao_mingcheng: { name: "赵明城", age: 45, job: "外贸公司老板、政治掮客", personality: "圆滑世故，擅长斡旋，冷酷", talent: "谈判、找把柄、资源调配、心理施压" },
+    gu_yan: { name: "顾言", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强，容易崩溃", talent: "物理推理、拆解机关、实验验证" },
+  };
+
+GameState.getProfile = function (charId) {
+  return GameState.PROFILES[charId] || null;
+};
+
+// GOD_KILLERS: only chen_mo and lao_zheng can slay a god
+    GameState.GOD_KILLERS = {
+      CHEN_MO: 'chen_mo',
+      LAO_ZHENG: 'zheng_shoushan'
+  };
+
+  // GameState.create: fresh game state
+  GameState.create = function () {
+    return {
+      // chapter and loop
+      chapter: 1,
+      loop: 1,
+      day: 1,
+      time: '06:00',
+
+      // protagonist state
+      stats: {
+        san: 100,
+        hunger: 0,
+        trust_suwan: 50,
+        trust_jiangbai: 30,
+        trust_fang_heng: 30,
+        trust_shenshen: 20,
+        fear_level: 0
+      },
+
+      // alive status (true = alive)
+      alive: {
+        chen_mo: true,
+        su_wan: true,
+        jiang_bai: true,
+        fang_heng: true,
+        shen_shen: true,
+        ye_zhiqiu: true,
+        zheng_shoushan: true,
+        lin_xiaoman: true,
+        gu_yan: true,
+        zhou_yang: true,
+        tang_xiaotang: true,
+        zhao_mingcheng: true
+      },
+
+      // current role assignments
+      roles: {
+        chen_mo: 'memory',
+        su_wan: 'villager',
+        jiang_bai: 'villager',
+        fang_heng: 'prophet',
+        shen_shen: 'magician',
+        ye_zhiqiu: 'witch',
+        zheng_shoushan: 'villager',
+        lin_xiaoman: 'knight',
+        gu_yan: 'mechanical_wolf',
+        zhou_yang: 'wolf_king',
+        tang_xiaotang: 'hidden_wolf',
+        zhao_mingcheng: 'wolf'
+      },
+
+      // inventory, clues, flags, endings
+      inventory: {},
+      clues: {},
+      flags: {},
+      endings: {},
+
+      // passage visit log
+      visited: {},
+
+      // visited locations (map)
+      visitedLocations: {},
+
+      // revealed character hidden info
+      revealed: {},
+
+      // safehouse status (intruded each night)
+      safehouse: {
+        intruded: false,
+        target: null
+      },
+
+      // god skills (reset each loop)
+      godSkills: {
+        witch: {
+          uses: 0,
+          maxUses: 3,
+          broken: false,
+          curses: [],
+          materials: {},
+          potions: {},
+          sensedDeath: null
+        },
+        knight: {
+          duelsUsed: 0,
+          weakenedDays: 0,
+          lastTarget: null,
+          guarding: null
+        },
+        prophet: {
+          checks: [],
+          exposed: false
+        },
+        magician: {
+          swapsUsed: 0,
+          maxSwaps: 7,
+          currentSwap: null,
+          swapHistory: [],
+          lastSwapPair: null
+        }
+      },
+
+      // last wolf kill result
+      lastWolfKill: null,
+
+      // memory fragments (persist across loops)
+      memories: []
+    };
+  };
+
+})();
+
+
+/*
+ * fake-jump.js - Fake-jump wolf: pretends to be the prophet to mislead good guys
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+  var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
+
+  function ensureFakeProphet(g) {
+    if (!g.godSkills) g.godSkills = {};
+    if (!g.godSkills.prophet) g.godSkills.prophet = {};
+    if (!g.godSkills.prophet.sharedWith) g.godSkills.prophet.sharedWith = {};
+    return g.godSkills;
+  }
+
+  Game.getFakeProphet = function () {
+    var g = ensureState();
+    return g.godSkills.fakeProphet || null;
+  };
+
+  Game.initFakeJump = function (wolfId) {
+    var g = ensureState();
+
+    // Only Zhao Mingcheng or Gu Yan can fake-jump as prophet
+    var validJumpers = ['zhao_mingcheng', 'gu_yan'];
+
+    // If the last wolf kill produced a deep-water (hidden-wolf friendly fire)
+    // situation, sometimes hold off on the jump to keep cover
+    var lastKill = g.lastWolfKill;
+    if (lastKill && lastKill.killed && lastKill.actualTarget && !g.alive[lastKill.actualTarget]) {
+      if (Math.random() < 0.5) return { ok: false, reason: 'deep_water' };
+    }
+
+    if (validJumpers.indexOf(wolfId) === -1) return { ok: false, reason: 'cannot_jump' };
+    if (!g.alive[wolfId]) return { ok: false, reason: 'dead' };
+
+    g.godSkills.fakeProphet = {
+      wolfId: wolfId,
+      day: g.day,
+      reports: [],     // list of {target, alignment, faked}
+      exposed: true    // a fake-jumper is effectively "out" once declared
+    };
+
+    return { ok: true };
+  };
+
+  Game.fakeProphetReport = function (targetId, alignment) {
+    var g = ensureState();
+    var fp = g.godSkills.fakeProphet;
+    if (!fp) return { ok: false, reason: 'no_jump' };
+    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+
+    for (var i = 0; i < fp.reports.length; i++) {
+      if (fp.reports[i].target === targetId) return { ok: false, reason: 'already_reported' };
+    }
+
+    var report = {
+      target: targetId,
+      alignment: alignment,  // 'ally' or 'enemy', as faked by the wolf
+      day: g.day,
+      faked: true
+    };
+
+    fp.reports.push(report);
+
+    // Distribute the faked info to god-role holders, mimicking real prophet sharing
+    ensureFakeProphet(g);
+    Object.keys(g.alive).forEach(function (charId) {
+      if (!g.alive[charId]) return;
+      if (charId === fp.wolfId) return; // do not inform the faker itself
+      if (GOD_ROLES.indexOf(g.roles[charId]) === -1) return; // only gods receive prophet info
+
+      if (!g.godSkills.prophet.sharedWith[charId]) g.godSkills.prophet.sharedWith[charId] = [];
+      g.godSkills.prophet.sharedWith[charId].push({
+        infoTarget: targetId,
+        alignment: alignment,
+        day: g.day,
+        loop: g.loop,
+        faked: true,
+        fromFakeProphet: true
+      });
+    });
+
+    return { ok: true, report: report };
+  };
+
+  Game.fakeProphetAIReport = function () {
+    var g = ensureState();
+    var fp = g.godSkills.fakeProphet;
+    if (!fp) return null;
+    if (!g.alive[fp.wolfId]) return null;
+
+    var aliveList = Object.keys(g.alive).filter(function (k) { return g.alive[k]; });
+
+    var unreported = aliveList.filter(function (k) {
+      if (k === fp.wolfId) return false;
+      return !fp.reports.some(function (r) { return r.target === k; });
+    });
+
+    if (unreported.length === 0) return null;
+
+    var target = unreported[Math.floor(Math.random() * unreported.length)];
+    var targetRole = g.roles[target];
+    var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
+
+    var reportTrue = Math.random() < 0.5;
+
+    var alignment;
+    if (reportTrue) {
+      // Report the real alignment
+      alignment = isWolf ? 'enemy' : 'ally';
+    } else {
+      // Lie: frame a good guy as enemy, or vouch for a fellow wolf
+      alignment = isWolf ? 'ally' : 'enemy';
+    }
+
+    return Game.fakeProphetReport(target, alignment);
+  };
+
+  Game.prophetCheckFakeJump = function () {
+    var g = ensureState();
+    var fp = g.godSkills.fakeProphet;
+    if (!fp) return null;
+
+    // The real prophet (Fang Heng) can sense whether the fake-jumper has an aura
+    if (!Game.isAlive('fang_heng')) return null;
+
+    var hasAura = Game.prophetSenseAura(fp.wolfId);
+
+    return {
+      wolfId: fp.wolfId,
+      hasAura: hasAura
+    };
+  };
+})();
+
+/*
+ * hidden-wolf.js - Hidden wolf (Tang Xiaotang) deep-water misleading AI
+ * Injects fake prophet info to protect herself and misdirect good guys
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+
+  Game.hiddenWolfAIMislead = function () {
+    var g = ensureState();
+    if (!g.alive['tang_xiaotang']) return null;
+    if (!g.alive['fang_heng']) return null; // needs prophet alive
+    if (!Game.isGoldWater('tang_xiaotang')) return null;
+
+    var aliveWolves = [];
+    var aliveGoodNonWolf = [];
+
+    Object.keys(g.alive).forEach(function (cid) {
+      if (!g.alive[cid]) return;
+      if (cid === 'tang_xiaotang') return;
+      var role = Game.roleOf(cid);
+      if (WOLF_ROLES.indexOf(role) !== -1) {
+        aliveWolves.push(cid);
+      } else {
+        aliveGoodNonWolf.push(cid);
+      }
+    });
+
+    var result = null;
+
+    // Strategy 1: protect a fellow wolf by faking them as "ally" (gold water)
+    if (aliveWolves.length > 0) {
+      var protectTarget = aliveWolves[Math.floor(Math.random() * aliveWolves.length)];
+
+      if (!g.godSkills.prophet.sharedWith) g.godSkills.prophet.sharedWith = {};
+      if (!g.godSkills.prophet.sharedWith['tang_xiaotang']) g.godSkills.prophet.sharedWith['tang_xiaotang'] = [];
+
+      // Check not already faked
+      var alreadyFaked = g.godSkills.prophet.sharedWith['tang_xiaotang'].some(function (s) {
+        return s.infoTarget === protectTarget && s.alignment === 'ally';
+      });
+
+      if (!alreadyFaked) {
+        g.godSkills.prophet.sharedWith['tang_xiaotang'].push({
+          infoTarget: protectTarget,
+          alignment: 'ally',
+          day: g.day,
+          loop: g.loop,
+          faked: true
+        });
+
+        // Also mislead Lin Xiaoman (knight) to trust the wolf
+        if (g.alive['lin_xiaoman']) {
+          if (!g.godSkills.prophet.sharedWith['lin_xiaoman']) g.godSkills.prophet.sharedWith['lin_xiaoman'] = [];
+          g.godSkills.prophet.sharedWith['lin_xiaoman'].push({
+            infoTarget: protectTarget,
+            alignment: 'ally',
+            day: g.day,
+            loop: g.loop,
+            faked: true
+          });
+        }
+        result = { type: 'protect', target: protectTarget };
+      }
+    } else if (aliveGoodNonWolf.length > 0) {
+      // Strategy 2: frame a good guy as "enemy" to make knight duel them
+      var misleadTarget = aliveGoodNonWolf[Math.floor(Math.random() * aliveGoodNonWolf.length)];
+
+      if (!g.godSkills.prophet.sharedWith) g.godSkills.prophet.sharedWith = {};
+      if (!g.godSkills.prophet.sharedWith['tang_xiaotang']) g.godSkills.prophet.sharedWith['tang_xiaotang'] = [];
+
+      var alreadyFaked2 = g.godSkills.prophet.sharedWith['tang_xiaotang'].some(function (s) {
+        return s.infoTarget === misleadTarget && s.alignment === 'enemy';
+      });
+
+      if (!alreadyFaked2) {
+        g.godSkills.prophet.sharedWith['tang_xiaotang'].push({
+          infoTarget: misleadTarget,
+          alignment: 'enemy',
+          day: g.day,
+          loop: g.loop,
+          faked: true
+        });
+
+        if (g.alive['lin_xiaoman']) {
+          if (!g.godSkills.prophet.sharedWith['lin_xiaoman']) g.godSkills.prophet.sharedWith['lin_xiaoman'] = [];
+          g.godSkills.prophet.sharedWith['lin_xiaoman'].push({
+            infoTarget: misleadTarget,
+            alignment: 'enemy',
+            day: g.day,
+            loop: g.loop,
+            faked: true
+          });
+        }
+        result = { type: 'mislead', target: misleadTarget };
+      }
+    }
+
+    return result;
+  };
+
+})();
+
+ /*
+ * mech-wolf
+ * ????????????? + ????
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+
+Game.hasMechWolfPower = function () {
+
+    return !!Game.hasFlag('gu_yan_stole_god_power');
+
+  }
+
+Game.mechWolfStealPower = function (godCharId) {
+
+    var g = ensureState();
+
+    var godRole = Game.roleOf(godCharId);
+
+    g.flags.gu_yan_stole_god_power = true;
+
+    g.flags.gu_yan_stolen_role = godRole;
+
+    return godRole;
+
+  }
+
+Game.getMechWolfStolenRole = function () {
+
+    var g = ensureState();
+
+    return g.flags.gu_yan_stolen_role || null;
+
+  }
+
+Game.mechWolfPeekIdentity = function (targetId) {
+
+    if (!Game.hasMechWolfPower()) return { ok: false, reason: 'no_power' };
+
+    var stolenRole = Game.getMechWolfStolenRole();
+
+    if (stolenRole !== 'prophet') return { ok: false, reason: 'wrong_power' };
+
+    var g = ensureState();
+
+    if (!g.alive['gu_yan']) return { ok: false, reason: 'dead' };
+
+    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+
+    var targetRole = Game.roleOf(targetId);
+
+    var targetName = GameState.PROFILES[targetId] ? GameState.PROFILES[targetId].name : targetId;
+
+    g.flags.gu_yan_stole_god_power = false;
+
+    return { ok: true, identity: targetRole, name: targetName };
+
+  }
+
+Game.mechWolfCurse = function (targetId) {
+
+    if (!Game.hasMechWolfPower()) return { ok: false, reason: 'no_power' };
+
+    var stolenRole = Game.getMechWolfStolenRole();
+
+    if (stolenRole !== 'witch') return { ok: false, reason: 'wrong_power' };
+
+    var g = ensureState();
+
+    if (!g.alive['gu_yan']) return { ok: false, reason: 'dead' };
+
+    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+
+    Game.kill(targetId);
+
+    g.flags.gu_yan_stole_god_power = false;
+
+    return { ok: true, target: targetId };
+
+  }
+
+Game.mechWolfDuel = function (targetId) {
+
+    if (!Game.hasMechWolfPower()) return { ok: false, reason: 'no_power' };
+
+    var stolenRole = Game.getMechWolfStolenRole();
+
+    if (stolenRole !== 'knight') return { ok: false, reason: 'wrong_power' };
+
+    var g = ensureState();
+
+    if (!g.alive['gu_yan']) return { ok: false, reason: 'dead' };
+
+    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+
+    Game.kill(targetId);
+
+    g.flags.gu_yan_stole_god_power = false;
+
+    return { ok: true, target: targetId };
+
+  }
+
+Game.mechWolfSwap = function (charA, charB) {
+
+    if (!Game.hasMechWolfPower()) return { ok: false, reason: 'no_power' };
+
+    var stolenRole = Game.getMechWolfStolenRole();
+
+    if (stolenRole !== 'magician') return { ok: false, reason: 'wrong_power' };
+
+    var g = ensureState();
+
+    if (!g.alive['gu_yan']) return { ok: false, reason: 'dead' };
+
+    if (!g.alive[charA] || !g.alive[charB]) return { ok: false, reason: 'target_dead' };
+
+    if (charA === charB) return { ok: false, reason: 'same_person' };
+
+    var swapResult = Game.magicianSwap(charA, charB);
+
+    if (swapResult.ok) {
+
+      g.flags.gu_yan_stole_god_power = false;
+
+    }
+
+    return swapResult;
+
+  }
+
+Game.mechWolfAIActivatePower = function () {
+
+    if (!Game.hasMechWolfPower()) return null;
+
+    if (!Game.isAlive('gu_yan')) return null;
+
+    var g = ensureState();
+
+    var stolenRole = Game.getMechWolfStolenRole();
+
+    var wolves4 = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+
+    var aliveGood = [];
+
+    Object.keys(g.alive).forEach(function (cid) {
+
+      if (!g.alive[cid]) return;
+
+      if (cid === 'gu_yan') return;
+
+      if (wolves4.indexOf(g.roles[cid]) === -1) aliveGood.push(cid);
+
+    });
+
+    if (aliveGood.length === 0) return null;
+
+    var target = aliveGood[Math.floor(Math.random() * aliveGood.length)];
+
+    if (stolenRole === 'prophet') {
+
+      var r = Game.mechWolfPeekIdentity(target);
+
+      return r.ok ? { action: 'peek', target: target, identity: r.identity } : null;
+
+    } else if (stolenRole === 'witch') {
+
+      var r = Game.mechWolfCurse(target);
+
+      return r.ok ? { action: 'curse', target: target } : null;
+
+    } else if (stolenRole === 'knight') {
+
+      var r = Game.mechWolfDuel(target);
+
+      return r.ok ? { action: 'duel', target: target } : null;
+
+    } else if (stolenRole === 'magician') {
+
+      if (aliveGood.length < 2) return null;
+
+      var others = aliveGood.filter(function(c) { return c !== target; });
+
+      var b = others[Math.floor(Math.random() * others.length)];
+
+      var r = Game.mechWolfSwap(target, b);
+
+      return r.ok ? { action: 'swap', a: target, b: b } : null;
+
+    }
+
+    return null;
+
+  }
+})();
+
+
+ /*
+ * night-kill
+ * ???????? + ??/??????
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+
+Game.executeWolfKill = function () {
+
+    var g = ensureState();
+
+    var wolves = ['zhou_yang', 'tang_xiaotang', 'zhao_mingcheng', 'gu_yan'];
+
+    var wolfTarget = Game.getWolfTarget();
+
+    if (!wolfTarget) return { target: null, killed: false };
+
+    var aliveWolves = wolves.filter(function (w) { return g.alive[w]; });
+
+    var availableKillers = aliveWolves.filter(function (w) {
+
+      var swap = Game.getMagicianSwap();
+
+      if (swap) {
+
+        var resolved = Game.resolveSwapTarget(w);
+
+        if (resolved === wolfTarget) return false;
+
+      }
+
+      return true;
+
+    });
+
+    if (availableKillers.length === 0) availableKillers = aliveWolves; // fallback
+
+    var killer = null;
+
+    if (availableKillers.length > 0) {
+
+      if (isKnownGod && availableKillers.indexOf('gu_yan') !== -1 && !Game.hasMechWolfPower()) {
+
+        killer = 'gu_yan';
+
+      } else if (availableKillers.indexOf('zhao_mingcheng') !== -1 && Math.random() < 0.4) {
+
+        killer = 'zhao_mingcheng';
+
+      } else {
+
+        var regulars = availableKillers.filter(function(w) {
+
+          return w !== 'gu_yan' && w !== 'zhao_mingcheng';
+
+        });
+
+        if (regulars.length > 0) {
+
+          killer = regulars[Math.floor(Math.random() * regulars.length)];
+
+        } else {
+
+          killer = availableKillers[Math.floor(Math.random() * availableKillers.length)];
+
+        }
+
+      }
+
+    }
+
+    var result = {
+
+      target: wolfTarget,
+
+      targetName: GameState.PROFILES[wolfTarget] ? GameState.PROFILES[wolfTarget].name : wolfTarget,
+
+      actualTarget: wolfTarget,
+
+      actualTargetName: GameState.PROFILES[wolfTarget] ? GameState.PROFILES[wolfTarget].name : wolfTarget,
+
+      killed: true,
+
+      killer: killer,
+
+      killerName: killer ? (GameState.PROFILES[killer] ? GameState.PROFILES[killer].name : killer) : null,
+
+      special: null,
+
+      swapped: false,
+
+      friendlyFire: false,
+
+      mutualKill: false
+
+    };
+
+    if (Game.knightIsGuarding(wolfTarget)) {
+
+      result.killed = false;
+
+      result.special = 'protected_by_knight';
+
+      Game.magicianResetDaily();
+
+      return result;
+
+    }
+
+    var actualVictim = wolfTarget;
+
+    var swap = Game.getMagicianSwap();
+
+    if (swap && Game.isAlive('shen_shen')) {
+
+      var resolved = Game.resolveSwapTarget(wolfTarget);
+
+      if (resolved !== wolfTarget) {
+
+        actualVictim = resolved;
+
+        result.swapped = true;
+
+        result.actualTarget = resolved;
+
+        result.actualTargetName = GameState.PROFILES[resolved] ? GameState.PROFILES[resolved].name : resolved;
+
+        if (aliveWolves.indexOf(resolved) !== -1) {
+
+          result.friendlyFire = true;
+
+          result.special = 'friendly_fire';
+
+          if (resolved === 'zhou_yang') {
+
+            result.mutualKill = true;
+
+            result.special = 'wolf_king_mutual';
+
+            Game.kill('zhou_yang');
+
+            if (killer) Game.kill(killer);
+
+          } else {
+
+            Game.kill(resolved);
+
+          }
+
+          Game.magicianResetDaily();
+
+          return result;
+
+        }
+
+      }
+
+    }
+
+    Game.kill(actualVictim);
+
+    var godRoles4 = ['prophet', 'witch', 'knight', 'magician'];
+
+    if (killer === 'gu_yan' && godRoles4.indexOf(Game.roleOf(actualVictim)) !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
+
+      Game.mechWolfStealPower(actualVictim);
+
+    }
+
+    if (killer === 'zhao_mingcheng') {
+
+      result.special = 'body_removed';
+
+    }
+
+    Game.magicianResetDaily();
+
+    return result;
+
+  }
+
+Game.getLastWolfKill = function () {
+
+    var g = ensureState();
+
+    return g.lastWolfKill || null;
+
+  }
+
+Game.setLastWolfKill = function (result) {
+
+    var g = ensureState();
+
+    g.lastWolfKill = result;
+
+  }
+
+Game.canGodAct = function () {
+
+    return true; // 缂備椒鑳堕崑鐘崇閹绢喗鍤勯柦妯侯槸閿熻棄绻樺鍫曞Ψ閿斿墽鍩嶆繛瀛樼矊鐎涒晛顭囧▎蹇ユ嫹濡鐓€缂佽鲸绻冪粙澶婎吋閸涱厾绉梺鍝勫暙閻栫厧螞閸ф鈷旈柟甯嫹闁糕敒?
+  }
+
+Game.canWolfAct = function (charId) {
+
+    if (Game.isNight()) return true;
+
+    var role = Game.roleOf(charId);
+
+    if (role === 'mechanical_wolf') {
+
+      return !!Game.hasFlag('gu_yan_stole_god_power');
+
+    }
+
+    return false;
+
+  }
+
+Game.canWolfKingRetaliate = function (causeOfDeath) {
+
+    if (causeOfDeath === 'curse') return false;
+
+    return true; // 闂佺绻戝﹢鍦垝閿熻姤鎱ㄥ┑濠忔嫹閸欏顦梺鎸庣☉閻楀棝宕伴崨鏉戞婵＄偟銆嬮幏閿嬫媴閸濄儲鎮欑紓浣疯兌閸嬬喖鎮洪幋锔芥櫖濠㈣泛锕ョ紞鍡涙煕濞嗘瑦瀚归梺鍛婄懕锟??
+
+  }
+
+Game.resetGodSkillsDaily = function () {
+
+    var g = ensureState();
+
+    g.godSkills.knight.weakened = false;
+
+  }
+
+Game.resetGodSkillsLoop = function () {
+
+    var g = ensureState();
+
+    g.godSkills.witch = { uses: 0, maxUses: 3, broken: false, hasReviveTarget: null, curses: [], actedTonight: false };
+
+    g.godSkills.knight = { duelsUsed: 0, weakened: false, lastTarget: null };
+
+    g.godSkills.prophet = { checks: [], exposed: false, sharedWith: {} };
+
+  }
+})();
+
+
+/*
+ * vote.js - Wolf team voting system: score targets + decide night kill
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+
+  var WOLF_IDS = ['zhou_yang', 'tang_xiaotang', 'zhao_mingcheng', 'gu_yan'];
+  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+
+  // Scoring weights for wolf target selection
+  var WEIGHTS = {
+    threat: 2.0,
+    isolation: 1.5,
+    trust_chenmo: -1.0,
+    ability: 1.0,
+    info: 1.2
+  };
+
+  // Score a potential target for a wolf (higher = more likely to kill)
+  Game.scoreTarget = function (charId) {
+    var g = ensureState();
+    if (!g.alive[charId]) return -1;
+    if (WOLF_IDS.indexOf(charId) !== -1) return -1;
+    if (charId === 'chen_mo') return -1; // protagonist protected
+
+    var role = Game.roleOf(charId);
+    var profile = GameState.PROFILES[charId] || {};
+
+    var score = 10;
+
+    // Threat score: gods are high threat
+    var threatScore = 3;
+    if (['prophet', 'witch', 'knight', 'magician'].indexOf(role) !== -1) {
+      threatScore = 7;
+    }
+    // Chen Mo with loop memory is dangerous
+    if (charId === 'chen_mo' && Game.hasFlag('loop_awakened')) {
+      threatScore = 8;
+    }
+    // Exposed roles are known threats
+    if (Game.hasRevealed(charId, 'witch_exposed') || Game.hasRevealed(charId, 'identity_exposed')) {
+      threatScore += 3;
+    }
+    score += threatScore * WEIGHTS.threat;
+
+    // Isolation score: targets that are isolated are easier kills
+    var isolationScore = 0;
+    if (charId === 'fang_heng' && Game.hasRevealed(charId, 'identity_exposed')) {
+      isolationScore += 4;
+    }
+    if (charId === 'lin_xiaoman' && Game.knightWeakened()) {
+      isolationScore += 4;
+    }
+    if (charId === 'ye_zhiqiu' && Game.witchBroken()) {
+      isolationScore += 3;
+    }
+    score += isolationScore * WEIGHTS.isolation;
+
+    // Trust score: if Chen Mo trusts someone, wolves want them dead
+    var trustKey = 'trust_' + charId;
+    var trustVal = g.stats[trustKey] || 0;
+    var trustScore = trustVal / 10;
+    if (charId === 'su_wan' || charId === 'jiang_bai') {
+      trustScore = 7;
+    }
+    score += trustScore * WEIGHTS.trust_chenmo;
+
+    score += (profile.ability || 3) * WEIGHTS.ability;
+
+    // Info score: characters with backstory clues are info-rich targets
+    var infoScore = 3;
+    var backstoryClue = GameState.BACKSTORY_KEYS[charId];
+    if (backstoryClue && Game.hasClue(backstoryClue)) {
+      infoScore += 2;
+    }
+    score += infoScore * WEIGHTS.info;
+
+    // Random variance
+    score *= (0.85 + Math.random() * 0.3);
+
+    return Math.round(score);
+  };
+
+  // Main wolf voting: each wolf independently votes, majority wins
+  Game.getWolfTarget = function () {
+    var g = ensureState();
+    var candidates = [];
+
+    Object.keys(g.alive).forEach(function (charId) {
+      if (!g.alive[charId]) return;
+      if (WOLF_IDS.indexOf(charId) !== -1) return;
+      if (charId === 'chen_mo') return;
+      candidates.push(charId);
+    });
+
+    if (candidates.length === 0) return null;
+
+    // Day 1: wolves don't know identities, random kill
+    if (g.day === 1) {
+      return candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    var votes = {};
+    candidates.forEach(function (c) { votes[c] = 0; });
+
+    var aliveWolves = WOLF_IDS.filter(function (w) { return g.alive[w]; });
+
+    aliveWolves.forEach(function (wolfId) {
+      var eligible = candidates.slice();
+
+      // Some wolves protect certain characters
+      var protectedSet = [];
+      if (wolfId === 'tang_xiaotang') {
+        protectedSet = ['lin_xiaoman', 'chen_mo'];
+      }
+      if (wolfId === 'gu_yan' && !Game.hasMechWolfPower()) {
+        protectedSet = ['fang_heng', 'ye_zhiqiu'];
+      }
+
+      eligible = eligible.filter(function (c) { return protectedSet.indexOf(c) === -1; });
+      if (eligible.length === 0) eligible = candidates;
+
+      // Wolf-specific preferences
+      var preferences = {};
+      if (wolfId === 'tang_xiaotang') {
+        preferences['su_wan'] = 3;
+        preferences['ye_zhiqiu'] = 1;
+      } else if (wolfId === 'gu_yan') {
+        preferences['zheng_shoushan'] = 2;
+        preferences['jiang_bai'] = 1;
+        preferences['su_wan'] = 1;
+      } else if (wolfId === 'zhao_mingcheng') {
+        preferences['zheng_shoushan'] = 3;
+        preferences['fang_heng'] = 2;
+      } else if (wolfId === 'zhou_yang') {
+        preferences['lin_xiaoman'] = 3;
+        preferences['fang_heng'] = 2;
+        preferences['shen_shen'] = 1;
+      }
+
+      // Boost preference for exposed roles
+      candidates.forEach(function (cid) {
+        if (Game.hasRevealed(cid, 'witch_exposed') || Game.hasRevealed(cid, 'identity_exposed')) {
+          preferences[cid] = (preferences[cid] || 0) + 3;
+        }
+      });
+
+      // Weighted random vote
+      var weighted = [];
+      eligible.forEach(function (cid) {
+        var base = preferences[cid] || 0;
+        var weight = 1 + base * 2 + Math.random() * 3;
+        weighted.push({ id: cid, weight: weight });
+      });
+
+      var totalWeight = weighted.reduce(function (sum, w) { return sum + w.weight; }, 0);
+      var r = Math.random() * totalWeight;
+      var accum = 0;
+      var vote = weighted[0].id;
+      for (var v = 0; v < weighted.length; v++) {
+        accum += weighted[v].weight;
+        if (r <= accum) { vote = weighted[v].id; break; }
+      }
+
+      votes[vote] = (votes[vote] || 0) + 1;
+    });
+
+    // Find majority vote (ties broken randomly)
+    var maxVotes = 0;
+    var topTargets = [];
+    candidates.forEach(function (cid) {
+      var v = votes[cid] || 0;
+      if (v > maxVotes) {
+        maxVotes = v;
+        topTargets = [cid];
+      } else if (v === maxVotes) {
+        topTargets.push(cid);
+      }
+    });
+
+    // If max votes is 1 (no consensus), it's a safe night
+    if (maxVotes < 2 && aliveWolves.length > 1) return null;
+
+    return topTargets[Math.floor(Math.random() * topTargets.length)];
+  };
+
+})();
+
+:: StoryStylesheet
+:root { --bg-color: #1a1a1d; --panel-color: #242428; --text-color: #e8e6e3; --muted-color: #a8a4a0; --accent-color: #c0392b; --accent-hover: #e74c3c; --link-color: #5dade2; --border-color: #3a3a3e; --danger-color: #e74c3c; --safe-color: #58d68d; --font-body: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-family: var(--font-body); font-size: 16px; line-height: 1.8; -webkit-font-smoothing: antialiased; }
+#ui-bar { background-color: var(--panel-color); border-right: 1px solid var(--border-color); }
+#story { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+#passages { background-color: var(--panel-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+.passage { font-size: 1.05rem; line-height: 1.9; }
+h1 { font-size: 1.8rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.4em; margin-top: 1.5em; margin-bottom: 0.8em; }
+h2 { font-size: 1.4rem; color: var(--muted-color); margin-top: 1.5em; margin-bottom: 0.8em; }
+h3 { font-size: 1.15rem; margin-top: 1.5em; margin-bottom: 0.8em; }
+p { margin: 0 0 1.2em 0; }
+.muted { color: var(--muted-color); }
+.danger { color: var(--danger-color); }
+.safe { color: var(--safe-color); }
+.system-hint { color: var(--muted-color); font-size: 0.9rem; border-left: 3px solid var(--accent-color); padding-left: 1rem; margin: 1.2rem 0; }
+.thought { color: var(--link-color); font-style: italic; }
+a { color: var(--link-color); text-decoration: none; transition: color 0.2s; }
+a:hover { color: var(--accent-hover); }
+.link-button, button, .ui-button { display: inline-block; background-color: var(--accent-color); color: #fff; border: none; border-radius: 4px; padding: 0.75rem 1.2rem; margin: 0.4rem 0.3rem 0.4rem 0; font-size: 1rem; font-family: inherit; cursor: pointer; transition: background-color 0.2s, transform 0.1s; min-width: 120px; text-align: center; }
+.link-button:hover, button:hover, .ui-button:hover { background-color: var(--accent-hover); }
+.link-button:active, button:active, .ui-button:active { transform: translateY(1px); }
+.choice-list { margin-top: 1.5rem; }
+.choice-list .link-button { display: block; width: 100%; text-align: left; margin: 0.5rem 0; }
+.status-panel { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.8rem; margin-bottom: 1rem; font-size: 0.9rem; }
+.status-panel .row { display: flex; justify-content: space-between; margin: 0.3rem 0; }
+.status-label { color: var(--muted-color); }
+.status-value { font-weight: bold; }
+.bar { height: 6px; background-color: var(--border-color); border-radius: 3px; overflow: hidden; margin-top: 0.3rem; }
+.bar-fill { height: 100%; background-color: var(--accent-color); transition: width 0.3s; }
+.bar-fill.safe { background-color: var(--safe-color); }
+.bar-fill.danger { background-color: var(--danger-color); }
+ul, ol { margin: 0 0 1.2em 0; padding-left: 1.5em; }
+blockquote { border-left: 3px solid var(--link-color); margin: 1.2rem 0; padding: 0.5rem 1rem; background-color: rgba(93,173,226,0.08); font-style: italic; }
+hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+@media (max-width: 600px) { html, body { font-size: 15px; } #story { padding: 0.5rem 0.5rem 3rem; } #passages { padding: 1rem; border-radius: 0; border-left: none; border-right: none; } .passage { font-size: 1rem; line-height: 1.85; } h1 { font-size: 1.5rem; } .link-button, button, .ui-button { width: 100%; margin: 0.4rem 0; padding: 0.85rem 1rem; } }
+@media (min-width: 1024px) { #story { max-width: 800px; padding-top: 2rem; } .passage { font-size: 1.1rem; } }
+.ending-page { text-align: center; padding: 2rem 1rem; }
+.ending-page h1 { font-size: 2rem; border-bottom: none; }
+.ending-good { color: var(--safe-color); }
+.ending-bad { color: var(--danger-color); }
+.ending-hidden { color: var(--link-color); }
+
+.ending-true { color: #f4d03f; text-shadow: 0 0 10px rgba(244,208,63,0.3); }
+.location-list p { padding: 0.4rem 0; border-bottom: 1px solid var(--border-color); }
+.location-list p:last-child { border-bottom: none; }
+
+.zone-list h3 { font-size: 1.1rem; color: var(--accent-color); margin-top: 1.2rem; margin-bottom: 0.3rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3rem; }
+.zone-list h3:first-child { margin-top: 0; }
+
+.warning { color: #f39c12; }
+.danger { color: var(--danger-color); font-weight: bold; }
+
+
+:: Chapter01_Cellar
+<<run Game.addClue('cellar_door')>>
+<<run Game.addClue('cellar_blood')>>
+<<run Game.visit()>>
+<h2>Day 1 · 地下酒窖</h2>
+<p>午后，你借口去找水，独自来到地下酒窖。</p>
+<p>那扇铁门还在。门上的红漆像血一样刺眼。</p>
+<p class="thought">陈默（内心）：“天黑请闭眼”……这不只是山庄的规矩，这是某种仪式。</p>
+<p>你转身时，看见周阳站在楼梯口。</p>
+<blockquote>周阳：“你一个人跑下来，不怕出事？”<br>陈默：“你呢？”<br>周阳：（笑了一下，露出虎牙）“我闻到了。”</blockquote>
+<p>他没有解释闻到了什么，转身离开。</p>
+<p class="system-hint">你获得了线索：地下酒窖铁门、酒窖血腥味。你注意到周阳行迹可疑。</p>
+<p>[[回到大厅|Chapter01_Evening]]</p>
+
+
+
+:: Chapter01_CheckExit
+<<run Game.addClue('locked_doors')>>
+<<run Game.visit()>>
+<p>你决定先确认自己能不能离开这里。</p>
+<p>一层的大门被积雪封死，门缝已经结冰。你用力推了推，纹丝不动。窗户也是——不是玻璃的问题，是窗外堆了三米厚的雪，连光线都变得惨白。</p>
+<p>你绕到厨房后门，发现同样的情况。山庄像被埋进了一个白色的棺材。</p>
+<p>地下酒窖的门虚掩着。你走下去，在深处看见一扇铁门，门上用红漆写着：</p>
+<blockquote><strong>“天黑请闭眼。”</strong></blockquote>
+<p>门没有锁，但推不开。门缝里渗出凉意，还有……很淡的血腥味。</p>
+<p class="system-hint">你获得了线索：门窗被封死、地下酒窖铁门、酒窖血腥味。</p>
+<p>[[回到大厅|Chapter01_Hall]]</p>
+
+
+
+
+:: Chapter01_ComfortSuWan
+<<run Game.changeTrust('suwan', 15)>>
+<<run Game.setFlag('comforted_suwan')>>
+<<run Game.visit()>>
+<p>你走到苏晚身边。她脸色苍白，但还在努力保持镇定。</p>
+<p>“你还好吗？”你问。</p>
+<p>她点点头，又摇摇头：“我没事……只是这些人里，我只信任你。”</p>
+<p>你握住她的手。她没有挣脱。</p>
+<p class="system-hint">苏晚信任度 +15。</p>
+<p>[[一起回到大厅|Chapter01_Hall]]</p>
+
+
+
+
+:: Chapter01_Evening
+<<set $game.time to '19:00'>>
+<<run Game.addClue('jiangbai_scar')>>
+<<run Game.addClue('fang_temperature')>>
+<<run Game.addClue('zhouyang_pocket')>>
+<<run Game.visit()>>
+<h2>Day 1 · 傍晚</h2>
+<p>19:00，老郑宣布山庄的发电机只能撑到 22:00，之后全山庄停电。</p>
+<p>苏晚给每个人做简单体检。她说方衡的体温偏低，但没有外伤；林小满一直在轻微发抖；江白的右手腕有一道旧疤，他说是车祸时被玻璃划的。</p>
+<p>你注意到江白的旧疤很整齐，不像玻璃划伤。</p>
+<p>沈慎始终坐在壁炉边的阴影里，像一尊石像。只有唐小棠给他递水时，他才微微点头。</p>
+<p>顾言凑过来，压低声音：“你不觉得奇怪吗？方衡体温低，江白有刀疤，周阳口袋里不知道藏着什么——我们中间肯定有人在撒谎。”</p>
+<p class="thought">陈默（内心）：像刀伤。或者……像某种仪式留下的痕迹。</p>
+<p class="system-hint">你获得了线索：江白的旧疤、方衡的低温、周阳的口袋。</p>
+<p>[[等待夜晚降临|Chapter01_NightReturn]]</p>
+
+
+
+
+:: Chapter01_FoodConflict
+<<run Game.visit()>>
+<h2>Day 1 · 食物之争</h2>
+<p>老郑从厨房找出少量罐头和干粮。按人头分，只够两天。</p>
+<p>周阳一把按住老郑的手：“凭什么你分配？你说是导游就是导游？这破山庄是你的，谁知道你是不是把我们骗来关在这里？”</p>
+<p>江白站出来：“现在内讧死得更快。”</p>
+<p>周阳冷笑：“哟，英雄救美啊？你算老几？”</p>
+<p>眼看要动手，你必须做出选择：</p>
+<div class="choice-list">
+[[支持江白，稳定局面|Chapter01_FoodSupportChen]]
+[[支持周阳，质疑老郑|Chapter01_FoodSupportZhou]]
+[[提议平分并记录|Chapter01_FoodEqual]]
+</div>
+
+
+
+
+:: Chapter01_FoodEqual
+<<run Game.changeTrust('suwan', 5)>>
+<<run Game.changeTrust('shen', 5)>>
+<<run Game.setFlag('food_equal_split')>>
+<<run Game.addItem('bread', 1)>>
+<<run Game.visit()>>
+<p>你举手打断他们：“不如所有人平分，每份都称重、记录。这样谁都别想多拿，也别想栽赃。”</p>
+<p>苏晚点点头：“我同意。”方衡也附和：“公平是最低成本的信任。”</p>
+<p>周阳哼了一声，但没再反对。</p>
+<p class="system-hint">苏晚、方衡信任度 +5。你获得了一份干粮。</p>
+<p>[[继续|Chapter01_Cellar]]</p>
+
+
+
+
+:: Chapter01_FoodSupportChen
+<<run Game.changeTrust('chenmo', 10)>>
+<<run Game.setFlag('food_supported_chen')>>
+<<run Game.addItem('bread', 1)>>
+<<run Game.visit()>>
+<p>你站到江白身边：“江白说得对。现在互相猜疑，只会让所有人死得更快。”</p>
+<p>周阳盯着你看了几秒，最终松开老郑的手，但眼神里的敌意没有消失。</p>
+<p>江白低声对你说：“谢了。”</p>
+<p class="system-hint">江白信任度 +10。你获得了一份干粮。</p>
+<p>[[继续|Chapter01_Cellar]]</p>
+
+
+
+
+:: Chapter01_FoodSupportZhou
+<<run Game.changeTrust('zhou_ye', 10)>>
+<<run Game.changeTrust('laozhou', -10)>>
+<<run Game.setFlag('food_supported_zhou')>>
+<<run Game.visit()>>
+<p>你站到周阳身边：“老郑，你确实该解释一下。这山庄是你的，规则也是你说的，我们凭什么信你？”</p>
+<p>老郑沉默地看了你很久，最后把罐头放下：“你们自己分。我不管了。”</p>
+<p>周阳拍了拍你的肩膀，力道很大：“聪明。”</p>
+<p class="system-hint">周阳信任度 +10，老郑信任度 -10。</p>
+<p>[[继续|Chapter01_Cellar]]</p>
+
+
+
+
+:: Chapter01_Hall
+<<set $game.time to '09:17'>>
+<<run Game.setFlag('met_everyone')>>
+<<run Game.visit()>>
+<h2>Day 1 · 大厅</h2>
+<p>十二个人围坐在壁炉周围。火是老郑生的，柴不多，他说只够烧两天。</p>
+<p>所有人都到齐了。沈慎坐在最远的角落，一言不发；叶知秋低头转着手中的杯子；顾言捧着一杯水，眼神在每个人脸上扫来扫去；赵明城站在阴影里，手指敲击着门框；唐小棠紧紧挽着林小满的手臂，小声说“会没事的”。</p>
+<p>周阳第一个打破沉默：“我们得派人出去找路。不能坐在这儿等死。”</p>
+<p>方衡摇头：“雪崩之后，徒步下山等于自杀。现在的气温，三十分钟就会失温。”</p>
+<p>林小满举起手机：“我的手机……显示没有信号，但是电量一直没有掉。你们看——”</p>
+<p>她把屏幕转向众人。电量：100%，已经显示“被困第三天 09:17”。</p>
+<p>江白盯着屏幕看了很久，低声说：“……我们昏迷了两天？”</p>
+<p>没有人回答。</p>
+<p>苏晚靠近你，小声说：“你脸色很差，是不是头还疼？”</p>
+<p class="thought">陈默（内心）：我头疼不是因为车祸。是因为……有什么东西在告诉我，时间不多了。</p>
+<p class="system-hint">系统提示：你感到一种不协调。壁炉的火焰没有倒影，所有人的影子都偏移了大约三厘米。方衡在看江白时，眼神停顿了 0.5 秒。周阳的右手始终插在口袋里，握成拳。</p>
+<p>[[继续|Chapter01_FoodConflict]]</p>
+
+
+
+:: Chapter01_LaoZhouDeath
+<<set $game.day to 2>>
+<<set $game.time to '06:00'>>
+<<run Game.kill('zheng_shoushan')>>
+<<run Game.setFlag('SAW_LAOZHENG_DIE')>>
+<<run Game.changeSan(-10)>>
+<<run Game.addMemory('第一轮第 2 天，老郑被杀了。脖子被撕开，没有搏斗痕迹。')>>
+<<run Game.visit()>>
+<h2>Day 2 · 06:00 · 第一具尸体</h2>
+<p>你被尖叫声惊醒。</p>
+<p>冲出门，你看见林小满跌坐在二楼走廊上，手指着斜对面的房间。</p>
+<p>房门大开。</p>
+<p>老郑倒在血泊里。脖子被撕开，血已经凝固成黑色。房间里没有搏斗痕迹，窗户从内部锁死。</p>
+<blockquote>苏晚：（跪下来检查）“死了……至少六个小时。也就是说，昨晚 23:00 到 24:00 之间。”<br>周阳：“也就是说，我们之中有人杀了他。”</blockquote>
+<p>没有人反驳。</p>
+<p>方衡慢慢说：“门窗都锁着。凶手要么有钥匙，要么……根本不需要出去。”</p>
+<p>江白站在人群最后，右手无意识地按住手腕上的旧疤。</p>
+<p>唐小棠死死捂住嘴，眼泪流下来。林小满抱住她，两个人一起发抖。</p>
+<p class="system-hint">老郑死亡。理智 -10。你获得了记忆碎片。</p>
+<p>[[新的一天|Chapter02_Start]]</p>
+
+
+
+:: Chapter01_NightReturn
+<<set $game.time to '23:00'>>
+<<run Game.addClue('old_guests')>>
+<<run Game.visit()>>
+<h2>Day 1 · 23:00</h2>
+<p>钟声不知从何处响起。不是电子音，是那种老式的、齿轮咬合的钟声。</p>
+<p>老郑催促所有人回房。他说这是“规矩”。</p>
+<blockquote>老郑：“在这里过夜，最好别出门。之前的客人……都死在走廊上。”<br>周阳：“之前的客人？这山庄以前死过人？”<br>老郑：（不回答，转身上楼）</blockquote>
+<p>老郑在关大门前低声说：“23:00 后，房间就是安全屋。门锁好，狼一晚也只能强闯一间。能不能活到明天，看你们自己的运气。”</p>
+<p>十二个人各自回房。你听见走廊里脚步声渐渐消失，然后是门锁咔哒咔哒的声音。</p>
+<p>你躺在床上，盯着天花板上那张“闭眼的人脸”。</p>
+<p>不知过了多久，你听见走廊尽头传来一声闷响。像有什么重物倒在了地上。</p>
+<p class="system-hint">你获得了线索：之前的客人。</p>
+<p>[[入睡|Chapter01_LaoZhouDeath]]</p>
+
+
+
+:: Chapter01_QuestionLaoZhou
+<<run Game.setFlag('questioned_laozhou')>>
+<<run Game.changeTrust('zheng_shoushan', -10)>>
+<<run Game.visit()>>
+<p>你径直走向老郑：“你知道这里发生了什么。为什么要我们 23:00 回房？这山庄以前是不是死过人？”</p>
+<p>老郑那只独眼盯着你，很久才说：“年轻人，知道得太多，死得也快。”</p>
+<p>周阳在旁边冷笑：“看来看守大爷确实藏着东西。”</p>
+<p class="system-hint">老郑信任度 -10。你获得了标记：追问老郑。</p>
+<p>[[回到大厅|Chapter01_Hall]]</p>
+
+
+
+
+:: Chapter01_Start
+<<set $game.chapter to 1>>
+<<set $game.day to 1>>
+<<set $game.time to '06:00'>>
+<<run Game.addClue('phone_battery')>>
+<<run Game.visit()>>
+<h2>Day 1 · 醒来</h2>
+<p>窗外是铅灰色的雪幕。风像钝刀，一下下刮着玻璃。</p>
+<p>陈默睁开眼。天花板有水渍，形状像一张闭眼的人脸。他眨了眨眼，水渍没有变化。</p>
+<p class="thought">陈默（内心）：……这是哪儿？</p>
+<p>他坐起身，太阳穴突突地跳。记忆里最后的画面是大巴在盘山公路上打滑，苏晚的手紧紧抓住他的手腕，然后是侧翻、黑暗。</p>
+<p>床头柜上有一行字，像是用指甲或者刀尖刻在木头上的：</p>
+<blockquote><strong>“23:00 前，必须回到房间。”</strong></blockquote>
+<p>他翻身下床，在房间里找到六个人：苏晚、江白、周阳、林小满、方衡、老郑。他们和他一样，都不记得怎么来到这里的，只记得车祸。</p>
+<p>不对，还有五个人。角落里坐着沉默的沈慎；叶知秋捧着一杯热水，指尖始终扣着杯沿；顾言在翻看一本笔记；赵明城靠在门边一言不发；而林小满身边，还挽着一个笑盈盈的女孩——唐小棠。</p>
+<p>老郑说，这是“落雁山庄”，建在山坳里，只有一条盘山公路通向外界。现在雪崩封路，电话线断，手机没信号。</p>
+<p class="system-hint">你获得了线索：手机电量异常。林小满的手机显示被困第三天，电量却一直是 100%。</p>
+<div class="choice-list">
+[[检查山庄结构|Chapter01_CheckExit]]
+[[先安抚苏晚|Chapter01_ComfortSuWan]]
+[[追问老郑|Chapter01_QuestionLaoZhou]]
+</div>
+
+
+
+:: Chapter01_WolfMeeting
+<<set $game.time to '00:00'>>
+<<run Game.setFlag('wolf_meeting_seen')>>
+
+<h2>Day 1 · 子夜 · 共享噩梦</h2>
+
+<p>雪落在眼睛里，不冷，只是很重。</p>
+
+<p>周阳最先“醒”来。他站在一片白茫茫的山脊上，风里有血的味道。右手握着什么，低头看，是一枚狼爪，从自己掌心里长出来的。</p>
+
+<p class="thought">周阳：这是梦吧？</p>
+
+<p>可梦不会这么清晰。他能感到牙变长了，能感到胸腔里有一种声音在咆哮：杀死他们。杀死那些自以为是的人。</p>
+
+<p>不远处，有三个人影。</p>
+
+<p>唐小棠站在那里，瑟瑟发抖。她的影子被月光钉在地上，形状不是人，而是一只蜷缩的狼崽。她看向周阳，眼神里没有惊讶，只有一种认命的恐惧。</p>
+
+<p>赵明城站在她身侧，手里把玩着一柄骨刀。他脚下的雪地正在融化，露出下面黑色的泥土。仿佛他走过的地方，什么痕迹都不会留下。</p>
+
+<p>顾言背对着他们，仰头看着月亮。他的影子在雪地上分裂成好几个，其中有一个，比他自己还要高大。</p>
+
+<p>周阳明白了。不是梦。是某种东西把“狼”从十二个人里挑了出来，让他们在第一个夜里彼此相认。</p>
+
+<p>他没有问“我们是谁”。答案在四人的呼吸里。</p>
+
+<p>他也没有问“那些神职有什么能力”。系统没有告诉他们这个。他们只知道——另外八个人里，有四个和他们一样被“选中”了，只是阵营相反。而那些人此刻正睡在楼下的房间里，一无所知。</p>
+
+<p>风停了。雪地上出现了一行脚印，通向山庄。不是他们中任何一个人留下的。</p>
+
+<p>那是留给他们的路。</p>
+
+<div class="choice-list">
+[[从噩梦中醒来|Chapter02_Start]]
+</div>
+
+
+:: Chapter02_AloneChen
+<<run Game.changeTrust('chenmo', 5)>>
+<<run Game.setFlag('chen_zhou_confront')>>
+<<run Game.visit()>>
+<p>你假装答应周阳，却在出发前悄悄叫上了江白。</p>
+<p>配电室里，周阳看见江白时脸色变了。</p>
+<blockquote>周阳：“你耍我？”<br>陈默：“我怕你耍我。”</blockquote>
+<p>江白没说话，只是把手按在右手腕的旧疤上。周阳盯着那个动作，最终退了一步。</p>
+<p class="system-hint">江白信任度 +5。你察觉到江白的旧疤对周阳有威慑力。</p>
+<p>[[夜晚降临|Chapter02_NightReturn]]</p>
+
+
+
+:: Chapter02_AloneNo
+<<run Game.changeTrust('zhou_ye', -5)>>
+<<run Game.setFlag('refused_zhou')>>
+<<run Game.visit()>>
+<p>你摇摇头：“有什么话在这里说。我不想单独跟你走。”</p>
+<p>周阳眯起眼睛：“你在怕我？”</p>
+<p>“我在防你。”你说。</p>
+<p>他冷笑一声，没再坚持。</p>
+<p class="system-hint">周阳信任度 -5。你拒绝了独处。</p>
+<p>[[夜晚降临|Chapter02_NightReturn]]</p>
+
+
+
+
+:: Chapter02_AloneTrap
+<<set $game.time to '14:00'>>
+<<run Game.visit()>>
+<h2>Day 2 · 独处陷阱</h2>
+<p>周阳主动找到你，提议两人一起去检查配电室。</p>
+<blockquote>周阳：“那个姓陈的有点怪。我想单独跟你聊聊。”</blockquote>
+<p>你记得上一周目他在酒窖说过的话：“我闻到了。”</p>
+<p>现在他要和你独处。这是危险的，但也可能是获取情报的机会。</p>
+<div class="choice-list">
+[[答应独处，试探周阳|Chapter02_AloneYes]]
+[[拒绝，坚持三人同行|Chapter02_AloneNo]]
+[[假装答应，实际把江白也叫上|Chapter02_AloneChen]]
+</div>
+
+
+
+
+:: Chapter02_AloneYes
+<<run Game.changeTrust('zhou_ye', 5)>>
+<<run Game.addClue('wolf_knife')>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<p>你点点头：“好。但去配电室之前，我想先看看你口袋里是什么。”</p>
+<p>周阳的表情僵了一瞬，然后慢慢把手从口袋里拿出来。</p>
+<p>那是一把折叠刀，刃口有暗红色的痕迹。</p>
+<blockquote>周阳：“……防身用的。你信吗？”</blockquote>
+<p>你没有回答。你们对视了很久，然后他转身离开。</p>
+<p class="system-hint">周阳信任度 +5。你发现了狼爪刀。理智 -5。</p>
+<p>[[夜晚降临|Chapter02_NightReturn]]</p>
+
+
+
+
+:: Chapter02_Hall
+<<set $game.time to '09:17'>>
+<<run Game.visit()>>
+<h2>Day 2 · 利用信息差</h2>
+<p>大厅里的场景和上一周目几乎一模一样。壁炉的火，林小满的手机，周阳的质问。</p>
+<p>但你现在是唯一知道未来的人。</p>
+<p>你走到老郑面前：“地下酒窖最深处，那扇铁门后面是什么？”</p>
+<p>老郑的脸色骤变：“你……你怎么知道那里？”</p>
+<p>“我猜的。”你说，“你刚才提到酒窖时，眼神在看地板。”</p>
+<p>老郑沉默了很久，最后说：</p>
+<blockquote>老郑：“那扇门后面，是以前的主人用来……‘祭祀’的地方。不要进去。也不要让任何人进去。”</blockquote>
+<p class="system-hint">你获得了新情报：铁门后是祭祀空间。</p>
+<p>[[继续观察众人|Chapter02_Observations]]</p>
+
+
+
+:: Chapter02_NightReturn
+<<set $game.time to '23:00'>>
+<<run Game.visit()>>
+<h2>Day 2 · 23:00</h2>
+<p>钟声再次响起。</p>
+<p class="system-hint">安全屋规则已生效：狼人每晚只能强闯一间房。</p>
+<p>十二个人各自回房。你锁好门，把椅子抵在门后。</p>
+<p>今晚和上周目不一样。你知道的更多了，但也更害怕了。</p>
+<p>你盯着天花板，等待黎明的到来。</p>
+<p>[[06:00|Chapter02_SanCost]]</p>
+
+
+
+:: Chapter02_Notebook
+<<run Game.addItem('notebook')>>
+<<run Game.visit()>>
+<p>你回到房间，在笔记本上写下上一周目的所有细节：人物关系、老郑的死、周阳的可疑、江白的旧疤、地下酒窖的铁门。</p>
+<p>然后你在笔记本最后一页写下一句话——</p>
+<blockquote><strong>“如果明天的我读到这句话，说明循环是真的。不要相信任何人。包括我。”</strong></blockquote>
+<p>你把笔记本塞进床垫下。</p>
+<p class="system-hint">你获得了道具：笔记本。这是跨轮回保存情报的关键。</p>
+<p>[[去大厅利用信息差|Chapter02_Hall]]</p>
+
+
+
+
+:: Chapter02_Observations
+<<run Game.setFlag('zhou_suspicious')>>
+<<run Game.setFlag('tang_suspicious')>>
+<<run Game.visit()>>
+<h2>Day 2 · 观察</h2>
+<p>你不再像上周目那样被动。你开始观察每一个人。</p>
+<p>周阳的右手还是插在口袋里。但你现在注意到，唐小棠也会不时看向那个方向——不是看周阳，是看他的口袋。</p>
+<p>沈慎坐在角落，目光扫过每个人的脖子。那种目光不像审视，像……在确认要害。</p>
+<p>顾言在纸上写写画画，嘴里念念有词：“神职、村民、狼、信仰……”</p>
+<p class="thought">陈默（内心）：不止一头狼。这个山庄里，至少有两个人在夜里杀人。</p>
+<p class="system-hint">你标记了周阳和唐小棠为可疑对象。</p>
+<p>[[午后，周阳来找你|Chapter02_AloneTrap]]</p>
+
+
+
+
+:: Chapter02_Outcome
+<<run Game.visit()>>
+<h2>Day 3 · 结果</h2>
+<<if Game.hasFlag('chen_zhou_confront')>>
+<p>清晨的走廊很安静。</p>
+<p>你推开门，发现周阳倒在配电室门口。脖子上有和江白旧疤一样的痕迹。</p>
+<p>江白站在不远处，脸色苍白。他看了你一眼，什么也没说。</p>
+<p>周阳死了——一头狼被提前清除。但江白也暴露了自己与众不同。</p>
+<p class="system-hint">周阳死亡。江白身份暴露，村民信仰链开始松动。</p>
+<<run Game.kill('zhou_yang')>>
+<<run Game.setFlag('chen_exposed')>>
+<<elseif Game.hasFlag('refused_zhou')>>
+<p>尖叫声来自二楼。</p>
+<p>顾言死在房间里。眼睛睁得很大，像是看见了什么不可置信的东西。</p>
+<p>苏晚检查后说：窒息，没有外伤。但门是从内部锁死的。</p>
+<p class="system-hint">顾言死亡。你的拒绝独处没有阻止杀戮，只是让周阳换了目标。</p>
+<<run Game.kill('gu_yan')>>
+<<else>>
+<p>走廊里没有异常。</p>
+<p>你推开每一扇门检查，所有人都还活着——包括老郑。</p>
+<p>但你知道，这只是暂时的。狼还在，只是昨晚没有找到机会。</p>
+<p class="system-hint">无人死亡。但你已经让周阳察觉到你的怀疑。</p>
+<</if>>
+<p>[[继续|Chapter03_Start]]</p>
+
+
+
+:: Chapter02_SanCost
+<<set $game.time to '06:00'>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<h2>Day 3 · 06:00 · 记忆的代价</h2>
+<p>你醒来时，头疼得像要裂开。</p>
+<p>太多画面同时涌进来：老郑倒在血泊里，苏晚在哭，江白手腕上的旧疤在发光，唐小棠笑着挽着林小满的手臂。</p>
+<blockquote>系统音（幻觉/真实？）：“记忆过多……理智值下降。”</blockquote>
+<p>你看到墙角站着一个人。是上一周目的老郑。他对你摇头，说：“别再看下去了。”</p>
+<p>你眨眨眼，老郑消失了。但你闻到了血腥味。</p>
+<p class="system-hint">理智 -5。你开始意识到，无限记忆不是免费的能力。</p>
+<p>[[查看昨晚的结果|Chapter02_Outcome]]</p>
+
+
+
+
+:: Chapter02_Start
+<<set $game.day to 2>>
+<<set $game.time to '06:00'>>
+<<run Game.setFlag('loop_awakened')>>
+<<run Game.changeSan(-5)>>
+<<run Game.addMemory('我记得。老郑会死。这一切我已经经历过一次。')>>
+<<run Game.visit()>>
+<h2>Day 2 · 循环觉醒</h2>
+<p>陈默睁开眼。</p>
+<p>天花板的水渍，形状像一张闭眼的人脸。</p>
+<p>床头柜上刻着那行字：</p>
+<blockquote><strong>“23:00 前，必须回到房间。”</strong></blockquote>
+<p>他猛地坐起来，心跳得像要从喉咙里跳出来。</p>
+<p>窗外还是那一场雪。时间显示：被困第三天 06:17。</p>
+<p>但这不是最可怕的。最可怕的是——他记得。他记得老郑会死。记得周阳在酒窖说的话。记得江白手腕上的疤。</p>
+<p>他冲出门，正好撞见苏晚。</p>
+<blockquote>苏晚：“你脸色好差，做噩梦了？”<br>陈默：（抓住她的肩膀）“老郑呢？”<br>苏晚：“老郑？他在楼下生火啊。你怎么了？”</blockquote>
+<p>陈默松开她，慢慢退后一步。</p>
+<p class="thought">陈默（内心）：……老郑还活着。这不是梦。这一周，我已经经历过一次。</p>
+<p class="system-hint">你觉醒了无限记忆能力。当前为第 <<print $game.loop>> 轮轮回，第 <<print $game.day>> 天。你可以利用上一周目的情报改变事件。</p>
+<p>[[回到房间记录情报|Chapter02_Notebook]]</p>
+<<if $game.loop > 1>>
+<p class="system-hint">一个噩梦的碎片在记忆里闪回……</p>
+<p>[[狼人的第一夜|Chapter01_WolfMeeting]]</p>
+<</if>>
+
+
+
+
+:: Chapter03_06_Framework
+<<set $game.day to 7>>
+<<set $game.time to '06:00'>>
+<<run Game.visit()>>
+<h2>Day 7 · 终局</h2>
+<<if Game.hasClue("cellar_door") and Game.hasClue("altar_inscription") and Game.hasClue("god_kill_method")>>
+<p>最后一个早晨。阳光终于穿破了雪幕——深金色的光从窗缝里漏进来，像是某种征兆。</p>
+<p>你知道该做什么了。你已经收集到了足够的线索：铁门后的祭坛、祭坛上的铭文、弑神的方法。</p>
+<p>轮回的终点就在今天。</p>
+<<run Game.checkBreakingReady()>>
+<<if $game.flags.breaking_ready>>
+<p class="system-hint">你已经准备好打破轮回。真结局路线已解锁。</p>
+<</if>>
+<<else>>
+<p>第七天。阳光从窗外照进来——但你心里清楚，这不是希望。</p>
+<p>你还缺少关键的线索。轮回不会被打破。你只能在这有限的选择中，找到最好的结局。</p>
+<</if>>
+<p>幸存者们在楼下等着你。你站在房门口，深吸一口气，然后推开了门。</p>
+<div class="choice-list">
+<<if Game.canReachTrueEnding()>>
+[[收集所有破局线索——走向真结局|Chapter07_True]]
+<</if>>
+<<if Game.hasClue("ritual_tablet") and Game.hasClue("cellar_door") and Game.san() > 30>>
+[[用祭坛之力逃出山庄|Chapter07_Good]]
+<</if>>
+<<if Game.san() < 20 and Game.hasFlag("knows_god_kill")>>
+[[以弑神者的身份，面对最终抉择|Chapter07_Hidden]]
+<</if>>
+[[在饥饿和绝望中等待结局|Chapter07_Bad]]
+</div>
+
+:: Chapter03_Cellar
+<<set $game.time to '10:15'>>
+<<run Game.setFlag('visited_cellar')>>
+<<run Game.visit()>>
+<h2>Day 3 · 地下酒窖</h2>
+<p>你趁大家不注意，溜进了地下酒窖。</p>
+<p>楼梯很陡，光线越来越暗。空气又冷又潮，带着霉味和一种说不清的金属味——像血。</p>
+<p>酒窖不大。几个空木架，几瓶落满灰的红酒。但最里面有一扇铁门，门上没有把手，只有一个凹槽——像是需要某种特定形状的钥匙才能打开。</p>
+<p>你蹲下来检查铁门的底部。门缝里塞着一张纸，已经发黄发脆：</p>
+<blockquote><em>"他们不会让人出去的。不要相信导游。第三天开始，他们就会换人。"</em></blockquote>
+<<run Game.addClue("cellar_door")>>
+<<run Game.addItem("old_note")>>
+<p class="system-hint">发现线索：铁门暗号。凹槽形状很特殊，你记下了轮廓。</p>
+<p class="system-hint">获得道具：发黄的纸条。</p>
+<p>突然，楼梯口传来脚步声。</p>
+<p>你来不及多想，闪身躲在酒架后面。</p>
+<p>来人是老郑。他手里提着一盏煤油灯，站在铁门前，沉默了很久。</p>
+<p>然后他低声说了一句话，声音很轻，但你听得很清楚——</p>
+<p>"对不起，上回我也没能活着出去。"</p>
+<p>他转身离开。脚步声消失后，你才从酒架后走出来。</p>
+<p class="thought">陈默（内心）：老郑记得？还是他只是在自言自语？不对……他说"上回"。</p>
+<div class="choice-list">
+[[追上去质问老郑|Chapter03_Cellar_Question]]
+[[继续探索酒窖|Explore_Cellar]]
+[[回到大厅|Chapter03_NightReturn]]
+</div>
+
+:: Chapter03_Cellar_Question
+<<run Game.visit()>>
+<h2>Day 3 · 追上去</h2>
+<p>你从酒架后闪出来，快步跟上老郑。</p>
+<p>"老郑。"</p>
+<p>他停住了，没有回头。</p>
+<p>"你刚才说'上一轮'。上一轮什么？"</p>
+<p>老郑沉默了很久。走廊里只有煤油灯的噼啪声。</p>
+<p>他终于转过身，那只独眼在昏暗的光线里闪着浑浊的光："你听到了？"</p>
+<p>"听到了。"</p>
+<p>他盯着你看了很久，然后缓缓说："有些话，说出来会死人的。我不说是为了保护你。"</p>
+<p>"你不说，我才会死。"</p>
+<p>老郑闭了一下眼："今晚 23:00 前来找我。记住，别让第三个人知道。"</p>
+<p>他转身走了，这次没有停下。</p>
+<<run Game.setFlag('laozheng_promise_night')>>
+<<run Game.addClue('laozheng_survivor')>>
+<p class="system-hint">老郑承诺今晚告诉你真相。线索更新：老郑可能是上一轮轮回的幸存者。</p>
+<div class="choice-list">
+[[回到大厅|Chapter03_NightReturn]]
+</div>
+
+:: Chapter03_FangHeng
+<<set $game.time to '10:30'>>
+<<run Game.setFlag('talked_fangheng_day3')>>
+<<run Game.visit()>>
+<h2>Day 3 · 与方衡对话</h2>
+<p>你找到方衡时，他正在二楼的阳台上抽烟。雪屑落在他肩上，他没有掸掉。</p>
+<p>"你来了。"他说，没有回头。"你观察其他人有一段时间了。有什么结论？"</p>
+<p>你注意到他用的词是"观察"——不是警察常用的词。</p>
+<p class="thought">陈默（内心）：他的反应像是早就预料到我会来找他。</p>
+<p>方衡弹了一下烟灰："我在想一个问题——如果有人想杀我们，为什么还要留我们三天？"</p>
+<p>"什么意思？"</p>
+<p>"第一天晚上有人死了。第二天也有人死了。但凶手明明可以在第一晚就把所有人杀光。他在等什么？"</p>
+<p>他把烟掐灭在栏杆上，转过身来："或者——他在等某个人死。只有那个人死了，他才能做下一件事。"</p>
+<<run Game.addClue("fang_heng_theory")>>
+<p class="system-hint">方衡的观点让你意识到：狼的杀戮可能有特定目标顺序，而非随机。</p>
+<div class="choice-list">
+[[问他怀疑谁|Chapter03_FangHeng_Suspect]]
+[[说自己也觉得奇怪|Chapter03_FangHeng_Agree]]
+</div>
+
+:: Chapter03_FangHeng_Agree
+<<run Game.visit()>>
+<p>"我也觉得不对。"你说，"如果他真想杀我们，没必要等三天。"</p>
+<p>方衡点了点头："你很敏锐。这很好。在这种地方，迟钝的人活不长。"</p>
+<p>他收起烟盒，像是结束了对话："晚上注意安全。如果发现什么不对的——不要声张，先来找我。"</p>
+<<run Game.changeTrust('fang_heng', 8)>>
+<p class="system-hint">方衡信任度 +8。他似乎把你当成了可以合作的对象。</p>
+<div class="choice-list">
+[[回到大厅|Chapter03_NightReturn]]
+</div>
+
+:: Chapter03_FangHeng_Suspect
+<<run Game.visit()>>
+<p>"你怀疑谁？"你问。</p>
+<p>方衡没有立刻回答。他重新点了一根烟，火光映在他脸上，表情晦暗。</p>
+<p>"老郑。他太熟悉这里了。一个退休导游，对山庄的地形比自己的家还熟。而且他总在回避一些问题。"</p>
+<p>你想起老郑在酒窖里的自言自语。"还有呢？"</p>
+<p>"顾言。他看人的方式不对。不是观察，是……估价。"</p>
+<p>方衡看着你："你问我的看法，这就是我的看法。"</p>
+<<run Game.setFlag('fangheng_suspects_laozheng')>>
+<<run Game.changeTrust('fang_heng', 5)>>
+<p class="system-hint">方衡信任度 +5。他怀疑老郑和顾言。</p>
+<div class="choice-list">
+[[回到大厅|Chapter03_NightReturn]]
+</div>
+
+:: Chapter03_Hall
+<<set $game.time to '08:30'>>
+<<run Game.visit()>>
+<h2>Day 3 · 大厅</h2>
+<p>所有人都在。壁炉的火烧得很旺——老郑加了他珍藏的最后几块木柴。</p>
+<p>苏晚端着热水走过来，在你身边坐下："昨晚睡得好吗？"</p>
+<p>她的眼神里有担忧。你注意到她眼下有淡淡的青色。</p>
+<p>方衡站在窗边，看着灰白色的雪幕："雪还在下。没有停的迹象。"</p>
+<p>老郑蹲在壁炉前，火钳拨弄着木柴："发电机只够撑到今晚十点。之后……全黑。"</p>
+<p>这句话让所有人沉默了。</p>
+<p>林小满握住唐小棠的手，低声说："我们可以点蜡烛。"</p>
+<p>唐小棠怯怯地看了你一眼，又低下头。</p>
+<p>周阳靠墙站着，双手插在口袋里："那就趁还有电，把能做的事都做了。谁跟我去检查发电机？"</p>
+<p>赵明城皱眉："你不应该单独行动。谁陪他一起去？"</p>
+<<if Game.isAlive("gu_yan")>>
+<p>顾言抬头："我跟你去。我对机械结构还算了解。"</p>
+<</if>>
+<p class="system-hint">第三天的关键选择：今天你要主动调查什么？</p>
+<div class="choice-list">
+[[去地下酒窖调查铁门|Chapter03_Cellar]]
+[[找方衡私下聊聊|Chapter03_FangHeng]]
+[[找沈慎坐在角落|Chapter03_ShenShen]]
+</div>
+
+:: Chapter03_NightReturn
+<<set $game.time to '21:00'>>
+<<run Game.visit()>>
+<h2>Day 3 · 入夜</h2>
+<p>天色已经完全暗下来。发电机发出一声沉闷的轰鸣，然后停了——整个山庄陷入黑暗。</p>
+<p>蜡烛被点亮。每个人的脸在火光中忽明忽暗。</p>
+<p>老郑站在楼梯口，像一尊雕像："23:00 前，所有人必须回房。"</p>
+<p>苏晚靠近你，小声说："今天调查到什么了吗？"</p>
+<<if Game.hasFlag('visited_cellar')>>
+<p>你想告诉她酒窖里的事，但走廊上人多耳杂。你只是轻轻握了一下她的手。</p>
+<</if>>
+<<if Game.hasClue('fang_heng_theory')>>
+<p>方衡的观点在你脑海里回响——"他在等某个人死。"</p>
+<</if>>
+<p>你回到房间，关上门。门外是黑暗、风声和不知名的响动。</p>
+<p>你躺在床上，听着自己的心跳。</p>
+<p class="system-hint">第 3 天结束。你获得了新的线索和情报。明天的调查方向取决于你今天的选择。</p>
+<div class="choice-list">
+[[等待夜晚过去|Chapter04_Start]]
+</div>
+
+:: Chapter03_ShenShen
+<<set $game.time to '11:00'>>
+<<run Game.visit()>>
+<h2>Day 3 · 与沈慎对话</h2>
+<p>沈慎坐在大厅壁炉最远的角落，手里拿着一张皱巴巴的扑克牌——红桃 Q。</p>
+<p>你在他旁边坐下。他没有看你，只是反复翻转那张牌。</p>
+<p>"你紧张的时候会玩牌？"你问。</p>
+<p>"不。我想事情的时候需要手上有东西。"他把红桃 Q 插进袖口，再抽出来时变成了黑桃 3。"变戏法。小时候学的。"</p>
+<p>你没有笑。他也不像是开玩笑。</p>
+<p>"昨晚你睡得好吗？"你问了一个安全的问题。</p>
+<p>沈慎终于看了你一眼。他的眼睛很沉，像是见过很多事情："你确定你睡得好？"</p>
+<p>这句话让你后背一凉。他是什么意思——他知道你记得昨天的事？</p>
+<p class="thought">陈默（内心）：他在试探我。还是他真的知道什么？</p>
+<<run Game.setFlag('talked_shenshen_day3')>>
+<<run Game.changeTrust('shen_shen', 3)>>
+<p class="system-hint">沈慎似乎话中有话，但你没有足够的依据追问。</p>
+<div class="choice-list">
+[[追问他的话|Chapter03_ShenShen_Probe]]
+[[结束对话，回到大厅|Chapter03_NightReturn]]
+</div>
+
+:: Chapter03_ShenShen_Probe
+<<run Game.visit()>>
+<p>"你刚才那句话是什么意思？什么叫'你确定你睡得好'？"你压低声音。</p>
+<p>沈慎看着你，很久没有说话。壁炉的火光在他脸上跳动，让他看起来像一尊蜡像。</p>
+<p>"你听过'双重曝光'吗？"他说。</p>
+<p>"摄影术语。"</p>
+<p>"对。两张底片叠在一起，变成一张照片。分不清哪张是真的，哪张是后来的。"他把扑克牌收回口袋，"我现在看所有人，都是双重曝光的。"</p>
+<p>他站起身，拍拍裤子："注意安全。"</p>
+<p>然后他就走了，留你一个人坐在壁炉前。</p>
+<<run Game.addClue('shenshen_identity')>>
+<p class="system-hint">沈慎的暗示：他也能感知到"重复"——他可能知道你处于循环中。或者，他有类似的能力。</p>
+<div class="choice-list">
+[[回到大厅|Chapter03_NightReturn]]
+</div>
+
+:: Chapter03_Start
+<<set $game.day to 3>>
+<<set $game.time to '06:00'>>
+<<run Game.addMemory('这是第 ' + $game.loop + ' 轮的第 3 天。我开始习惯这种重复。')>>
+<<run Game.visit()>>
+<h2>Day 3 · 习惯的深渊</h2>
+<<if Game.hasFlag('chen_zhou_confront')>>
+<p>周阳死了。</p>
+<p>你站在走廊上，脚边是配电室的地砖缝隙。老郑蹲在尸体旁边，表情复杂。</p>
+<p>苏晚轻声说："脖子上的伤……和江白手腕上那道疤痕，是同一种手法。"</p>
+<p>江白站在人群外围，右手无意识地按住手腕。他对上你的目光，摇了摇头——不是否认，是"别现在说"。</p>
+<p class="thought">陈默（内心）：江白有问题。但问题不一定是"狼"。也许这件事比我想象的更复杂。</p>
+<<elseif Game.hasFlag('refused_zhou')>>
+<p>顾言死了。</p>
+<p>他的尸体躺在床上，眼睛睁着。没有外伤，没有血迹。房间从内部反锁。</p>
+<p>方衡检查了整个房间，说："只有一种可能——凶手在门锁上做了手脚，或者……凶手进来的时候，顾言主动开的门。"</p>
+<p>赵明城站在走廊尽头，一言不发地看着你们。</p>
+<p class="thought">陈默（内心）：顾言死了。周阳还活着。这局的走向变了。</p>
+<<else>>
+<p>清晨的走廊很安静。</p>
+<p>你推开门——没有尸体，没有血迹。</p>
+<p>所有人都活着。老郑在楼下生火，苏晚在厨房煮水，江白在帮忙劈柴。</p>
+<p>但你知道，这种平静不会持续太久。狼只是还没找到机会。</p>
+<p class="thought">陈默（内心）：暴风雨前的宁静。这种等待比死人更让人焦虑。</p>
+<</if>>
+<p>[[去大厅集合|Chapter03_Hall]]</p>
+
+:: Chapter04_GuYan
+<<set $game.time to '11:00'>>
+<<run Game.visit()>>
+<h2>Day 4 · 顾言</h2>
+<p>顾言坐在餐桌前，面前的物理笔记上用铅笔画满了复杂的示意图。你坐下来时他猛地合上笔记。</p>
+<p>"抱歉。"他说，"习惯了。资料不能给别人看。"</p>
+<p>"你在研究什么？"</p>
+<p>他犹豫了一下，然后翻开笔记的一页——上面画的是山庄的结构图。</p>
+<p>"我在试图算出这座山庄的对称性。如果它是按照某种特定比例建造的——比如黄金分割——那可能存在隐藏空间。"</p>
+<p>他指着图纸上一个区域："你看这里。走廊的长度和房间的宽度不匹配。差了大约两米。这意味着——"</p>
+<p>"有夹层。"你说。</p>
+<p>他愣了一下："你学建筑的？"</p>
+<p>"计算机的。但对结构逻辑也懂一点。"</p>
+<p>顾言露出今天第一个笑容："那我们可能找到了合作的基础。"</p>
+<<run Game.addClue("hidden_floor")>>
+<<run Game.changeTrust('gu_yan', 5)>>
+<p class="system-hint">顾言的理论：山庄可能存在隐藏夹层。顾言信任度 +5。</p>
+<div class="choice-list">
+[[继续聊他的学术背景|Chapter04_GuYan_Academia]]
+[[问他为什么来山庄|Chapter04_GuYan_Motive]]
+</div>
+
+:: Chapter04_GuYan_Academia
+<<run Game.visit()>>
+<p>"你说你是物理学的博士？"</p>
+<p>顾言点头："理学院，理论物理。研究弦理论的。"他自嘲地笑了笑，"用不上。在学术界，弦理论博士找不到教职。我的师兄抢了我的课题，我退出了。"</p>
+<p>他说这句话的时候语气很平静，但你注意到他握笔的手指发白了。</p>
+<p>"所以你来山庄旅游？"</p>
+<p>"散心。结果散到这里来了。"</p>
+<<run Game.setFlag('gu_yan_academic')>>
+<p class="system-hint">顾言的背景：学术竞争失败者，来山庄散心。</p>
+<div class="choice-list">
+[[回大厅|Chapter04_NightReturn]]
+</div>
+
+:: Chapter04_GuYan_Motive
+<<run Game.visit()>>
+<p>"你怎么会报名这个旅行团的？"你问。</p>
+<p>顾言沉默了一会儿："一个朋友推荐的。说落雁山庄很安静，适合思考。"</p>
+<p>"朋友是谁？"</p>
+<p>"……赵明城。"</p>
+<p>他说出这个名字后，自己也愣了一下，像是没打算说。</p>
+<p>"你认识赵明城？"</p>
+<p>"不熟。他是我导师的一位投资人。偶尔在学术酒会上见过。"顾言揉了揉太阳穴，"我不知道他也在这趟车上。来了之后才发现。"</p>
+<<run Game.addClue("zhao_invited_gu")>>
+<p class="system-hint">重要线索：赵明城介绍顾言来山庄。这是巧合，还是刻意安排？</p>
+<div class="choice-list">
+[[回大厅|Chapter04_NightReturn]]
+</div>
+
+:: Chapter04_Hall
+<<set $game.time to '09:00'>>
+<<run Game.visit()>>
+<h2>Day 4 · 裂痕</h2>
+<p>大厅里，所有人都在。但气氛明显不对。</p>
+<p>苏晚正在给林小满包扎手腕——她今早不小心打碎了一个杯子，划伤了手。</p>
+<p>赵明城站在窗边，语气冷淡："我们已经损失了人。如果大家还是各自为战，下一个死的可能就是在座的任何一个人。"</p>
+<p>周阳嗤笑一声："你倒是说得冠冕堂皇。昨天晚上你在哪儿？"</p>
+<p>赵明城眯起眼："我的房间。你呢？"</p>
+<p>"我也在房间。但我没听到你房间里有任何声音。"</p>
+<p>"因为我睡着了。"</p>
+<p>两个人之间的张力几乎肉眼可见。</p>
+<p>方衡介入："够了。互相猜忌解决不了问题。我们需要搞清楚凶手是怎么做到的。"</p>
+<p>唐小棠突然小声说："我昨晚……看到有人上了三楼。"</p>
+<p>所有人的目光转向她。她缩了缩脖子："我不确定是谁。走廊太暗了。但那个时间已经过了 23:00。"</p>
+<<run Game.addClue("tang_saw_3f")>>
+<p class="system-hint">唐小棠声称昨晚 23:00 后看到有人上三楼。这可能是线索，也可能是误导。</p>
+<div class="choice-list">
+[[问唐小棠更多细节|Chapter04_TangXiaotang]]
+[[找周阳单独谈谈|Chapter04_ZhouYang]]
+[[找顾言聊聊|Chapter04_GuYan]]
+</div>
+
+:: Chapter04_NightReturn
+<<set $game.time to '21:00'>>
+<<run Game.visit()>>
+<h2>Day 4 · 入夜</h2>
+<p>发电机彻底罢工了。整个山庄只剩下壁炉和蜡烛的光。</p>
+<p>晚餐是一人半块面包和一小碗稀粥。老郑说这是最后的补给。</p>
+<p>苏晚盛粥的时候，多给了你半勺。赵明城看见了，没说话。</p>
+<p>林小满和唐小棠缩在壁炉边取暖。林小满的手一直握着唐小棠的，像是怕她跑掉。</p>
+<p>方衡坐在暗处，目光在赵明城和周阳之间来回扫视。</p>
+<p>沈慎不知道什么时候消失了。没有人知道他去了哪里。</p>
+<p class="thought">陈默（内心）：第四天。食物的尽头也是信任的尽头。</p>
+<p>你回到房间。今晚的月光特别亮，透过窗帘的缝隙在地板上投下一道苍白的线。</p>
+<p>你没有锁门。</p>
+<p class="system-hint">第 4 天结束。你已经积累了不少线索，但关键连接还没出现。</p>
+<div class="choice-list">
+[[等待夜晚过去|Chapter05_Start]]
+</div>
+
+:: Chapter04_Start
+<<set $game.day to 4>>
+<<set $game.time to '06:00'>>
+<<run Game.visit()>>
+<h2>Day 4 · 尸体与裂痕</h2>
+<p>你醒来的第一件事是数人。</p>
+<<if Game.isAlive("zheng_shoushan")>>
+<p>老郑还活着。在厨房生火。你松了一口气——但又觉得不对。为什么狼没杀他？</p>
+<</if>>
+<<if Game.isAlive("gu_yan")>>
+<p>顾言坐在餐桌前，面前摊着一本翻烂的物理笔记。他看起来一宿没睡。</p>
+<</if>>
+<<if not Game.isAlive("zheng_shoushan")>>
+<p>老郑死了。尸体是在地下酒窖门口被发现的——和你上一轮看到的情形几乎一模一样。</p>
+<p>方衡蹲在尸体旁边，抬起头看了你一眼："你知道他会死？"</p>
+<p>你不知道怎么回答。</p>
+<<run Game.kill("zheng_shoushan")>>
+<</if>>
+<p>林小满面色苍白地走过来："昨晚……我听到走廊上有声音。像是拖东西的声音。"</p>
+<p>唐小棠紧紧拉着她的衣袖，瑟瑟发抖。</p>
+<p>大厅的气氛比昨天更凝重。食物已经不多了，老郑昨天说过，粮食最多撑到第五天。</p>
+<p>江白走到你身边，低声说："今天有什么计划？"</p>
+<div class="choice-list">
+[[去大厅看看情况|Chapter04_Hall]]
+</div>
+
+:: Chapter04_TangXiaotang
+<<set $game.time to '09:20'>>
+<<run Game.visit()>>
+<h2>Day 4 · 唐小棠</h2>
+<p>你把唐小棠叫到走廊拐角。她一直低着头，手指绞着衣角。</p>
+<p>"你说昨晚看到有人上三楼？"</p>
+<p>她点点头，小声说："我……睡不着。听到楼梯有声音，就从门缝看了一眼。有个人影上了三楼。"</p>
+<p>"你看清是谁了吗？"</p>
+<p>"没有。但身高——不像林小满，也不像苏晚姐。"她犹豫了一下，"也不像你。"</p>
+<p>你注意到她说"不像你"的时候，语气有一点……失望？</p>
+<p>她又补充道："那个人走路很轻。像是故意不让人听到。"</p>
+<<run Game.setFlag('talked_tangxiaotang_day4')>>
+<p class="system-hint">唐小棠提供的信息：身高判断排除林小满、苏晚、你；行走轻盈，可能是练过的人。</p>
+<div class="choice-list">
+[[继续问她对其他人的看法|Chapter04_TangXiaotang_Opinion]]
+[[结束对话|Chapter04_NightReturn]]
+</div>
+
+:: Chapter04_TangXiaotang_Opinion
+<<run Game.visit()>>
+<p>"你觉得这些人里，谁最可疑？"你问。</p>
+<p>唐小棠咬着嘴唇想了一会儿："林小满说，老郑对山庄太了解了，像一个在这里住了很久的人。顾言看人的眼神让人不舒服。还有——"</p>
+<p>她压低声音："赵明城。他总在观察所有人，但从来不发表意见。好像他在等什么。"</p>
+<p>你点点头。这些信息你大部分已经知道，但从唐小棠嘴里说出来，说明她的观察力比表面看起来强。</p>
+<p>她抬起头看着你，眼睛里有种说不清的情绪："学长……你也要小心。"</p>
+<p>她叫的是"学长"。</p>
+<<run Game.changeTrust('tang_xiaotang', 5)>>
+<p class="system-hint">唐小棠信任度 +5。她似乎对你格外信任。</p>
+<div class="choice-list">
+[[结束对话|Chapter04_NightReturn]]
+</div>
+
+:: Chapter04_ZhouYang
+<<set $game.time to '10:00'>>
+<<run Game.visit()>>
+<h2>Day 4 · 周阳</h2>
+<p>你在器械室找到周阳。他正在做俯卧撑，看起来完全不像被困在山庄里等死的人。</p>
+<p>"是你啊。"他翻身站起来，擦了擦汗，"有事？"</p>
+<p>他的态度比昨天客气了一点，但眼神里始终带着一种审视。</p>
+<p>"昨晚你在哪儿？"你开门见山。</p>
+<p>周阳笑了："房间。一个人的房间。没有证人。"他摊了摊手，"我知道你想说什么——赵明城也说他一个人在房间。但我们两个总有一个在撒谎。"</p>
+<p>"你觉得是谁？"</p>
+<p>"我不知道。但我知道一件事——"他凑近一步，压低声音，"赵明城和方衡认识。他们假装不认识，但我看到他们交换过眼神。那种眼神不是陌生人该有的。"</p>
+<<run Game.addClue("fang_and_zhao_known")>>
+<p class="system-hint">周阳提供的情报：方衡和赵明城可能认识。这对陈默来说是新信息。</p>
+<<run Game.changeTrust('zhou_yang', 3)>>
+<div class="choice-list">
+[[进一步追问周阳|Chapter04_ZhouYang_Probe]]
+[[结束对话|Chapter04_NightReturn]]
+</div>
+
+:: Chapter04_ZhouYang_Probe
+<<run Game.visit()>>
+<p>"你怎么看到他们交换眼神的？"你追问。</p>
+<p>周阳耸了耸肩："第一天晚上吃饭的时候。方衡说了一句'这汤咸了'，然后看了赵明城一眼。赵明城微不可察地点了一下头。"</p>
+<p>"就因为这个？"</p>
+<p>"就因为这个。但你仔细想想——两个陌生人，为什么会因为一句'汤咸了'需要交换眼神？"</p>
+<p>他说得有道理。</p>
+<p>周阳拍了拍你的肩膀："小心点，兄弟。这场游戏里，每个人都有秘密。"</p>
+<p>他转身继续做俯卧撑，结束了这场对话。</p>
+<<run Game.setFlag('probed_zhouyang')>>
+<div class="choice-list">
+[[回到大厅|Chapter04_NightReturn]]
+</div>
+
+:: Chapter05_Hall
+<<set $game.time to '08:30'>>
+<<run Game.visit()>>
+<h2>Day 5 · 饥饿与恐惧</h2>
+<p>大厅里只剩下七个人。</p>
+<p>方衡站在壁炉前，正在和赵明城低声交谈。看到你进来，他们同时停止了说话。</p>
+<p>周阳靠在墙上，表情比昨天阴沉。他面前放着一张纸条，不知道是谁塞给他的。</p>
+<p>林小满握着唐小棠的手坐在角落。唐小棠在哭。</p>
+<p>沈慎今天破天荒地坐在了壁炉边，而不是角落。他面前摆着一副扑克牌——但不是用来玩的，他在用牌搭一座塔。</p>
+<p>苏晚走到你身边，压低声音："沈慎今天不太对劲。他一直在自言自语。"</p>
+<p>你注意到沈慎的嘴唇的确在动。但声音太小，听不清他在说什么。</p>
+<p>方衡清了清嗓子："我有个提议。今天我们需要决定一件事——要不要派人下山求助。"</p>
+<p>赵明城摇头："雪崩之后下山等于自杀。"</p>
+<p>方衡反问："那在这里等死就是选择？"</p>
+<p>周阳突然开口："我去。"</p>
+<p>所有人都看向他。</p>
+<p>"我说，我去。反正留在这里也是等死。不如赌一把。"</p>
+<<run Game.setFlag('day5_mountain_proposal')>>
+<div class="choice-list">
+[[支持周阳下山|Chapter05_Support_Zhou]]
+[[反对，建议继续搜查山庄|Chapter05_Hall_Search]]
+[[找叶知秋聊聊|Chapter05_YeZhiqiu]]
+</div>
+
+:: Chapter05_Hall_Search
+<<run Game.visit()>>
+<p>"下山太危险了。"你说，"我们还没搜查完整个山庄。地下酒窖的铁门后面可能藏着出口，或者至少是通讯设备。"</p>
+<p>周阳不说话了。他转身踢了一脚墙壁，发出沉闷的响声。</p>
+<p>方衡沉吟片刻："他说得有道理。我们在往外跑之前，应该先弄清楚这座山庄到底藏着什么。"</p>
+<p>赵明城冷冷地补了一句："如果真有东西的话。"</p>
+<<run Game.setFlag('search_remaining')>>
+<p class="system-hint">你成功说服大家继续搜查山庄。铁门和隐藏夹层成为今天的重点。</p>
+<div class="choice-list">
+[[找林小满一起去搜索|Chapter05_LinXiaoman]]
+[[找赵明城调查他那边的线索|Chapter05_ZhaoMingcheng]]
+</div>
+
+:: Chapter05_LinXiaoman
+<<set $game.time to '11:00'>>
+<<run Game.visit()>>
+<h2>Day 5 · 林小满</h2>
+<p>林小满正在二楼走廊里来回踱步，像是憋了一肚子话没人说。</p>
+<p>看到你过来，她快步迎上："你来得正好。我发现了点东西。"</p>
+<p>她带你来到走廊尽头的一扇门前。门上有一个铜制的徽章，雕刻着一条衔尾蛇。</p>
+<p>"我昨天就想打开这扇门。但锁很特殊——不是普通的门锁，是需要密码的那种。"</p>
+<p>她蹲下来指着锁芯："你看这里。数字只有 0 到 5，没有 6-9。是六进制密码。"</p>
+<p>你有些意外："你懂这个？"</p>
+<p>"画画的人对数位敏感。"她笑了笑，"线条、比例、排列方式——都是一回事。"</p>
+<<run Game.addClue("six_digit_lock")>>
+<p class="system-hint">发现六进制密码锁，位于二楼走廊尽头的神秘房间。</p>
+<div class="choice-list">
+[[尝试破解密码|Chapter05_LinXiaoman_Puzzle]]
+[[先回大厅|Chapter05_NightReturn]]
+</div>
+
+:: Chapter05_LinXiaoman_Puzzle
+<<run Game.visit()>>
+<p>你蹲下来检查锁芯。六位数密码，每位 0-5。</p>
+<p>林小满说："我试了几个组合——000000、123456（六进制的话是 123450）、还有这座山庄被发现的时间——都不对。"</p>
+<p>你想起老郑说过的一句话："这山庄建于 1972 年。"</p>
+<p>"试试 1972 转换成六进制。"</p>
+<p>林小满快速算了一下："……13132。但这是五位数。"</p>
+<p>你沉默了几秒。然后想起铁门上的凹槽形状——那个你记下的轮廓。</p>
+<p>你把轮廓比划给林小满看。她盯着看了很久，眼睛亮了一下："这是数字 0-5 的手写体变形。"她用手指在空中画了一个图形，"看——如果把 3 和 1 连在一起——041032。"</p>
+<p>她按下密码。</p>
+<p>锁发出一声清脆的"咔哒"。</p>
+<<run Game.setFlag('mystery_room_opened')>>
+<<run Game.addClue('mystery_room')>>
+<p class="system-hint">密码正确！门缓缓打开——你要进去吗？</p>
+<div class="choice-list">
+[[推开门进去探索|Explore_Study]]
+[[先退后，叫更多人过来|Chapter05_NightReturn]]
+</div>
+
+:: Chapter05_NightReturn
+<<set $game.time to '21:00'>>
+<<run Game.visit()>>
+<h2>Day 5 · 入夜</h2>
+<<if Game.hasFlag('zhou_jiang_downhill')>>
+<p>周阳和江白没有回来。</p>
+<p>天已经黑了三个小时。你站在大厅门口，看着门外漆黑的雪地。</p>
+<p>没有人说话。沉默比风声更沉重。</p>
+<p>方衡第一个开口："他们不会回来了。至少今夜不会。"</p>
+<p>苏晚紧紧地握着你的手。她的手指冰凉。</p>
+<</if>>
+<<if Game.hasFlag('mystery_room_opened')>>
+<p>那扇门背后的房间在你记忆中留下了深刻的印记——书架上摆满了关于"仪式"和"献祭"的旧书。桌上有一本日志，最后一页写着一行字：</p>
+<p>"他们不会永远沉默。当第一个人死去，轮回就已经开始了。"</p>
+<p>你把日志藏进口袋。</p>
+<<run Game.addItem("ritual_log")>>
+<<run Game.addClue("ritual_tablet")>>
+<</if>>
+<<if not Game.hasFlag('zhou_jiang_downhill') and not Game.hasFlag('mystery_room_opened')>>
+<p>今天没有新的死亡。但饥饿在每个人脸上刻下了痕迹。</p>
+<p>苏晚分完最后一口面包后，林小满小声说了一句让所有人都听见的话："如果明天还没有吃的，我们就得考虑吃别的东西了。"没有人接话。</p>
+<</if>>
+<p>你回到房间。躺在床上，你感到一种奇怪的平静——像是在暴风雪的中心，一切嘈杂都被隔离在外。</p>
+<p class="system-hint">第 5 天结束。你已经接近真相的边缘。</p>
+<div class="choice-list">
+[[等待夜晚过去|Chapter06_Start]]
+</div>
+
+:: Chapter05_Start
+<<set $game.day to 5>>
+<<set $game.time to '06:00'>>
+<<run Game.visit()>>
+<h2>Day 5 · 饥饿与恐惧</h2>
+<p>第五天。</p>
+<p>你醒来时觉得胃在烧。昨晚那半块面包根本撑不住一个成年男人的代谢。</p>
+<p>走廊里弥漫着一股淡淡的烟味——有人昨晚烧了什么东西。</p>
+<p>你推开门，看到苏晚蹲在楼梯口，面前摆着一小堆灰烬。</p>
+<p>"有人烧了一本笔记。"她说，声音很轻，"我把灰收集起来了。上面还有一些残留的字迹。"</p>
+<p>她摊开手掌——灰烬上隐约能看到几个字："……者笔记……别让人看到……"</p>
+<<run Game.addClue("burned_notebook")>>
+<p class="system-hint">烧毁的笔记碎片。可能是谁在销毁证据？</p>
+<p>你走向大厅，发现今天的人比昨天少了。</p>
+<<if Game.isAlive("zheng_shoushan")>>
+<p>老郑不在。你问江白，他说老郑一大早就去地下室了，说要去检查暖气管道。</p>
+<</if>>
+<<if not Game.isAlive("zheng_shoushan")>>
+<p>老郑的位置空着。没有人坐在那里。像是大家都刻意避开那个角落。</p>
+<</if>>
+<<if Game.isAlive("gu_yan")>>
+<p>顾言也不在餐厅。他的房间门开着，被子叠得整整齐齐——比他前一天更整齐。</p>
+<</if>>
+<div class="choice-list">
+[[去大厅看看今天的情况|Chapter05_Hall]]
+</div>
+
+:: Chapter05_Support_Zhou
+<<run Game.visit()>>
+<p>你站出来说："我同意周阳去。但我们不能让他一个人去。至少两个人一组。"</p>
+<p>方衡看着你，眼神里有些意外。赵明城皱了皱眉。</p>
+<p>周阳拍了拍你的肩膀："够意思。"</p>
+<p>最后决定：周阳和江白一组，尝试下山寻找信号。你们约定——如果天黑前他们没有回来，就说明失败了。</p>
+<<run Game.setFlag('zhou_jiang_downhill')>>
+<p class="system-hint">周阳和江白下山求援。他们会在天黑前回来——或者不会。</p>
+<div class="choice-list">
+[[等待|Chapter05_NightReturn]]
+</div>
+
+:: Chapter05_YeZhiqiu
+<<set $game.time to '09:30'>>
+<<run Game.visit()>>
+<h2>Day 5 · 叶知秋</h2>
+<p>叶知秋坐在厨房角落，面前摆着一杯已经凉透的水。她看起来像是三天没睡觉了。</p>
+<p>"你还好吗？"你在她对面坐下。</p>
+<p>她抬起眼。那双眼睛很沉静，和她的手一样——常年与尸体打交道的人，手总是很稳。</p>
+<p>"我是入殓师。"她突然说。你没有问，但她像是终于憋不住了，"我帮死人整理遗容，化妆，穿衣服。让他们体面地走完最后一程。"</p>
+<p>你等着她继续说。</p>
+<p>"我见过很多种死法。但这里的死法不一样。"她端起杯子又放下，"这里的死法……太快了。像是被什么力量加速了一样。"</p>
+<p>"什么意思？"</p>
+<p>"老郑……(或者你们昨天死的那个人)的伤口。我检查过。那不是人类能造成的伤口。"她看着你的眼睛，"像是被什么东西撕开的。"</p>
+<<run Game.addClue("ye_supernatural_wound")>>
+<<run Game.setFlag('talked_yezhiqiu_day5')>>
+<p class="system-hint">叶知秋的验尸结论：伤口不是人为造成。这意味着——狼真的是"狼"。</p>
+<div class="choice-list">
+[[追问她关于其他人的看法|Chapter05_YeZhiqiu_Opinion]]
+[[让她多休息|Chapter05_NightReturn]]
+</div>
+
+:: Chapter05_YeZhiqiu_Opinion
+<<run Game.visit()>>
+<p>"你对其他人有什么看法？"</p>
+<p>叶知秋沉默了很久，然后说："那个警察——方衡。他身上有一种我说不清的味道。"</p>
+<p>"什么味道？"</p>
+<p>"不是体味。是……经历。像是他手上沾过比尸体更脏的东西。"</p>
+<p>她的话让你后背发凉。</p>
+<p>"还有那个玩牌的——沈慎。他不像其他人那么怕。他像是早就知道会发生这种事。"她顿了顿，"或者说，他对死亡很熟悉。不是入殓师那种熟悉，是另一种。"</p>
+<<run Game.addClue("ye_opinion_fang_shen")>>
+<div class="choice-list">
+[[让她多休息|Chapter05_NightReturn]]
+</div>
+
+:: Chapter05_ZhaoMingcheng
+<<set $game.time to '11:00'>>
+<<run Game.visit()>>
+<h2>Day 5 · 赵明城</h2>
+<p>赵明城站在三楼阳台的阴影里，抽着一根没有点着的烟。</p>
+<p>"我不抽烟。"他说，像是看穿了你的疑问，"但手里没东西的时候，别人会觉得你在紧张。"</p>
+<p>你开门见山："你认识方衡。"</p>
+<p>赵明城没有否认。他沉默了几秒，然后说："认识。以前办案的时候有过交集。"</p>
+<p>"以前？他不是刑警吗？"</p>
+<p>赵明城笑了一下——那种完全不带温度的笑："刑不刑警的，不过是个身份。重要的是——他和我是同一种人。"</p>
+<p>"什么意思？"</p>
+<p>"我们都擅长让别人以为自己在说实话。"他把那根没有点燃的烟折成两段，"不过，在这个地方，说实话和说谎话的下场是一样的。都会被怀疑。"</p>
+<<run Game.setFlag('talked_zhao_day5')>>
+<<run Game.changeTrust('zhao_mingcheng', 2)>>
+<p class="system-hint">赵明城承认与方衡认识，但回避了具体关系。</p>
+<div class="choice-list">
+[[追问他和方衡的交易|Chapter05_ZhaoMingcheng_Business]]
+[[回大厅|Chapter05_NightReturn]]
+</div>
+
+:: Chapter05_ZhaoMingcheng_Business
+<<run Game.visit()>>
+<p>"你和方衡来山庄，不是为了旅游吧？"</p>
+<p>赵明城看了你很久。然后说："你很聪明。聪明到危险的程度。"</p>
+<p>他走近一步，声音压得很低："我来这里是为了办一件事。方衡是来确保那件事不被别人发现的。"</p>
+<p>"什么事？"</p>
+<p>"交易。这座山庄的前主人……留下了一些东西。方衡和我，各取所需。"</p>
+<p>他没有说具体是什么。但你从他眼神里读到了警告——不要再问了。</p>
+<<run Game.addClue("zhao_fang_deal")>>
+<p class="system-hint">赵明城承认他和方衡来山庄是为了"取东西"。这座山庄的前主人留下了什么？</p>
+<div class="choice-list">
+[[回大厅|Chapter05_NightReturn]]
+</div>
+
+:: Chapter06_Hall
+<<set $game.time to '08:00'>>
+<<run Game.visit()>>
+<h2>Day 6 · 最后的白天</h2>
+<p>大厅里，幸存者围成半圈。壁炉的火已经熄灭了——没有木柴了。</p>
+<p>方衡站在中央，表情比以往任何一天都要严肃："今天是我们最后一个完整的白天。明天就是第七天。如果老郑说的是对的——第七天没有找到出口的话——我们都会死。"</p>
+<p>赵明城说："所以今天必须做决定。要么全部人一起搜一遍整个山庄，不留死角。要么……"</p>
+<p>他顿了一下，目光扫过所有人："要么我们承认，凶手就在我们中间，先解决内部问题，再找出路。"</p>
+<p>此言一出，空气凝固了。</p>
+<p>林小满握紧了拳头："你什么意思？"</p>
+<p>"我的意思是——杀了老郑的人就在这个房间里。杀了顾言的人也在。如果我们不先把凶手揪出来，就算找到出口，也会死在他手上。"</p>
+<<if Game.hasClue("zhao_fang_deal") or Game.hasClue("fang_and_zhao_known")>>
+<p class="thought">陈默（内心）：赵明城想转移视线。他和方衡来山庄另有目的，他比任何人都希望"内部问题"不被人深究。</p>
+<</if>>
+<p>苏晚轻声说："我同意先搜查。但如果凶手混在搜查队里，单独行动的人就是靶子。"</p>
+<div class="choice-list">
+[[主张全体搜查山庄|Chapter06_Observe]]
+[[主张先指认凶手|Chapter06_PrepareRitual]]
+[[独自去地下祭坛|Chapter06_KillGod]]
+</div>
+
+:: Chapter06_KillGod
+<<run Game.visit()>>
+<h2>Day 6 · 弑神</h2>
+<p>你趁所有人争论的时候，一个人溜到了地下祭坛。</p>
+<p>铁门还开着。祭坛上的符文在烛光中像是活过来了一样——它们在呼吸。</p>
+<p>你走近祭坛中央的那本书。你读到了更多内容：</p>
+<blockquote><em>"掌祭者即掌生死。存者若取祭者之位，则轮回终，新神立。"</em></blockquote>
+<<run Game.addClue("god_kill_method")>>
+<<run Game.setFlag("knows_god_kill")>>
+<p class="system-hint">你知道了弑神的方法：取代祭坛的守护者，就能终结轮回。</p>
+<p>但代价是什么？</p>
+<p>你感到有人在看你。</p>
+<p>回头——沈慎站在门口，手里握着一把刀。</p>
+<p>"你也读到了。"他说，声音平静得不像在杀人现场。</p>
+<p>"你一直在跟踪我？"</p>
+<p>"我一直在保护这道门。"他走进来，把刀放在祭坛上，"不是你想象的那样。我不是来杀你的。"</p>
+<p>他看你的眼神里有一种奇怪的……悲伤。</p>
+<p>"因为如果你要弑神，你会需要我的帮助。"</p>
+<<run Game.setFlag("shenshen_offered_help")>>
+<<run Game.changeTrust("shen_shen", 10)>>
+<div class="choice-list">
+[[接受沈慎的帮助|Chapter06_KillGod_Accept]]
+[[拒绝他，独自行动|Chapter06_NightReturn]]
+</div>
+
+:: Chapter06_KillGod_Accept
+<<run Game.visit()>>
+<p>"你有什么计划？"你问。</p>
+<p>沈慎收起刀："明天是第七天。祭坛会在 23:00 完全激活。在那之前，我们需要三样东西——"</p>
+<p>"铁门的钥匙。祭坛的记录。还有一个自愿的祭品。"他顿了顿，"第三样东西，我可以当。"</p>
+<p>你愣住了："你在说什么？"</p>
+<p>"这座祭坛需要'等价交换'。一个生命换一个出口。如果你要终结轮回，就需要有人留在祭坛里，代替旧的神。"</p>
+<p>他的语气像是在陈述天气。</p>
+<<run Game.setFlag("shenshen_sacrifice")>>
+<<run Game.addClue("ritual_tablet")>>
+<p class="system-hint">沈慎愿意成为祭品。如果明天之前收集齐钥匙和记录，就有可能终结轮回。</p>
+<div class="choice-list">
+[[回到大厅|Chapter06_NightReturn]]
+</div>
+
+:: Chapter06_NightReturn
+<<set $game.time to '21:00'>>
+<<run Game.visit()>>
+<h2>Day 6 · 最后一个夜晚</h2>
+<p>发电机早就停了。整个山庄沉浸在纯粹的黑暗中。</p>
+<p>你点了一根蜡烛。烛光是你和黑暗之间的唯一屏障。</p>
+<p>敲门声。</p>
+<p>你打开门——苏晚站在门口，端着一杯热水。"最后一壶热水了。"她说，把杯子递给你。</p>
+<p>你们没有说话，只是并肩坐在床边，看着蜡烛一点点燃烧。</p>
+<p>"明天会怎么样？"她问。</p>
+<p>"我不知道。"你说。</p>
+<p>她侧过头看你。烛光在她眼睛里跳动："不管明天发生什么……我希望你知道，能遇见你，是我的运气。"</p>
+<p>你握住她的手。她的手指冰凉，但她的掌心是热的。</p>
+<p>蜡烛熄灭了。</p>
+<<run Game.setFlag("suwan_farewell")>>
+<p class="system-hint">第 6 天结束。明天是第 7 天——一切都将尘埃落定。</p>
+<div class="choice-list">
+[[面对第七日|Chapter03_06_Framework]]
+</div>
+
+:: Chapter06_Observe
+<<run Game.visit()>>
+<h2>Day 6 · 搜查</h2>
+<p>你主张全体一起搜查。</p>
+<p>方衡同意了。他迅速分组：他自己和林小满搜东翼，赵明城和周阳搜西翼，你、苏晚和沈慎搜地下层。</p>
+<p>唐小棠被留在厨房——她不安全，但如果跟着搜查队，也可能成为目标。</p>
+<p>地下层很暗。沈慎走在最前面，手里举着一根蜡烛。烛光在石壁上投下扭曲的影子。</p>
+<p>苏晚跟在你身后，呼吸急促。</p>
+<p>你找到了地下酒窖的铁门。这一次，你没有回头。</p>
+<p>铁门后面的空间比你想的大得多——是一个完整的祭坛。墙上刻满了古老的符文，地上有干涸的黑色痕迹。</p>
+<p>祭坛中央放着一本打开的书。书页上写着：</p>
+<blockquote><em>"第七日，祭品满，门开。存者出，亡者留。"</em></blockquote>
+<<run Game.addClue("altar_inscription")>>
+<<run Game.setFlag("found_altar")>>
+<p class="system-hint">你发现了祭坛。真相正在浮出水面。</p>
+<div class="choice-list">
+[[回大厅集结|Chapter06_NightReturn]]
+</div>
+
+:: Chapter06_PrepareRitual
+<<run Game.visit()>>
+<h2>Day 6 · 指认</h2>
+<p>你选择先解决内部问题。</p>
+<p>所有人回到大厅。你站在壁炉前，面对着十一张（或更少的）面孔。</p>
+<p>你知道凶手是狼。但你不能直接说"狼"——没有人会相信你。</p>
+<p>你整理了一下已知的线索：</p>
+<ul>
+<<if Game.hasClue("cellar_door")>><li>地下酒窖的铁门——需要特定形状的钥匙</li><</if>>
+<<if Game.hasClue("fang_and_zhao_known")>><li>方衡和赵明城认识——他们来山庄另有目的</li><</if>>
+<<if Game.hasClue("ye_supernatural_wound")>><li>伤口不是人类能造成的——凶器不是普通刀具</li><</if>>
+<<if Game.hasClue("zhao_invited_gu")>><li>赵明城介绍顾言来山庄——这趟旅行可能被精心安排</li><</if>>
+<<if Game.hasClue("hidden_floor")>><li>山庄存在隐藏夹层——有人在暗中行动</li><</if>>
+</ul>
+<<if Game.hasClue("cellar_door") and Game.hasClue("altar_inscription")>>
+<p>你整合了所有信息，得出一个结论——这座山庄是一个祭坛，每七天需要祭品。狼是执行者，神是看守者，村民是祭品。</p>
+<p>但你说出来的时候，没有人相信你。</p>
+<</if>>
+<p>方衡看着你，眼神复杂："你有什么证据？"</p>
+<p>你没有直接证据。只有推测和记忆。</p>
+<p class="thought">陈默（内心）：我需要更多证据。或者……我需要活过今晚，明天才能揭晓真相。</p>
+<<run Game.changeSan(-10)>>
+<p class="system-hint">指认失败。你没有充足的物证支持你的推理。SAN值 -10。</p>
+<div class="choice-list">
+[[回房间整理思路|Chapter06_NightReturn]]
+</div>
+
+:: Chapter06_Start
+<<set $game.day to 6>>
+<<set $game.time to '06:00'>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<h2>Day 6 · 终结将至</h2>
+<p>第六天。最后一个完整的白天。</p>
+<p>你醒来时感觉到嘴里有血腥味——不是受伤，是牙龈因为饥饿开始出血。</p>
+<p>走廊比以往更安静。太安静了。</p>
+<p>你一个房间一个房间地敲门。林小满在。唐小棠在。苏晚在。方衡在。沈慎在。赵明城也在。</p>
+<<if Game.isAlive("zheng_shoushan")>>
+<p>老郑还在。但他看起来比昨天老了十岁。</p>
+<</if>>
+<<if Game.isAlive("gu_yan")>>
+<p>顾言还在。但他的笔记本不见了。</p>
+<</if>>
+<<if Game.isAlive("jiang_bai")>>
+<p>江白还在——如果你选择了搜查而不是下山，他就在这里。</p>
+<</if>>
+<<if not Game.isAlive("jiang_bai")>>
+<p>江白不在。他下山再也没有回来。</p>
+<</if>>
+<<if not Game.isAlive("gu_yan")>>
+<p>顾言不在。他的房间门开着，床铺冰冷。</p>
+<</if>>
+<p>你数了数——还剩九个人。或者八个。或者更少。</p>
+<p>今天是最后的机会。</p>
+<p class="system-hint">第 6 天：最后一个完整的白天。明天就是第 7 天——结局日。</p>
+<div class="choice-list">
+[[去大厅做最后的部署|Chapter06_Hall]]
+</div>
+
+:: Explore_Altar
+<<run Game.visitLocation('altar')>>
+<<run Game.addClue('ritual_tablet')>>
+<<run Game.addClue('recruitment_tablet')>>
+<<run Game.addClue('god_kill_method')>>
+<<run Game.addItem('ritual_dagger')>>
+<<run Game.addItem('mirror_shard')>>
+<<run Game.visit()>>
+<h2>祭祀空间</h2>
+<p>铁门后的空间比想象的更大。石壁上刻满了名字，有些模糊，有些清晰。</p>
+<p>中央有一块倾斜的石碑，刻着规则：</p>
+<blockquote><strong>"七日为一轮。轮末未出神者，循环重置。神死者，其力归弑神者。弑神需以骨刀，于祭祀空间内行之。"</strong></blockquote>
+<p>另一块石碑刻着名单，最下方是你的名字。祭坛上放着一把骨刀，刀刃泛着幽光。祭坛后的镜面完整，但映出的不是你的倒影，而是一个闭着眼的人脸。</p>
+<p class="thought">陈默（内心）：骨刀是弑神的唯一工具。镜子是出口。我终于看清了全部规则。</p>
+<p class="system-hint">你获得了破局线索：规则石碑、招聘碑、弑神之法。道具：祭祀骨刀、镜子碎片。</p>
+<div class="choice-list">
+[[探索地下墓穴|Explore_Crypt]]
+[[返回|Map_Underground]]
+</div>
+
+:: Explore_ArchiveRoom
+<<run Game.visitLocation('archive_room')>>
+<<run Game.addItem('old_photo')>>
+<<run Game.addClue('shenshen_identity')>>
+<<run Game.visit()>>
+<h2>档案室</h2>
+<p>锁着的铁柜被你的旧钥匙打开了。里面是庄园二十年来的文件：账本、住客名单、员工档案。</p>
+<p>员工档案里有一份赌场荷官的入职申请，照片上是沈慎，日期是二十年前。职位一栏写着："祭祀执行人"。</p>
+<p>你还在档案夹里找到一张泛黄的合影。照片上是十二个年轻人，背景就是这座庄园。最后一排左边第三个，长得很像年轻时的老郑。</p>
+<p class="system-hint">你获得了破局线索：沈慎的真身。道具：泛黄照片。</p>
+<div class="choice-list">
+[[返回|Map_Main3F]]
+</div>
+
+:: Explore_Armory
+<<run Game.visitLocation('armory')>>
+<<run Game.addItem('first_aid_kit')>>
+<<run Game.visit()>>
+<h2>杂物间</h2>
+<p>堆满旧家具和旅行箱。其中一个旅行箱的锁已经坏了，打开后里面是一套急救用品：绷带、消毒水、止血带。</p>
+<p>旅行箱的夹层里还有一本日记，字迹和书房里管家信件的笔迹一致。最后一页写着：</p>
+<blockquote>"仪式需要十二个人。必须有一个人觉醒，必须有一个人弑神。否则循环不会结束。"</blockquote>
+<p class="thought">陈默（内心）：十二个人，一个觉醒者，一个弑神者。这就是规则的全部。</p>
+<p class="system-hint">你获得了道具：急救包。你更接近真相了。</p>
+<div class="choice-list">
+[[返回|Map_WestWing]]
+</div>
+
+:: Explore_Attic
+<<run Game.visitLocation('attic')>>
+<<run Game.addItem('old_photo')>>
+<<run Game.addClue('laozheng_survivor')>>
+<<run Game.addItem('bible')>>
+<<run Game.visit()>>
+<h2>阁楼</h2>
+<p>陡峭的楼梯通向布满灰尘的阁楼。木箱里堆着旧物：褪色的衣服、生锈的玩具、一本破旧圣经。</p>
+<p>圣经的扉页写着一行字，墨迹已经发黄：</p>
+<blockquote>"愿主宽恕我幸存者的罪。我只看了，没有救。——郑守山"</blockquote>
+<p>夹在圣经里的是一张泛黄照片，背景是这座庄园，日期是二十年前。照片上最后一排左边第三个人，长得很像年轻时的老郑。</p>
+<p class="thought">陈默（内心）：老郑……他真的是上一轮的幸存者。他知道一切，却一直不说。</p>
+<p class="system-hint">你获得了破局线索：老郑的幸存者身份。道具：破旧圣经、泛黄照片。</p>
+<div class="choice-list">
+[[返回|Map_Main3F]]
+</div>
+
+
+:: Explore_Balcony
+<<run Game.visitLocation('balcony')>>
+<<run Game.addClue('locked_doors')>>
+<<run Game.visit()>>
+<h2>阳台</h2>
+<p>刺骨的风雪扑面而来。你只能短暂停留。</p>
+<p>从阳台俯瞰，庄园被三米厚的积雪完全包围。盘山公路已经看不见了，只剩下白色的荒原。没有救援队，没有车灯，没有任何人类活动的痕迹。</p>
+<p>你注意到中庭花园的尽头有一座小教堂，尖顶上的十字架歪斜着，像是在鞠躬。</p>
+<p class="system-hint">你确认了线索：门窗被封死。庄园与外界完全隔绝。</p>
+<div class="choice-list">
+[[返回|Map_Main2F]]
+</div>
+
+:: Explore_Broadcast
+<<run Game.visitLocation('broadcast_room')>>
+<<run Game.addItem('cassette_tape')>>
+<<run Game.addClue('system_origin')>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<h2>广播室</h2>
+<p>布满灰尘的广播设备。你按下播放键，一段断断续续的独白传出：</p>
+<blockquote>"……系统衰竭了。我们需要新的神。七日一轮，弑神迭代……我就是这么来的。如果你听到这段话，说明我也失败了。别相信任何人，包括你自己……"</blockquote>
+<p>声音沙哑，带着绝望。磁带的最后是一声尖叫，然后是静默。</p>
+<p class="thought">陈默（内心）：说话的人是上一任"神"。他失败了，被取代了。沈慎取代了他，现在轮到我了吗？</p>
+<p class="system-hint">你获得了破局线索：系统的起源。道具：磁带。理智 -5。</p>
+<div class="choice-list">
+[[返回|Map_EastWing]]
+</div>
+
+
+:: Explore_Cellar
+<<run Game.visitLocation('cellar_door')>>
+<<if not Game.hasClue('ritual_tablet')>>
+<<run Game.addClue('cellar_door')>>
+<<run Game.addClue('cellar_blood')>>
+<<run Game.visit()>>
+<h2>地下铁门</h2>
+<p>铁门后的楼梯通向黑暗。空气中弥漫着血腥味和某种古老的气息。</p>
+<p>门上用红漆写着四个字："天黑请闭眼"。</p>
+<p class="thought">陈默（内心）："天黑请闭眼"……这不只是山庄的规矩，这是某种仪式的暗语。</p>
+<p class="system-hint">你获得了线索：地下酒窖铁门、酒窖血腥味。</p>
+<<else>>
+<<run Game.visit()>>
+<h2>地下铁门</h2>
+<p>铁门敞开着。你已经知道门后是什么了。</p>
+<</if>>
+<div class="choice-list">
+<<if Game.hasClue('cellar_door')>>
+[[前往祭祀空间|Explore_Altar]]
+<</if>>
+[[返回|Map_Underground]]
+</div>
+
+
+:: Explore_Chapel
+<<run Game.visitLocation('chapel')>>
+<<run Game.addItem('bible')>>
+<<run Game.addClue('laozheng_survivor')>>
+<<run Game.visit()>>
+<h2>小教堂</h2>
+<p>废弃的家庭礼拜堂。木制长椅歪斜地摆放着，圣坛上的十字架倒了下来。地上散落着撕碎的圣经书页。</p>
+<p>圣坛后方有一本完整的圣经，比散落的页脚更厚。你翻开扉页，上面写着：</p>
+<blockquote>"愿主宽恕我幸存者的罪。我只看了，没有救。——郑守山"</blockquote>
+<p>圣经的夹层里有一张手绘的庄园地图，标注了所有镜子碎片的位置，用红线连成一个完整的镜面轮廓。</p>
+<p class="system-hint">你获得了破局线索：老郑的幸存者身份。道具：破旧圣经（含手绘镜子地图）。</p>
+<div class="choice-list">
+[[返回|Map_Courtyard]]
+</div>
+
+:: Explore_ChildrenRoom
+<<run Game.visitLocation('children_room')>>
+<<run Game.addClue('tangxiaotang_trauma')>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<h2>儿童房</h2>
+<p>积灰的童床，角落里有一只掉了一只眼睛的木马。墙上满是蜡笔涂鸦，大多是歪歪扭扭的房子和人。</p>
+<p>有一面墙的涂鸦与众不同：画的是一个小人缩在角落，旁边站着一个巨大的黑色人影。小人的头上画满了眼泪，黑色人影的手伸得很长很长。</p>
+<p>你在涂鸦下面发现一行字，是用指甲刻在墙上的：</p>
+<blockquote>"他不让我说。但这里没有人会听。"</blockquote>
+<p class="thought">陈默（内心）：这让我想起唐小棠……她幼年被养父虐待的事。这些涂鸦是谁画的？</p>
+<p class="system-hint">你获得了线索：唐小棠的创伤。理智 -5。</p>
+<div class="choice-list">
+[[返回|Map_Main2F]]
+</div>
+
+:: Explore_Conservatory
+<<run Game.visitLocation('conservatory')>>
+<<run Game.addClue('mirror_exit')>>
+<<run Game.visit()>>
+<h2>温室</h2>
+<p>玻璃穹顶已经碎裂，雪花飘进来，覆盖了枯死的植物。玫瑰丛变成了黑色的荆棘，干涸的喷泉池里结了一层冰。</p>
+<p>喷泉中央有一面镜子的碎片，镶嵌在石雕的眼睛位置。你拿起碎片，发现它的裂纹形状与祭祀空间的镜子一致。</p>
+<p class="thought">陈默（内心）：庄园里所有的镜子碎片，裂纹都一样。它们是从同一面镜子上碎下来的。</p>
+<p class="system-hint">你确认了破局线索：镜子出口。庄园所有的镜子碎片都是同一面镜子的组成部分。</p>
+
+<<if not Game.witchHasMaterial('herb_bundle')>>
+<<run Game.witchAddMaterial('herb_bundle')>>
+<p class="system-hint">你发现了女巫材料：草药束。温室的角落里挂着几束干燥的草药。叶知秋也许能用来制作药剂。</p>
+<</if>>
+<div class="choice-list">
+[[返回|Map_EastWing]]
+</div>
+
+:: Explore_Courtyard
+<<run Game.visitLocation('courtyard')>>
+<<run Game.addClue('mirror_exit')>>
+<<run Game.visit()>>
+<h2>中庭</h2>
+<p>刺骨的风雪。你只能在中庭短暂停留。</p>
+<p>你掏出坏掉的指南针——指针剧烈转动，最终稳定指向地下的方向，正是祭祀空间的位置。</p>
+<p>中庭中央有一个破碎的镜框，镜面已经不在，但框架的形状与祭坛的镜子完全吻合。似乎庄园的每一面镜子，都连接着同一个出口。</p>
+<p class="thought">陈默（内心）：镜子是出口。打碎所有镜子，也许能打开真正的出口。</p>
+<p class="system-hint">你获得了破局线索：镜子出口。</p>
+<div class="choice-list">
+[[返回|Map_Courtyard]]
+</div>
+
+
+:: Explore_Crypt
+<<run Game.visitLocation('crypt')>>
+<<run Game.addClue('recruitment_tablet')>>
+<<run Game.changeSan(-10)>>
+<<run Game.visit()>>
+<h2>地下墓穴</h2>
+<p>祭祀空间后方有一条狭窄的甬道，通向地下墓穴。两侧排列着石棺，每口石棺上都刻着一个名字和年份。</p>
+<p>你数了数——总共十二口石棺。最早的几口已经斑驳，最新的那口还是空的，棺盖半开，里面铺着白色的绸缎。</p>
+<p>空棺的边缘刻着一行字：</p>
+<blockquote>"等待第十二位继承者。"</blockquote>
+<p>甬道尽头的墙壁上密密麻麻刻满了名字，你认出了其中几个——和画廊肖像上的名字一致。这些人都曾是"继承者"，都曾以为自己能打破轮回。</p>
+<p class="thought">陈默（内心）：我不是第一个。在我之前，有多少人走到了这里，又失败了？</p>
+<p class="system-hint">你确认了破局线索：招聘碑。地下墓穴有十二口石棺，等待第十二位继承者。理智 -10。</p>
+<div class="choice-list">
+[[返回祭祀空间|Explore_Altar]]
+</div>
+
+:: Explore_DiningRoom
+<<run Game.visitLocation('dining_room')>>
+<<run Game.visit()>>
+<h2>餐厅</h2>
+<p>长条橡木餐桌足有六米长，能轻松坐下二十人。桌上铺着落满灰尘的白布，银质餐具已经发黑。</p>
+<p>墙上挂着十二幅肖像画，画中人穿着不同年代的衣服，表情却惊人地相似——都是那种空洞的、被什么东西注视着的表情。</p>
+<p>餐柜里还剩几瓶没开封的红酒。</p>
+
+<<if not Game.witchHasMaterial('medicine_bottle')>>
+<<run Game.witchAddMaterial('medicine_bottle')>>
+<p class="system-hint">你发现了女巫材料：药瓶。你注意到餐柜角落有一个标签被撕掉的药瓶，含有化学药剂。叶知秋也许能用上。</p>
+<</if>>
+<div class="choice-list">
+[[检查餐柜|Search_Sideboard]]
+[[细看肖像画|Search_Portraits]]
+[[返回|Map_Main1F]]
+</div>
+
+:: Explore_DrawingRoom
+<<run Game.visitLocation('drawing_room')>>
+<<run Game.visit()>>
+<h2>会客厅</h2>
+<p>壁炉旁的休息区。深色天鹅绒沙发，茶几上摆着一套精致的瓷茶具。角落里有一架旧钢琴，琴盖半开。</p>
+<p>沙发缝隙里塞着一张纸条，上面写着潦草的字：</p>
+<blockquote>"第三个晚上，别相信镜子里的自己。"</blockquote>
+<p class="thought">陈默（内心）：谁写的？也是之前的住客吗？</p>
+<div class="choice-list">
+[[弹一下钢琴|Search_Piano]]
+[[返回|Map_Main1F]]
+</div>
+
+:: Explore_Gallery
+<<run Game.visitLocation('gallery')>>
+<<run Game.addClue('chenmo_guilt')>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<h2>画廊</h2>
+<p>这是一条狭长的走廊，两侧挂着历任庄园主人的肖像。从最早的一幅到最新的一幅，画中人的表情越来越空洞。</p>
+<p>走到走廊尽头，你看到最后一幅画。画框是新的，颜料还没完全干透。</p>
+<p>画上的人是你。</p>
+<p>你的肖像穿着深色外套，站在庄园门前，背景是永恒的风雪。画中你的眼睛是闭着的，但嘴角有一丝笑意。</p>
+<p>肖像下方有一行小字："陈默——候选继承者。下一个。"</p>
+<p class="system-hint">你获得了破局线索：陈默的见死不救。你看到了自己的肖像，被系统标记为候选者。理智 -5。</p>
+<div class="choice-list">
+[[返回|Map_Main1F]]
+</div>
+
+:: Explore_Garden
+<<run Game.visitLocation('garden')>>
+<<run Game.visit()>>
+<h2>花园</h2>
+<p>枯死的玫瑰丛被雪覆盖，只露出黑色的荆棘。干涸的喷泉池里结着厚厚的冰。</p>
+<p>你扒开喷泉边的积雪，发现下面是一块墓碑。碑上没有名字，只有一个日期和一行字：</p>
+<blockquote>"1903—2023。继承人永不停歇。"</blockquote>
+<p class="thought">陈默（内心）：从 1903 到现在，120 年。这个庄园已经"运转"了 120 年。</p>
+<div class="choice-list">
+[[返回|Map_Courtyard]]
+</div>
+
+:: Explore_Generator
+<<run Game.visitLocation('generator_room')>>
+<<if Game.isAlive('jiang_bai')>>
+<<run Game.addItem('wire')>>
+<<run Game.addItem('flashlight')>>
+<</if>>
+<<run Game.visit()>>
+<h2>配电室</h2>
+<<if Game.isAlive('jiang_bai')>>
+<p>江白正在这里检修电路。看到你来，他递过来一截金属丝和修好的手电筒。</p>
+<blockquote>江白：「这地方线路老化得厉害。我勉强修好了手电筒，金属丝你拿着，说不定有用。」</blockquote>
+<p>他的右手腕又露出来了，那道整齐的旧疤在灯光下格外显眼。</p>
+<p class="system-hint">你获得了道具：金属丝、手电筒。</p>
+<<else>>
+<p>配电室空无一人，设备发出低沉的嗡鸣。没有了江白，这里的电路无人维护。</p>
+<</if>>
+<div class="choice-list">
+[[返回|Map_WestWing]]
+</div>
+
+
+:: Explore_GrandHall
+<<run Game.visitLocation('grand_hall')>>
+<<run Game.visit()>>
+<h2>大厅</h2>
+<p>壁炉里的火劈啪作响。前台是一张沉重的橡木桌，上面挂满了房间钥匙，每把钥匙都系着一条褪色的绸带，编号从 1 到 12。</p>
+<p>墙上挂着一幅巨大的油画：庄园建成时的样子。画里的天空是蓝色的，花园里开满玫瑰，完全不像现在这样被风雪吞没。</p>
+<p>角落里有一台老式座钟，钟摆有节奏地摆动。时间永远停在 11:58。</p>
+<p class="thought">陈默（内心）：11:58……还有两分钟到午夜。然后是 23:00 的规则。这个庄园的时间是不是被设计过的？</p>
+<div class="choice-list">
+[[检查前台抽屉|Search_FrontDesk]]
+[[细看那幅油画|Search_Painting]]
+[[返回|Map_Main1F]]
+</div>
+
+:: Explore_GuestCorridor
+<<run Game.visitLocation('guest_corridor')>>
+<<run Game.visit()>>
+<h2>客房走廊</h2>
+<p>十二扇门沿着走廊排开，每扇门上都有一个铜制号码牌。门锁是老式的，从里面用插销锁住。</p>
+<p>走廊尽头有一面落地镜。镜面发暗，你走近时，镜子里的你似乎比真实的你慢了半拍。</p>
+<p class="thought">陈默（内心）：镜子……和祭祀空间的那面镜子，会不会有关系？</p>
+<div class="choice-list">
+[[检查落地镜|Search_Mirror2F]]
+[[返回|Map_Main2F]]
+</div>
+
+:: Explore_Kitchen
+<<run Game.visitLocation('kitchen')>>
+<<run Game.addItem('bread')>>
+<<run Game.visit()>>
+<h2>厨房</h2>
+<p>厨房很大，能同时供几个厨师工作。但现在炉灶是冷的，只有储物架角落还剩几袋干粮。</p>
+<p>水龙头还在滴水，水流进一个生锈的铁盆。你尝了一口，水是冰的，但没有异味。</p>
+<p>砧板上有一把厨师刀，刀刃还很锋利。</p>
+<div class="choice-list">
+[[拿走干粮和水|Search_KitchenSupplies]]
+[[检查砧板上的刀|Search_Knife]]
+[[前往储藏室|Explore_Pantry]]
+[[返回|Map_Main1F]]
+</div>
+
+:: Explore_Library
+<<run Game.visitLocation('library')>>
+<<run Game.addItem('guest_register')>>
+<<run Game.addClue('old_guests')>>
+<<run Game.visit()>>
+<h2>图书室</h2>
+<p>满架的旧书蒙着厚厚的灰。你在前台抽屉里找到一本住客登记簿，上面密密麻麻写满了名字，有些被划掉，旁边标注着日期。</p>
+<p>书架深处藏着一本日记，记录着庄园二十年前的往事：曾经有一群大学生在这里失踪，只有一个导游活了下来。</p>
+<p>日记的最后一页写着：</p>
+<blockquote>"仪式需要十二个人。必须有一个人觉醒，必须有一个人弑神。否则循环不会结束。"</blockquote>
+<p class="system-hint">你获得了道具：住客登记簿。线索：之前的客人。</p>
+<div class="choice-list">
+[[返回|Map_EastWing]]
+</div>
+
+
+:: Explore_MasterBedroom
+<<run Game.visitLocation('master_bedroom')>>
+<<run Game.addItem('syringe')>>
+<<run Game.visit()>>
+<h2>主卧</h2>
+<p>庄园主人曾住的房间。四柱床上铺着厚重的帷幔，床头柜上放着一面蒙灰的小镜子。</p>
+<p>梳妆台的抽屉里有一支注射器，针筒里残留着干涸的液体。抽屉底部还压着一张处方笺，上面的字迹很潦草。</p>
+<p class="thought">陈默（内心）：注射器……叶知秋的？还是庄园主人留下的？</p>
+<p class="system-hint">你获得了道具：注射器（残留干涸液体）。</p>
+
+<<if not Game.witchHasMaterial('syringe')>>
+<<run Game.witchAddMaterial('syringe')>>
+<p class="system-hint">你发现了女巫材料：注射器。梳妆台的抽屉里有一支干净的注射器。叶知秋制作毒药时可能需要。</p>
+<</if>>
+<div class="choice-list">
+[[返回|Map_Main2F]]
+</div>
+
+:: Explore_MusicRoom
+<<run Game.visitLocation('music_room')>>
+<<run Game.visit()>>
+<h2>音乐室</h2>
+<p>三角钢琴占据了大半个房间。琴键落满灰尘，但你按下时，第一个音依然清亮。</p>
+<p>大提琴靠在角落，琴弦断了两根。琴谱架上有一本翻开的乐谱，上面的音符排列成一个图案：一只睁开的眼睛。</p>
+<p>和会客厅钢琴上看到的图案一样。</p>
+<p class="thought">陈默（内心）：眼睛的图案到处都是。这个庄园一直在"看着"我们。</p>
+<div class="choice-list">
+[[返回|Map_EastWing]]
+</div>
+
+:: Explore_Pantry
+<<run Game.visitLocation('pantry')>>
+<<run Game.addItem('compass')>>
+<<run Game.visit()>>
+<h2>储藏室</h2>
+<p>储藏室比厨房更深更暗。货架大多空了，只剩罐头和杂物。</p>
+<p>在最底层的角落，你发现一个坏掉的指南针。指针在晃动，最终稳定地指向地下。</p>
+<p class="thought">陈默（内心）：指针指向地下……酒窖？祭祀空间？它到底在指什么？</p>
+<p class="system-hint">你获得了道具：坏掉的指南针。指针永远指向庄园地下。</p>
+<div class="choice-list">
+[[返回厨房|Explore_Kitchen]]
+</div>
+
+:: Explore_SewingRoom
+<<run Game.visitLocation('sewing_room')>>
+<<run Game.addItem('wire')>>
+<<run Game.visit()>>
+<h2>缝纫室</h2>
+<p>旧式缝纫机靠窗放着，踏板已经生锈。布料卷堆在角落，大多是褪色的丝绸和棉布。</p>
+<p>抽屉里有针线盒、剪刀，还有一卷细金属丝——用来固定布料的，但也能用作简易工具。</p>
+<p class="system-hint">你获得了道具：金属丝。</p>
+<div class="choice-list">
+[[返回|Map_Main2F]]
+</div>
+
+:: Explore_Study
+<<run Game.visitLocation('study')>>
+<<run Game.addItem('lighter')>>
+<<run Game.addClue('laozheng_knowledge')>>
+<<run Game.visit()>>
+<h2>书房</h2>
+<p>满墙的书架，书脊上的字大多褪色了。书桌上有一盏老式台灯、一个放大镜、几封拆开的信件。</p>
+<p>信件是庄园管家写给主人的，内容平淡，但最后一封的末尾写着：</p>
+<blockquote>"……客人们又来了。和上次一样，十二个人。先生，您说过，只要仪式完成，一切都会结束。我信您。"</blockquote>
+<p>书桌抽屉里有一只打火机，刻着"S.S."两个字母。</p>
+<p class="thought">陈默（内心）：S.S.……沈慎？沈慎的打火机怎么会在这里？</p>
+<p class="system-hint">你获得了破局线索：老郑的秘密。道具：打火机（刻有 S.S.）。</p>
+<div class="choice-list">
+[[返回|Map_Main1F]]
+</div>
+
+:: Explore_Well
+<<run Game.visitLocation('well')>>
+<<run Game.addClue('system_origin')>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<h2>古井</h2>
+<p>井口结了一层薄冰。你趴在井沿上往下看——深不见底，但你能听到微弱的回声，像是风在井底呜咽，又像是无数人在低声说话。</p>
+<p>你扔下一块碎冰。很久之后，传来一声闷响，不是水声，而是某种……金属碰撞的声音。</p>
+<p>然后回声变了。你听清了井底传来的声音——是录音，循环播放的录音：</p>
+<blockquote>"……系统衰竭了。我们需要新的神。七日一轮，弑神迭代……"</blockquote>
+<p>和广播室磁带里的独白一模一样。整个庄园的地下，似乎都是连通的。</p>
+<p class="system-hint">你获得了破局线索：系统的起源。庄园地下连通，循环播放着前任神的独白。理智 -5。</p>
+<div class="choice-list">
+[[返回|Map_Courtyard]]
+</div>
+
+:: Explore_WineCellar
+<<run Game.visitLocation('wine_cellar')>>
+<<run Game.addClue('cellar_blood')>>
+<<run Game.visit()>>
+<h2>酒窖</h2>
+<p>酒架沿着墙壁排成弧形，大部分格子都空了，只剩几瓶落灰的红酒。空气阴冷潮湿。</p>
+<p>酒窖最深处有一扇铁门，门上用红漆写着四个字："天黑请闭眼"。门缝里渗出淡淡的血腥味。</p>
+<p class="thought">陈默（内心）：这就是老郑说过的祭祀空间入口。</p>
+<p class="system-hint">你获得了线索：酒窖血腥味。铁门后是祭祀空间。</p>
+<<if Game.hasItem('old_key')>>
+<div class="choice-list">
+[[用旧钥匙打开铁门|Explore_Cellar]]
+<</if>>
+<div class="choice-list">
+[[返回|Map_WestWing]]
+</div>
+
+:: Explore_Workshop
+<<run Game.visitLocation('workshop')>>
+<<run Game.addItem('wire')>>
+<<run Game.addItem('flashlight')>>
+<<run Game.visit()>>
+<h2>工坊</h2>
+<p>木工和金工工具整齐地挂在墙上。工作台上有一盏修好的手电筒，旁边是一卷金属丝。</p>
+<p>墙角堆着几个未完工的木箱，其中一个箱盖上刻着和画廊肖像下方一样的文字："候选继承者"。</p>
+<p class="thought">陈默（内心）：这个庄园一直在为"继承者"做准备。箱子是给我准备的。</p>
+<p class="system-hint">你获得了道具：手电筒、金属丝。</p>
+
+<<if not Game.witchHasMaterial('chemical_vial')>>
+<<run Game.witchAddMaterial('chemical_vial')>>
+<p class="system-hint">你发现了女巫材料：化学试剂瓶。工坊的架子上有一瓶化学试剂。叶知秋制作高级毒药可能需要。</p>
+<</if>>
+<div class="choice-list">
+[[返回|Map_WestWing]]
+</div>
+
+:: Search_FrontDesk
+<<run Game.addItem('guest_register')>>
+<<run Game.addClue('old_guests')>>
+<<run Game.visit()>>
+<h2>前台抽屉</h2>
+<p>抽屉没有上锁。里面是一本厚厚的住客登记簿，纸页发黄。</p>
+<p>你翻开最近几页。上面写着不同年份的住客名字，有些名字被划掉了，旁边标注着简短的备注：</p>
+<blockquote>"2019.1 — 6人入住，1人离开。"<br>"2020.7 — 4人入住，0人离开。"<br>"2021.3 — 8人入住，2人离开。"</blockquote>
+<p>最新一页是空的，等待新的住客登记。</p>
+<p class="system-hint">你获得了道具：住客登记簿。线索：之前的客人。</p>
+<div class="choice-list">
+[[返回大厅|Explore_GrandHall]]
+</div>
+
+:: Search_KitchenSupplies
+<<run Game.addItem('bread')>>
+<<run Game.visit()>>
+<h2>厨房储物</h2>
+<p>你把剩下的干粮和水装好。干粮的味道像压缩饼干，但能填饱肚子。</p>
+<p class="system-hint">你获得了道具：干粮。</p>
+<div class="choice-list">
+[[返回厨房|Explore_Kitchen]]
+</div>
+
+:: Search_Knife
+<<run Game.addItem('pocket_knife')>>
+<<run Game.visit()>>
+<h2>厨师刀</h2>
+<p>你拿起砧板上的厨师刀。刀身沉重，刃口磨得锃亮。这不是一把普通的厨房刀具——刀柄上刻着一个狼头图案。</p>
+<p class="thought">陈默（内心）：狼头……这把刀和狼人有关？还是说，庄园的主人本身就是猎人？</p>
+<p class="system-hint">你获得了道具：折叠小刀（刻有狼头图案）。</p>
+<div class="choice-list">
+[[返回厨房|Explore_Kitchen]]
+</div>
+
+:: Search_Mirror2F
+<<run Game.addClue('mirror_exit')>>
+<<run Game.visit()>>
+<h2>落地镜</h2>
+<p>你站在镜子前。镜面有一道细微的裂纹，从右上角延伸到左下角。</p>
+<p>你注意到裂纹的形状和祭祀空间的镜子完全一致。似乎庄园里的每一面镜子，都连接着同一个出口。</p>
+<p class="thought">陈默（内心）：镜子是出口。打碎它，也许就能离开。但需要先知道全部规则。</p>
+<p class="system-hint">你获得了破局线索：镜子出口。</p>
+<div class="choice-list">
+[[返回走廊|Explore_GuestCorridor]]
+</div>
+
+:: Search_Painting
+<<run Game.addClue('fang_temperature')>>
+<<run Game.visit()>>
+<h2>油画</h2>
+<p>你凑近细看那幅油画。画中庄园的窗户里隐约有人影，其中一个窗台边站着一个人，穿着深色大衣——和方衡的穿着一模一样。</p>
+<p>你揉了揉眼睛再看，人影已经不见了。</p>
+<p class="thought">陈默（内心）：是错觉吗？还是这幅画在告诉我什么？</p>
+<p class="system-hint">你注意到油画中的异常人影，与方衡的装束相似。</p>
+<div class="choice-list">
+[[返回大厅|Explore_GrandHall]]
+</div>
+
+:: Search_Piano
+<<run Game.changeSan(-3)>>
+<<run Game.visit()>>
+<h2>钢琴</h2>
+<p>你按下琴键。第一个音是准的，但第二个音开始走调，越弹越刺耳，最后几个音完全不像钢琴发出的——更像是某种低沉的呜咽。</p>
+<p>琴谱架上有一本翻开的乐谱，页面上用红笔画满了圈，圈住的音符排列出一个图案：一只眼睛。</p>
+<p class="system-hint">钢琴的异响让你不安。理智 -3。</p>
+<div class="choice-list">
+[[返回会客厅|Explore_DrawingRoom]]
+</div>
+
+:: Search_Portraits
+<<run Game.addClue('old_guests')>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<h2>肖像画</h2>
+<p>十二幅肖像画，每幅画的右下角都有签名和年份。最早的一幅是 1903 年，最新的一幅是去年。</p>
+<p>你发现了一件令人不安的事：每幅画中人的眼睛，都似乎在跟随着你移动。当你仔细凝视其中一幅时，画中人的嘴角似乎微微上扬。</p>
+<p class="system-hint">肖像画引发不安。理智 -5。你更确信这座庄园有自己的意志。</p>
+<div class="choice-list">
+[[返回餐厅|Explore_DiningRoom]]
+</div>
+
+:: Search_Sideboard
+<<run Game.addItem('bread')>>
+<<run Game.addItem('medicine_bottle')>>
+<<run Game.visit()>>
+<h2>餐柜</h2>
+<p>餐柜深处藏着几袋密封的干粮，还有一个小药瓶。药瓶的标签被撕掉了，摇晃时能听到药片的声音。</p>
+<p class="thought">陈默（内心）：止痛药？安眠药？还是……毒药？这东西出现在餐厅而不是医务室，有点奇怪。</p>
+<p class="system-hint">你获得了道具：干粮、药瓶。</p>
+<div class="choice-list">
+[[返回餐厅|Explore_DiningRoom]]
+</div>
+
+:: Chapter07_Bad
+<<run Game.unlockEnding('starvation')>>
+<<run Game.visit()>>
+<div class="ending-page">
+<h1 class="ending-bad">坏结局：七日终焉</h1>
+<p>第七天的太阳没有升起。你感到极度饥饿和口渴，皮肤开始龟裂。</p>
+<p>苏晚虚弱地笑了：“原来……我们真的只能活七天啊。”</p>
+<p>她死在你怀里。其他人在绝望中相继倒下。</p>
+<p>你最后一个闭上眼睛。你以为自己会再次醒来。</p>
+<blockquote>系统音：“轮回结束。新神未产生。世界继续衰竭。”</blockquote>
+<p>黑屏。没有下一次 06:00。</p>
+<p class="system-hint">结局已解锁：七日终焉。</p>
+<p>[[重新开始|Start]]</p>
+</div>
+
+
+
+
+:: Chapter07_Good
+<<run Game.unlockEnding('good')>>
+<<run Game.visit()>>
+<div class="ending-page">
+<h1 class="ending-good">好结局：走出暴风雪</h1>
+<p>你带领幸存者进入地下祭祀空间。那里有一面镜子，镜子里映出的不是你们现在的样子，而是车祸现场。</p>
+<blockquote>系统音：“你们本可以在这山庄里永远活下去。为什么要走？”<br>陈默：“因为你不是神。你只是一个饿坏了的规则。”</blockquote>
+<p>镜子碎裂，暴风雪停了一瞬。你们看见盘山公路上有救援车的灯光。</p>
+<p>苏晚握紧你的手：“……我们真的活下来了吗？”</p>
+<p>你没有回答，只是回头看了一眼山庄。二楼某扇窗户后，似乎站着一个人，正在等你。</p>
+<p class="system-hint">结局已解锁：走出暴风雪。</p>
+<p>[[重新开始|Start]]</p>
+</div>
+
+
+
+
+:: Chapter07_Hidden
+<<run Game.unlockEnding('god_of_gods')>>
+<<run Game.visit()>>
+<div class="ending-page">
+<h1 class="ending-hidden">隐藏结局：万神之神</h1>
+<p>你站在祭祀空间的中心。你同时拥有无限记忆、骑士的决斗、先知的洞察。</p>
+<p>你的影子分裂成三个，每一个都属于你曾经杀死的神。</p>
+<blockquote>系统音：“你收集了他们。你成为了他们。现在，你需要做一个选择。”<br>陈默：“什么选择？”<br>系统音：“这个世界即将崩塌。它需要一个新的系统。你可以拒绝，让一切归零；或者接受，成为下一轮循环的规则本身。”</blockquote>
+<div class="choice-list">
+[[拒绝成神|Chapter07_Hidden_Refuse]]
+[[接受成神|Chapter07_Hidden_Accept]]
+</div>
+</div>
+
+
+
+
+:: Chapter07_Hidden_Accept
+<<run Game.unlockEnding('god_of_gods_accept')>>
+<<run Game.visit()>>
+<div class="ending-page">
+<h1 class="ending-hidden">万神之神 · 接受</h1>
+<p>陈默：“……我愿意。”</p>
+<p>他的身体开始消散，变成无数条规则，渗入墙壁、地板、风雪。</p>
+<p>他成为了山庄本身。</p>
+<p>很久以后，又一批旅客推开山庄的门。他们年轻、惊恐、互相搀扶。</p>
+<p>陈默在他们每个人耳边低语：</p>
+<blockquote>“欢迎来到落雁山庄。23:00 前，必须回到房间。”</blockquote>
+<p>他等来了下一个无限记忆者。</p>
+<p class="system-hint">结局已解锁：万神之神 · 接受。</p>
+<p>[[重新开始|Start]]</p>
+</div>
+
+
+
+:: Chapter07_Hidden_Refuse
+<<run Game.unlockEnding('refuse_god')>>
+<<run Game.visit()>>
+<div class="ending-page">
+<h1 class="ending-hidden">万神之神 · 拒绝</h1>
+<p>陈默：“我不是你的电池。”</p>
+<p>世界像一张纸被揉皱。你看见苏晚、江白、所有人，在光芒中碎成粉末。</p>
+<p>最后的画面是空的。没有山庄，没有雪，没有轮回。只有你一个人，站在白茫茫的虚无里。</p>
+<p>你还记得他们。这就是你的惩罚。</p>
+<p class="system-hint">结局已解锁：万神之神 · 拒绝。</p>
+<p>[[重新开始|Start]]</p>
+</div>
+
+
+
+
+:: Chapter07_True
+<<run Game.unlockEnding('true_ending')>>
+<<run Game.visit()>>
+<div class="ending-page">
+<h1 class="ending-true">真结局：打破轮回</h1>
+
+<p>祭坛的符文开始发光。</p>
+
+<p>你站在地下祭坛的中心，手握着铁门的钥匙和祭祀的记录。沈慎站在你身后，手里握着那把刀——但他的刀尖朝下。</p>
+
+<p>苏晚、方衡、林小满、老郑……还活着的人都在祭坛外，隔着铁门的栅栏看着你。</p>
+
+<p>方衡喊道："你要做什么？"</p>
+
+<p>你没有回答。你把祭祀记录和铁门钥匙并排放在祭坛上。</p>
+
+<p>地面开始震动。符文的红光沿着石壁的纹路蔓延，像血管一样爬上穹顶。</p>
+
+<p>系统音在你们每个人耳边响起——但不是恐惧，更像是一种……如释重负。</p>
+
+<blockquote>系统音："你找到了所有碎片。你理解了规则。你不是来取代我的——你是来关闭我的。"</blockquote>
+
+<p>陈默："这些人的生死不应该由一场游戏决定。你饿了七天的确久了，但这不是你收割他们的理由。"</p>
+
+<p>沈慎走上一步："让我来。我欠的够多了。"</p>
+
+<p>你按住他的肩膀："不。我说过，我记忆里死过太多次，这次换我来决定。"</p>
+
+<p>你把铁门钥匙插入祭坛中央的凹槽。一声沉闷的巨响——整个山庄像是松了一口气。</p>
+
+<p>墙上的符文开始褪色。那些困住你们的规则，一条接一条地断裂。</p>
+
+<p>苏晚跑进来，紧紧抱住你。你不确定她是因为得救还是因为害怕失去你才抱的——两种都行。</p>
+
+<p>二十个小时后，救援队找到了你们。暴风雪停了。</p>
+
+<p>你站在山庄门口，最后一次回头。那个站在二楼窗户后的影子不见了。雪地上只有你自己的脚印。</p>
+
+<p>江白走过来，拍了你的肩："妈的……我总觉得我认识你好久了。"</p>
+
+<p>你没有告诉他，你确实认识他很久了。</p>
+
+<p class="system-hint">轮回终结。你带着所有人的记忆——和所有人的信任——走出了落雁山庄。</p>
+
+<p>[[重新开始|Start]]</p>
+</div>
+
+:: Common_Characters
+<h2>????</h2>
+<p class="system-hint">???????????????????????????????????</p>
+
+<p><strong>??</strong> ? 22?????????????????????????</p>
+
+<p><strong>??</strong> ? 21????????????????????????????</p>
+
+<p><strong>??</strong> ? 22????????????????????????????????</p>
+
+<p><strong>??</strong> ? 35????????????????????????</p>
+<<if Game.hasRevealed("fang_heng", "zhao_connection")>>
+<p class="system-hint">?????????????????????</p>
+<</if>>
+
+<p><strong>???</strong> ? 32????????????????????????????????</p>
+<<if Game.hasRevealed("ye_zhiqiu", "medical_background")>>
+<p class="system-hint">?????????????????????????</p>
+<</if>>
+
+<p><strong>??</strong> ? 38?????????????????????????</p>
+<<if Game.hasRevealed("shen_shen", "gambler")>>
+<p class="system-hint">????????????????????????</p>
+<</if>>
+<<if Game.hasRevealed("shen_shen", "cellar_connection")>>
+<p class="system-hint">????????????????????</p>
+<</if>>
+
+<p><strong>???????</strong> ? 58???????????????????????</p>
+<<if Game.hasRevealed("zheng_shoushan", "previous_survivor")>>
+<p class="system-hint">????????????????????</p>
+<</if>>
+
+<p><strong>???</strong> ? 20??????????????????????????</p>
+<<if Game.hasRevealed("lin_xiaoman", "protector")>>
+<p class="system-hint">????????????????????????????</p>
+<</if>>
+
+<p><strong>??</strong> ? 23??????????????????????????</p>
+<<if Game.hasRevealed("zhou_yang", "aggressive")>>
+<p class="system-hint">???????????????????????????</p>
+<</if>>
+<<if Game.hasRevealed("zhou_yang", "wolf_king")>>
+<p class="system-hint">????????????????</p>
+<</if>>
+
+<p><strong>???</strong> ? 20?????????????????????????????????</p>
+<<if Game.hasRevealed("tang_xiaotang", "unstable")>>
+<p class="system-hint">????????????????????????</p>
+<</if>>
+<<if Game.hasRevealed("tang_xiaotang", "hidden_wolf")>>
+<p class="system-hint">????????????????????</p>
+<</if>>
+
+<p><strong>???</strong> ? 45???????????????????</p>
+<<if Game.hasRevealed("zhao_mingcheng", "ruthless")>>
+<p class="system-hint">?????????????????????????</p>
+<</if>>
+
+<p><strong>??</strong> ? 24???????????????????????????</p>
+<<if Game.hasRevealed("gu_yan", "observer")>>
+<p class="system-hint">??????????????????????</p>
+<</if>>
+
+<p>[[??|Start]]</p>
+
+
+:: Common_ClueList
+<<set _clues to Object.keys($game.clues)>>
+<h2>线索簿</h2>
+<<if _clues.length is 0>>
+<p class="muted">你还没有收集到任何线索。</p>
+<<else>>
+<<for _id range _clues>>
+  <p><strong><<print Game.clueName(_id)>></strong></p>
+  <p class="muted"><<print Game.clueDesc(_id)>></p>
+<</for>>
+<</if>>
+<p>[[返回|passage()]]</p>
+
+
+
+:: Common_DayTransition
+<<run Game.visit()>>
+<<set _advanced to Game.advanceDay()>>
+<<if _advanced>>
+<<set _chapter to 'Chapter03_06_Framework'>>
+<<else>>
+<<set _chapter to 'Chapter0' + $game.day + '_Hall'>>
+<</if>>
+<<goto _chapter>>
+
+
+:: Common_Inventory
+<<set _inv to Object.keys($game.inventory)>>
+<h2>道具栏</h2>
+<<if _inv.length is 0>>
+<p class="muted">你身上没有任何道具。</p>
+<<else>>
+<<for _id range _inv>>
+  <p><strong><<print Game.itemName(_id)>></strong> × <<print $game.inventory[_id]>></p>
+  <p class="muted"><<print GameState.ITEMS[_id].desc>></p>
+<</for>>
+<</if>>
+<p>[[返回|passage()]]</p>
+
+
+
+:: Common_Map
+<<run Game.visit()>>
+<h2>庄园地图</h2>
+<p class="system-hint">这是一座建造在雪山深处的老式庄园。主楼三层，东西两翼各有厢房，中庭被风雪包围，地下还有未知的空间。点击区域进入探索。</p>
+
+<div class="zone-list">
+<h3>主楼一层</h3>
+<p class="muted">门厅、大厅、餐厅、厨房、储藏室、会客厅、书房、画廊</p>
+<h3>主楼二层</h3>
+<p class="muted">客房走廊、主卧、儿童房、缝纫室、阳台</p>
+<h3>主楼三层 / 阁楼</h3>
+<p class="muted">阁楼、档案室</p>
+<h3>东厢房</h3>
+<p class="muted">图书室、音乐室、温室、广播室</p>
+<h3>西厢房</h3>
+<p class="muted">配电室、工坊、杂物间、酒窖</p>
+<h3>庭院</h3>
+<p class="muted">中庭、花园、古井、小教堂</p>
+<h3>地下空间</h3>
+<p class="muted">地下铁门、祭祀空间、地下墓穴</p>
+</div>
+
+<div class="choice-list">
+[[主楼一层|Map_Main1F]]
+[[主楼二层|Map_Main2F]]
+[[阁楼 / 档案室|Map_Main3F]]
+[[东厢房|Map_EastWing]]
+[[西厢房|Map_WestWing]]
+[[庭院|Map_Courtyard]]
+<<if Game.hasItem('old_key')>>
+[[地下空间|Map_Underground]]
+<</if>>
+[[返回|Start]]
+</div>
+
+
+:: Common_Memory
+<<set _memories to $game.memories>>
+<h2>记忆碎片</h2>
+<<if _memories.length is 0>>
+<p class="muted">你还没有记录下任何跨循环记忆。</p>
+<<else>>
+<<for _m range _memories>>
+  <p class="muted">第 <<print _m.loop>> 轮 · 第 <<print _m.day>> 天</p>
+  <p><<print _m.text>></p>
+  <hr>
+<</for>>
+<</if>>
+<p>[[返回|passage()]]</p>
+
+
+
+:: Common_NightResolution
+<<set _kill to Game.executeWolfKill()>>
+<<run Game.setLastWolfKill(_kill)>>
+<<run Game.witchSenseDeath()>>
+<<run Game.visit()>>
+
+<<if Game.isAlive('ye_zhiqiu') and !Game.witchBroken() and Game.witchRemaining() > 0>>
+<<set _witchDecision to Game.witchAIDecideNight()>>
+<<else>>
+<<set _witchDecision to { action: 'pass' }>>
+<</if>>
+
+<<if _witchDecision.action is 'save'>>
+<<set _witchSaved to Game.witchRevive(Game.witchGetSensedDeath())>>
+<</if>>
+<<if _witchDecision.action is 'curse'>>
+<<set _witchCurseTarget to _witchDecision.target>>
+<<set _witchCurseResult to Game.witchCurse(_witchCurseTarget)>>
+<<set _witchCurseName to GameState.PROFILES[_witchCurseTarget].name>>
+<</if>>
+
+<<set _loopToDeath to false>>
+
+<<if _kill.killed>>
+<<set _actualName to GameState.PROFILES[_kill.actualTarget].name>>
+
+<<if _kill.friendlyFire>>
+<h2>黎明 · 狼人自相残杀</h2>
+<p>尖叫声把你惊醒。但当你冲出房间时，看到的场景让所有人困惑。</p>
+<<if _kill.mutualKill>>
+<p>走廊上有两具尸体：<strong><<print _actualName>></strong>（狼王）和 <strong><<print _kill.killerName>></strong>。他们倒在一起，像是互相撕咬致死。</p>
+<blockquote>「狼人怎么会杀自己人？除非——它们被什么东西搞糊涂了。」</blockquote>
+<p class="system-hint">狼王 <<print _actualName>> 被同伴误杀，同归于尽。执行者 <<print _kill.killerName>> 也死了。可能是魔术师的交换所致。</p>
+<<run Game.changeSan(-5)>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 和 ' + _kill.killerName + ' 同归于尽。狼人自相残杀！')>>
+<<else>>
+<p><strong><<print _actualName>></strong> 倒在血泊中。但伤痕不对——这是狼的爪牙。</p>
+<p class="system-hint">一只狼被同伴误杀。可能是魔术师的交换所致。</p>
+<<run Game.changeSan(-5)>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被同伴误杀。')>>
+<</if>>
+
+<<elseif _kill.special is 'body_removed'>>
+<h2>黎明 · 消失的尸体</h2>
+<p><strong><<print _actualName>></strong> 的房间门大开着，但里面没有尸体。只有大量的血迹和拖拽的痕迹，延伸到走廊尽头就消失了。</p>
+<p class="danger">尸体被抹除了。没有尸体，就没有证据。女巫即使有还魂之力，也无处施展。</p>
+<p class="system-hint"><<print _actualName>> 被杀。清道夫狼抹除了尸体，女巫无法复活。</p>
+<<run Game.changeSan(-10)>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀，尸体被抹除。')>>
+
+<<elseif _kill.special is 'saved_by_witch'>>
+<h2>黎明 · 从死亡边缘归来</h2>
+<p>你冲向 <strong><<print _actualName>></strong> 的房间，却看到他/她正坐在床边，脸色苍白。</p>
+<p>叶知秋站在一旁，放下手中的药瓶：「差一点。」</p>
+<p class="system-hint">女巫叶知秋在狼人袭击后救活了 <<print _actualName>>。</p>
+<<if _witchSaved.reason is 'broken'>>
+<p class="danger">叶知秋靠在墙角，双手抱着头，浑身发抖。她用了最后一次力量——精神已经崩溃了。</p>
+<<run Game.revealInfo('ye_zhiqiu', 'witch_exposed')>>
+<</if>>
+<<run Game.changeSan(5)>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被狼人袭击，但叶知秋救活了他/她。')>>
+
+<<elseif _kill.special is 'witch_knight_conflict'>>
+<h2>黎明 · 夜色中的混乱</h2>
+<p><strong><<print _actualName>></strong> 倒下了。</p>
+<p>叶知秋站在走廊另一端，神情复杂：「我去了……但有人先到了。她赶走了我，以为安全了——但狼还在。」</p>
+<p class="system-hint">骑士守卫和女巫救人冲突：守卫赶走了女巫，以为目标安全，狼趁机杀人。</p>
+<<run Game.changeSan(-15)>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀。女巫与守卫冲突。')>>
+
+<<elseif _kill.special is 'protected_by_knight'>>
+<<run Game.knightReset()>>
+<h2>黎明 · 无人死亡</h2>
+<p>你冲出房间时，发现林小满靠在走廊的墙上，手里的小刀上有血。她对你点了点头：</p>
+<blockquote>林小满：「昨晚有东西想闯进来。我挡住了。」</blockquote>
+<p class="system-hint">昨夜无人死亡。林小满的保护奏效了，但她现在很虚弱。</p>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：林小满保护了某人，无人死亡。')>>
+
+<<else>>
+<h2>黎明 · 新的死者</h2>
+<p>尖叫声把你从梦中惊醒。你冲出房间，看到走廊上已经围了一圈人。</p>
+<p><strong><<print _actualName>></strong> 倒在自己的房间里。门窗从内部锁死，没有搏斗痕迹。</p>
+<p>苏晚检查后摇头：「死亡时间大约在凌晨两点。没有外伤，像是……在睡梦中被某种力量夺走了呼吸。」</p>
+<p class="system-hint"><<print _actualName>> 被狼人杀害。</p>
+
+<<if _kill.actualTarget is 'chen_mo'>>
+<<set _loopToDeath to true>>
+<</if>>
+
+<<if _kill.actualTarget is 'su_wan'>>
+<<run Game.changeSan(-20)>>
+<p class="danger">苏晚死了。你的手在发抖。你蹲下来，握住她已经冰冷的手。天花板上水渍的形状开始变化。</p>
+<p class="system-hint">苏晚的死亡让你遭受重创。理智 -20。</p>
+<<elseif _kill.actualTarget is 'jiang_bai'>>
+<<run Game.changeSan(-15)>>
+<p class="danger">江白死了。你的室友，你的死党。他右手腕上的旧疤在晨光中格外刺眼。</p>
+<p class="system-hint">江白的死亡让你遭受重创。理智 -15。</p>
+<<else>>
+<<run Game.changeSan(-10)>>
+<</if>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀。')>>
+<</if>>
+
+<<elseif _kill.special is 'saved_by_witch'>>
+<h2>黎明 · 从死亡边缘归来</h2>
+<p>你冲出房间，没有发现尸体。但叶知秋的房间灯还亮着。</p>
+<p class="system-hint">女巫预感到了死亡，救了某人。无人死亡。</p>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：有人被袭击，但叶知秋救了回来。')>>
+
+<<else>>
+<<run Game.knightReset()>>
+<h2>黎明 · 无人死亡</h2>
+<p>走廊很安静。你检查了每一扇门，所有人都还活着。</p>
+<p>但你知道，这只是暂时的。狼还在。</p>
+<p class="system-hint">昨夜无人死亡。但恐惧不会消失。</p>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：无人死亡。')>>
+<</if>>
+
+<<if _witchDecision.action is 'curse' and _witchCurseResult.ok>>
+<h3>叶知秋的诅咒</h3>
+<p>清晨，你发现 <strong><<print _witchCurseName>></strong> 倒在自己的房间里。没有外伤，没有血迹，只是嘴唇发黑——像是被某种看不见的力量夺走了呼吸。</p>
+<p class="system-hint">女巫叶知秋在夜间诅咒了 <<print _witchCurseName>>。诅咒是神力，狼王的反杀能力无法触发。</p>
+<<if _witchCurseResult.reason is 'broken'>>
+<p class="danger">叶知秋靠在墙角，双手抱着头，浑身发抖。她用了最后一次力量——精神已经崩溃了。</p>
+<<run Game.revealInfo('ye_zhiqiu', 'witch_exposed')>>
+<</if>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：叶知秋诅咒了 ' + _witchCurseName + '。')>>
+<</if>>
+
+<<run Game.witchClearSensedDeath()>>
+
+<<if _loopToDeath>>
+<h2>你的死亡</h2>
+<p class="danger">你低头看着自己胸口的伤。血从指缝间涌出，温热而黏稠。</p>
+<p>视野开始模糊。周围的声音变得遥远——有人在喊你的名字，有人在哭泣。</p>
+<p>但你听不太清了。</p>
+<p>黑暗从边缘涌来，像是有人慢慢拉上了窗帘。</p>
+<p>你知道这不是终点。你知道你会再次醒来。</p>
+<p class="system-hint">陈默死亡。轮回即将重置。你将带着这一轮的记忆进入下一轮。</p>
+<<run Game.nextLoop()>>
+[[进入下一轮回|Chapter02_Start]]
+<<else>>
+<div class="choice-list">
+[[继续新的一天|Common_DayTransition]]
+</div>
+<</if>>
+
+:: God_Knight
+<<run Game.visit()>>
+<h2>林小满 · 骑士</h2>
+<<if Game.knightWeakened()>>
+<p class="danger">林小满虚弱地靠在墙上，上次行动的消耗还没恢复。她今天无法再做任何事。</p>
+<div class="choice-list">
+[[返回|Start]]
+</div>
+<<else>>
+<p>林小满正在擦拭她的折叠小刀。看到你走近，她挑了挑眉：</p>
+<blockquote>林小满：「说吧，今晚想怎么做？是让我去盯着谁，还是直接上去砍人？」</blockquote>
+<p class="system-hint">骑士有两种能力，<strong>每次只能选一种</strong>，使用后进入虚弱状态（明日无法行动）：</p>
+<ul>
+<li><strong>决斗</strong>：指认一人为狼。若真是狼则斩杀；若不是则林小满自己死。狼王同归于尽。</li>
+<li><strong>守卫</strong>：保护一人，今晚狼人袭击该人时被挡下。不可连续两晚守同一人。与女巫救人冲突时互相抵消。</li>
+</ul>
+
+<div class="choice-list">
+<<link "决斗——指认某人">><<goto 'God_Knight_Duel'>><</link>>
+<<link "守卫——保护某人">><<goto 'God_Knight_Guard'>><</link>>
+</div>
+<div class="choice-list">
+[[算了，不打搅她|Start]]
+</div>
+<</if>>
+
+:: God_Knight_Duel
+<<run Game.visit()>>
+<h2>林小满 · 决斗</h2>
+<p>林小满握紧小刀：</p>
+<blockquote>林小满：「你如果有目标，就告诉我。但我要提醒你——如果我砍错了人，死的会是我。」</blockquote>
+<p class="system-hint">骑士决斗：若目标是狼人，斩杀之；若不是，林小满自己死。若目标是狼王，同归于尽。</p>
+<p class="warning">决斗后林小满进入虚弱状态，次日无法行动。</p>
+<div class="choice-list">
+<<if Game.isAlive('zhou_yang')>>
+<<link "指认周阳是狼">><<run Game.knightDuel('zhou_yang')>><<goto 'God_Knight_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('tang_xiaotang')>>
+<<link "指认唐小棠是狼">><<run Game.knightDuel('tang_xiaotang')>><<goto 'God_Knight_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zhao_mingcheng')>>
+<<link "指认赵明城是狼">><<run Game.knightDuel('zhao_mingcheng')>><<goto 'God_Knight_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('gu_yan')>>
+<<link "指认顾言是狼">><<run Game.knightDuel('gu_yan')>><<goto 'God_Knight_Result'>><</link>>
+<</if>>
+</div>
+<div class="choice-list">
+[[放弃决斗|God_Knight]]
+</div>
+
+:: God_Knight_Guard
+<<run Game.visit()>>
+<h2>林小满 · 守卫</h2>
+<<if Game.knightWeakened()>>
+<p class="danger">林小满虚弱地靠在墙上，上次行动的消耗还没恢复。她今天无法行动。</p>
+<div class="choice-list">
+[[返回|Start]]
+</div>
+<<else>>
+<p>林小满收起折叠小刀，压低声音：</p>
+<blockquote>林小满：「你想让我守着谁？我只能护一个人，而且之后两天我都动不了了——你确定？」</blockquote>
+<p class="system-hint">守卫：今晚狼人袭击该目标时，林小满会挡下。守卫后林小满进入虚弱状态，次日无法行动。</p>
+<p class="warning">守卫与女巫救人冲突时，两者互相抵消，目标仍会死亡。</p>
+
+<div class="choice-list">
+<<if Game.isAlive('su_wan')>>
+<<link "保护苏晚">><<run Game.knightGuard('su_wan')>><<goto 'God_Knight_Guard_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai')>>
+<<link "保护江白">><<run Game.knightGuard('jiang_bai')>><<goto 'God_Knight_Guard_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zheng_shoushan')>>
+<<link "保护老郑">><<run Game.knightGuard('zheng_shoushan')>><<goto 'God_Knight_Guard_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('ye_zhiqiu')>>
+<<link "保护叶知秋">><<run Game.knightGuard('ye_zhiqiu')>><<goto 'God_Knight_Guard_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng')>>
+<<link "保护方衡">><<run Game.knightGuard('fang_heng')>><<goto 'God_Knight_Guard_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen')>>
+<<link "保护沈慎">><<run Game.knightGuard('shen_shen')>><<goto 'God_Knight_Guard_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('chen_mo')>>
+<<link "保护陈默">><<run Game.knightGuard('chen_mo')>><<goto 'God_Knight_Guard_Result'>><</link>>
+<</if>>
+</div>
+<div class="choice-list">
+[[算了，返回|God_Knight]]
+</div>
+<</if>>
+
+:: God_Knight_Guard_Result
+<<run Game.visit()>>
+<<set _guardResult to $game.godSkills.knight>>
+<h2>守卫</h2>
+<<set _guardName to GameState.PROFILES[_guardResult.lastGuard].name>>
+<p>林小满点了点头，收起小刀：</p>
+<blockquote>林小满：「我去盯着 <<print _guardName>> 的房间。今晚不会有东西靠近他/她。」</blockquote>
+<p>她的背影消失在走廊拐角。你希望这个决定是对的。</p>
+<p class="system-hint">林小满正在守卫 <<print _guardName>>。今夜如果狼人袭击 <<print _guardName>>，林小满会挡下。</p>
+<p class="warning">林小满进入虚弱状态，明天无法行动。</p>
+<div class="choice-list">
+[[返回|Start]]
+</div>
+
+:: God_Knight_Result
+<<run Game.visit()>>
+<<set _result to $game.godSkills.knight>>
+<h2>决斗</h2>
+<<if not Game.isAlive('lin_xiaoman')>>
+<p class="danger">林小满倒下了。她砍错了人，骑士的代价是自己的命。</p>
+<blockquote>林小满（最后的话）：「棠棠……对不起……」</blockquote>
+<p class="system-hint">林小满死亡。骑士能力消失。好人阵营失去了唯一的武力淘汰手段。</p>
+<<else>>
+<p>林小满擦掉刀上的血，面无表情地看着倒下的尸体。</p>
+<blockquote>林小满：「它果然是狼。干得漂亮，陈默。」</blockquote>
+<p class="system-hint">一只狼被斩杀。但林小满现在很虚弱，明天无法行动。</p>
+<p class="danger">如果是狼王，林小满会与之同归于尽。</p>
+<</if>>
+<div class="choice-list">
+[[返回|Start]]
+</div>
+
+
+:: God_Magician
+<<run Game.visit()>>
+<h2>沈慎 · 魔术师</h2>
+<<set _remaining to Game.magicianSwapsRemaining()>>
+<<set _currentSwap to Game.getMagicianSwap()>>
+
+<p>沈慎坐在壁炉旁的阴影里，手指不停地搓着一张扑克牌。</p>
+<blockquote>沈慎：「我可以让两个人在夜里互换身份。狼只会看到交换后的样子。如果它们冲着一个人去……杀的其实是另一个。」</blockquote>
+<p class="system-hint">身份交换：选择两人互换，只有夜晚狼人形态能感知。交换在当夜生效，次日重置。每天可用一次。</p>
+<p class="warning">限制：不能连续两晚交换同一个人。上一晚参与交换的人今晚无法再被交换。</p>
+
+<<if _currentSwap>>
+<p class="warning">今晚已设置交换：<strong><<print GameState.PROFILES[_currentSwap.a].name>></strong> ↔ <strong><<print GameState.PROFILES[_currentSwap.b].name>></strong></p>
+<p class="muted">交换已生效，无法更改。</p>
+<<else>>
+<p>剩余交换次数：<strong><<print _remaining>></strong>/7</p>
+
+<<if _remaining > 0>>
+<h3>选择交换的两人</h3>
+<div class="choice-list">
+<<if Game.isAlive('su_wan') and Game.isAlive('jiang_bai') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('jiang_bai')>>
+<<link "苏晚 ↔ 江白">><<run Game.magicianSwap('su_wan', 'jiang_bai')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('fang_heng') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('fang_heng')>>
+<<link "苏晚 ↔ 方衡">><<run Game.magicianSwap('su_wan', 'fang_heng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('shen_shen') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('shen_shen')>>
+<<link "苏晚 ↔ 沈慎">><<run Game.magicianSwap('su_wan', 'shen_shen')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('ye_zhiqiu') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('ye_zhiqiu')>>
+<<link "苏晚 ↔ 叶知秋">><<run Game.magicianSwap('su_wan', 'ye_zhiqiu')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('zheng_shoushan')>>
+<<link "苏晚 ↔ 老郑">><<run Game.magicianSwap('su_wan', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('lin_xiaoman')>>
+<<link "苏晚 ↔ 林小满">><<run Game.magicianSwap('su_wan', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('zhou_yang')>>
+<<link "苏晚 ↔ 周阳">><<run Game.magicianSwap('su_wan', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('tang_xiaotang')>>
+<<link "苏晚 ↔ 唐小棠">><<run Game.magicianSwap('su_wan', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "苏晚 ↔ 赵明城">><<run Game.magicianSwap('su_wan', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('gu_yan')>>
+<<link "苏晚 ↔ 顾言">><<run Game.magicianSwap('su_wan', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('fang_heng') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('fang_heng')>>
+<<link "江白 ↔ 方衡">><<run Game.magicianSwap('jiang_bai', 'fang_heng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('shen_shen') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('shen_shen')>>
+<<link "江白 ↔ 沈慎">><<run Game.magicianSwap('jiang_bai', 'shen_shen')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('ye_zhiqiu') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('ye_zhiqiu')>>
+<<link "江白 ↔ 叶知秋">><<run Game.magicianSwap('jiang_bai', 'ye_zhiqiu')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('zheng_shoushan')>>
+<<link "江白 ↔ 老郑">><<run Game.magicianSwap('jiang_bai', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('lin_xiaoman')>>
+<<link "江白 ↔ 林小满">><<run Game.magicianSwap('jiang_bai', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('zhou_yang')>>
+<<link "江白 ↔ 周阳">><<run Game.magicianSwap('jiang_bai', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('tang_xiaotang')>>
+<<link "江白 ↔ 唐小棠">><<run Game.magicianSwap('jiang_bai', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "江白 ↔ 赵明城">><<run Game.magicianSwap('jiang_bai', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('gu_yan')>>
+<<link "江白 ↔ 顾言">><<run Game.magicianSwap('jiang_bai', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng') and Game.isAlive('shen_shen') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('shen_shen')>>
+<<link "方衡 ↔ 沈慎">><<run Game.magicianSwap('fang_heng', 'shen_shen')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng') and Game.isAlive('ye_zhiqiu') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('ye_zhiqiu')>>
+<<link "方衡 ↔ 叶知秋">><<run Game.magicianSwap('fang_heng', 'ye_zhiqiu')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('zheng_shoushan')>>
+<<link "方衡 ↔ 老郑">><<run Game.magicianSwap('fang_heng', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('lin_xiaoman')>>
+<<link "方衡 ↔ 林小满">><<run Game.magicianSwap('fang_heng', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('zhou_yang')>>
+<<link "方衡 ↔ 周阳">><<run Game.magicianSwap('fang_heng', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('tang_xiaotang')>>
+<<link "方衡 ↔ 唐小棠">><<run Game.magicianSwap('fang_heng', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "方衡 ↔ 赵明城">><<run Game.magicianSwap('fang_heng', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('gu_yan')>>
+<<link "方衡 ↔ 顾言">><<run Game.magicianSwap('fang_heng', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen') and Game.isAlive('ye_zhiqiu') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('ye_zhiqiu')>>
+<<link "沈慎 ↔ 叶知秋">><<run Game.magicianSwap('shen_shen', 'ye_zhiqiu')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('zheng_shoushan')>>
+<<link "沈慎 ↔ 老郑">><<run Game.magicianSwap('shen_shen', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('lin_xiaoman')>>
+<<link "沈慎 ↔ 林小满">><<run Game.magicianSwap('shen_shen', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('zhou_yang')>>
+<<link "沈慎 ↔ 周阳">><<run Game.magicianSwap('shen_shen', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('tang_xiaotang')>>
+<<link "沈慎 ↔ 唐小棠">><<run Game.magicianSwap('shen_shen', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "沈慎 ↔ 赵明城">><<run Game.magicianSwap('shen_shen', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('gu_yan')>>
+<<link "沈慎 ↔ 顾言">><<run Game.magicianSwap('shen_shen', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('zheng_shoushan')>>
+<<link "叶知秋 ↔ 老郑">><<run Game.magicianSwap('ye_zhiqiu', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('lin_xiaoman')>>
+<<link "叶知秋 ↔ 林小满">><<run Game.magicianSwap('ye_zhiqiu', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('zhou_yang')>>
+<<link "叶知秋 ↔ 周阳">><<run Game.magicianSwap('ye_zhiqiu', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('tang_xiaotang')>>
+<<link "叶知秋 ↔ 唐小棠">><<run Game.magicianSwap('ye_zhiqiu', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "叶知秋 ↔ 赵明城">><<run Game.magicianSwap('ye_zhiqiu', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('gu_yan')>>
+<<link "叶知秋 ↔ 顾言">><<run Game.magicianSwap('ye_zhiqiu', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zheng_shoushan') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('lin_xiaoman')>>
+<<link "老郑 ↔ 林小满">><<run Game.magicianSwap('zheng_shoushan', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zheng_shoushan') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('zhou_yang')>>
+<<link "老郑 ↔ 周阳">><<run Game.magicianSwap('zheng_shoushan', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zheng_shoushan') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('tang_xiaotang')>>
+<<link "老郑 ↔ 唐小棠">><<run Game.magicianSwap('zheng_shoushan', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zheng_shoushan') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "老郑 ↔ 赵明城">><<run Game.magicianSwap('zheng_shoushan', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zheng_shoushan') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('gu_yan')>>
+<<link "老郑 ↔ 顾言">><<run Game.magicianSwap('zheng_shoushan', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('lin_xiaoman') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('lin_xiaoman') and not Game.wasInLastSwap('zhou_yang')>>
+<<link "林小满 ↔ 周阳">><<run Game.magicianSwap('lin_xiaoman', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('lin_xiaoman') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('lin_xiaoman') and not Game.wasInLastSwap('tang_xiaotang')>>
+<<link "林小满 ↔ 唐小棠">><<run Game.magicianSwap('lin_xiaoman', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('lin_xiaoman') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('lin_xiaoman') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "林小满 ↔ 赵明城">><<run Game.magicianSwap('lin_xiaoman', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('lin_xiaoman') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('lin_xiaoman') and not Game.wasInLastSwap('gu_yan')>>
+<<link "林小满 ↔ 顾言">><<run Game.magicianSwap('lin_xiaoman', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zhou_yang') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('zhou_yang') and not Game.wasInLastSwap('tang_xiaotang')>>
+<<link "周阳 ↔ 唐小棠">><<run Game.magicianSwap('zhou_yang', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zhou_yang') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('zhou_yang') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "周阳 ↔ 赵明城">><<run Game.magicianSwap('zhou_yang', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zhou_yang') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('zhou_yang') and not Game.wasInLastSwap('gu_yan')>>
+<<link "周阳 ↔ 顾言">><<run Game.magicianSwap('zhou_yang', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('tang_xiaotang') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('tang_xiaotang') and not Game.wasInLastSwap('zhao_mingcheng')>>
+<<link "唐小棠 ↔ 赵明城">><<run Game.magicianSwap('tang_xiaotang', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('tang_xiaotang') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('tang_xiaotang') and not Game.wasInLastSwap('gu_yan')>>
+<<link "唐小棠 ↔ 顾言">><<run Game.magicianSwap('tang_xiaotang', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zhao_mingcheng') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('zhao_mingcheng') and not Game.wasInLastSwap('gu_yan')>>
+<<link "赵明城 ↔ 顾言">><<run Game.magicianSwap('zhao_mingcheng', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
+<</if>>
+</div>
+<</if>>
+<</if>>
+
+<div class="choice-list">
+[[返回神职面板|God_Panel]]
+</div>
+
+
+:: God_Magician_Result
+<<run Game.visit()>>
+<<set _swap to Game.getMagicianSwap()>>
+<h2>交换已设置</h2>
+<p>沈慎微微点头，手中的扑克牌无声地翻转。</p>
+<blockquote>沈慎：「<strong><<print GameState.PROFILES[_swap.a].name>></strong>和<strong><<print GameState.PROFILES[_swap.b].name>></strong>。今晚，在狼的眼里，他们就是彼此。」</blockquote>
+<p class="system-hint">交换将在今夜生效。如果狼人攻击其中一人，实际被杀的是另一人。</p>
+<p class="muted">沈慎不知道这是否有用。赌博就是这样——你永远不知道牌面是什么，直到翻开。</p>
+<div class="choice-list">
+[[返回神职面板|God_Panel]]
+</div>
+
+
+:: God_Panel
+<<run Game.visit()>>
+<h2>神职联络</h2>
+<p class="system-hint">你可以联络已确认的神职，请他们使用能力。神职能力来源于村民，<strong>白天和夜晚均可发动</strong>。</p>
+<p class="muted">但白天当众使用能力会暴露身份。狼人能力仅夜晚可用，除非机械狼已弑神偷取神力。</p>
+
+<div class="choice-list">
+<<if Game.isAlive('ye_zhiqiu')>>
+[[联络叶知秋（女巫）|God_Witch]]
+<<else>>
+<p class="muted">叶知秋已死亡。女巫能力消失。</p>
+<</if>>
+
+<<if Game.isAlive('lin_xiaoman')>>
+[[联络林小满（骑士）|God_Knight]]
+<<else>>
+<p class="muted">林小满已死亡。骑士能力消失。</p>
+<</if>>
+
+<<if Game.isAlive('fang_heng')>>
+[[联络方衡（预言家）|God_Prophet]]
+<<else>>
+<p class="muted">方衡已死亡。预言家能力消失。</p>
+<</if>>
+
+<<if Game.isAlive('shen_shen')>>
+[[联络沈慎（魔术师）|God_Magician]]
+<<else>>
+<p class="muted">沈慎已死亡。魔术师能力消失。</p>
+<</if>>
+</div>
+
+<<if Game.witchBroken()>>
+<p class="danger">叶知秋已精神崩溃，无法再使用女巫能力。</p>
+<</if>>
+<<if Game.knightWeakened()>>
+<p class="warning">林小满处于虚弱状态，今天无法行动。</p>
+<</if>>
+
+<div class="choice-list">
+[[返回|Start]]
+</div>
+
+:: God_Prophet
+<<run Game.visit()>>
+<h2>方衡 · 预言家</h2>
+<p>方衡站在窗边，目光扫过大厅里的每一个人。</p>
+<blockquote>方衡：「我能感知到一个人身上的气息。但我看到的不是身份，是意象——雾气、火焰、空洞、涟漪。怎么解读，取决于你自己。」</blockquote>
+<p class="system-hint">预言家感知：方衡会描述他感受到的气息和意象。你需要自己判断这些描述意味着什么。</p>
+<p class="muted">有些气息具有误导性。隐狼看起来可能像好人，机械狼的空洞感可能是前所未有的新东西。不要急于下结论。</p>
+
+<<set _results to Game.prophetResults()>>
+<<if _results.length > 0>>
+<h3>已探查记录</h3>
+<<for _i to 0>>_SHOW
+<<if _i < _results.length>>
+<<set _r to _results[_i]>>
+<p class="muted"><strong><<print GameState.PROFILES[_r.target].name>></strong>（第 <<print _r.day>> 天）：<<print _r.text>></p>
+<</if>>
+_SHOW
+<</for>>
+<</if>>
+
+<h3>选择探查目标</h3>
+<div class="choice-list">
+<<if Game.isAlive('zhou_yang')>>
+<<link "探查周阳">><<run Game.prophetCheck('zhou_yang')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('tang_xiaotang')>>
+<<link "探查唐小棠">><<run Game.prophetCheck('tang_xiaotang')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zhao_mingcheng')>>
+<<link "探查赵明城">><<run Game.prophetCheck('zhao_mingcheng')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('gu_yan')>>
+<<link "探查顾言">><<run Game.prophetCheck('gu_yan')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('shen_shen')>>
+<<link "探查沈慎">><<run Game.prophetCheck('shen_shen')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('ye_zhiqiu')>>
+<<link "探查叶知秋">><<run Game.prophetCheck('ye_zhiqiu')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('fang_heng')>>
+<<link "探查方衡（自己）">><<run Game.prophetCheck('fang_heng')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('lin_xiaoman')>>
+<<link "探查林小满">><<run Game.prophetCheck('lin_xiaoman')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('su_wan')>>
+<<link "探查苏晚">><<run Game.prophetCheck('su_wan')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('jiang_bai')>>
+<<link "探查江白">><<run Game.prophetCheck('jiang_bai')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zheng_shoushan')>>
+<<link "探查老郑">><<run Game.prophetCheck('zheng_shoushan')>><<goto 'God_Prophet_Result'>><</link>>
+<</if>>
+</div>
+<div class="choice-list">
+[[返回|Start]]
+</div>
+
+
+:: God_Prophet_Result
+<<run Game.visit()>>
+<<set _results to Game.prophetResults()>>
+<<set _last to _results[_results.length - 1]>>
+<<set _targetName to GameState.PROFILES[_last.target].name>>
+<h2>预言家的感知</h2>
+<p>方衡凝视了许久。他的瞳孔微微放大，像是看到了某种常人看不到的东西。许久之后，他缓缓开口：</p>
+<blockquote><<print _last.text>></blockquote>
+<p class="muted">方衡无法给出明确的答案。他感知到的只是气息和意象——是盟友还是敌人，需要你自己判断。</p>
+<p class="warning">注意：有些气息具有误导性。完美的善意可能是伪装，空洞的存在可能隐藏着危险。</p>
+
+<<set _allResults to Game.prophetResults()>>
+<<if _allResults.length > 1>>
+<h3>历史感知记录</h3>
+<<for _i to 0>>_HIST
+<<if _i < _allResults.length - 1>>
+<<set _r to _allResults[_i]>>
+<p class="muted">第 <<print _r.loop>> 轮第 <<print _r.day>> 天 · <<print GameState.PROFILES[_r.target].name>>：<<print _r.text>></p>
+<</if>>
+_HIST
+<</for>>
+<</if>>
+
+<div class="choice-list">
+[[继续探查|God_Prophet]]
+[[返回|Start]]
+</div>
+
+
+:: God_Witch
+<<run Game.visit()>>
+<h2>叶知秋 · 女巫</h2>
+<<set _remaining to Game.witchRemaining()>>
+<<set _uses to Game.witchUses()>>
+<<set _broken to Game.witchBroken()>>
+<<set _sensed to Game.witchGetSensedDeath()>>
+
+<<if _broken>>
+<p class="danger">叶知秋已经精神崩溃了。她的眼神空洞，手指不停地颤抖。她再也无法使用诅咒或还魂的能力。</p>
+<div class="choice-list">
+[[返回|God_Panel]]
+</div>
+<<else>>
+<p>叶知秋坐在角落，手指无意识地摩挲着一支空注射器。</p>
+<blockquote>叶知秋：「我能感知生命的流逝。如果有人死了，我会知道。我能把生命推回去——但每一次，都是从我自己身上剜掉一块。」</blockquote>
+
+<hr>
+<h3>生命感知</h3>
+<<if _sensed>>
+<p class="warning">叶知秋感知到：<strong><<print GameState.PROFILES[_sensed].name>></strong> 正在死去。她可以在今夜将生命推回去。</p>
+<<if _remaining > 0>>
+<div class="choice-list">
+<<link "还魂 <<print GameState.PROFILES[_sensed].name>>（消耗 1 次）">><<run Game.witchRevive(_sensed, false)>><<goto 'God_Witch_Result'>><</link>>
+<<link "在众人面前还魂（会暴露身份）">><<run Game.witchRevive(_sensed, true)>><<goto 'God_Witch_Result'>><</link>>
+</div>
+<<else>>
+<p class="danger">但她已经没有余力了。再使用一次就会崩溃。</p>
+<</if>>
+<<else>>
+<p class="muted">目前没有感知到生命流逝。</p>
+<</if>>
+
+<hr>
+<h3>诅咒与还魂（已用 <<print _uses>>/3）</h3>
+<<if _remaining > 0>>
+<p class="muted">诅咒是神力，直接夺走生命。还魂是神力，将生命推回。合计 3 次/轮。</p>
+<div class="choice-list">
+<<if Game.isAlive('zhou_yang')>>
+<<link "诅咒周阳（杀人）">><<run Game.witchCurse('zhou_yang')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('tang_xiaotang')>>
+<<link "诅咒唐小棠（杀人）">><<run Game.witchCurse('tang_xiaotang')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('zhao_mingcheng')>>
+<<link "诅咒赵明城（杀人）">><<run Game.witchCurse('zhao_mingcheng')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('gu_yan')>>
+<<link "诅咒顾言（杀人）">><<run Game.witchCurse('gu_yan')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+</div>
+<<else>>
+<p class="danger">诅咒/还魂额度已用完。</p>
+<</if>>
+
+<hr>
+<h3>毒药制作（不消耗额度，需要材料）</h3>
+<<set _mats to $game.godSkills.witch.materials>>
+<p class="muted">材料：药瓶 <<print _mats.medicine_bottle || 0>> | 注射器 <<print _mats.syringe || 0>> | 草药束 <<print _mats.herb_bundle || 0>> | 化学试剂 <<print _mats.chemical_vial || 0>></p>
+<div class="choice-list">
+<<if Game.witchCanCraft('sleeping_potion')>>
+<<link "制作安眠药（药瓶 x1）">><<run Game.witchCraftPotion('sleeping_potion')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<<if Game.witchCanCraft('paralytic')>>
+<<link "制作麻痹剂（药瓶 x1 + 注射器 x1）">><<run Game.witchCraftPotion('paralytic')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<<if Game.witchCanCraft('deep_sedative')>>
+<<link "制作强效镇静剂（注射器 + 草药 + 试剂）">><<run Game.witchCraftPotion('deep_sedative')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<<if Game.witchCanCraft('truth_serum')>>
+<<link "制作吐真剂（草药 + 试剂）">><<run Game.witchCraftPotion('truth_serum')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+</div>
+<p class="muted">材料可通过探索庄园（餐厅、主卧、温室、工坊）获得。</p>
+
+<hr>
+<h3>使用毒药</h3>
+<<set _pots to $game.godSkills.witch.potions>>
+<div class="choice-list">
+<<if _pots.sleeping_potion > 0>>
+<<if Game.isAlive('zhou_yang')>>
+<<link "对周阳使用安眠药">><<run Game.witchUsePotion('sleeping_potion', 'zhou_yang')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('tang_xiaotang')>>
+<<link "对唐小棠使用安眠药">><<run Game.witchUsePotion('sleeping_potion', 'tang_xiaotang')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<</if>>
+<<if _pots.paralytic > 0>>
+<<if Game.isAlive('zhou_yang')>>
+<<link "对周阳使用麻痹剂">><<run Game.witchUsePotion('paralytic', 'zhou_yang')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<<if Game.isAlive('tang_xiaotang')>>
+<<link "对唐小棠使用麻痹剂">><<run Game.witchUsePotion('paralytic', 'tang_xiaotang')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<</if>>
+<<if _pots.deep_sedative > 0>>
+<<if Game.isAlive('zhao_mingcheng')>>
+<<link "对赵明城使用强效镇静剂">><<run Game.witchUsePotion('deep_sedative', 'zhao_mingcheng')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<</if>>
+<<if _pots.truth_serum > 0>>
+<<if Game.isAlive('gu_yan')>>
+<<link "对顾言使用吐真剂">><<run Game.witchUsePotion('truth_serum', 'gu_yan')>><<goto 'God_Witch_Result'>><</link>>
+<</if>>
+<</if>>
+</div>
+
+<hr>
+<h3>治愈重伤</h3>
+<<if $game.pursuit and $game.pursuit.playerInjured>>
+<p class="warning">你在追击战中受了伤。叶知秋可以治愈你，但这会暴露她的女巫身份。</p>
+<div class="choice-list">
+<<link "让叶知秋治愈重伤（暴露身份）">><<run Game.witchHeal('chen_mo')>><<goto 'God_Witch_Result'>><</link>>
+</div>
+<<else>>
+<p class="muted">目前没有需要治愈的重伤。</p>
+<</if>>
+
+<</if>>
+
+<div class="choice-list">
+[[返回神职面板|God_Panel]]
+</div>
+
+
+:: God_Witch_Result
+<<run Game.visit()>>
+<<if Game.witchBroken()>>
+<h2>精神崩溃</h2>
+<p class="danger">叶知秋施完最后一次能力后，整个人像被抽空了。她的瞳孔涣散，嘴角不受控制地抽搐。</p>
+<blockquote>叶知秋：「我……我看到了。那些被我害死的人。他们都在看着我……」</blockquote>
+<p class="system-hint">叶知秋精神崩溃。她永久失去了女巫能力。她的医疗事故黑历史可能被触发，有黑化风险。</p>
+<<run Game.revealInfo('ye_zhiqiu', 'witch_broken')>>
+<<else>>
+<h2>完成</h2>
+<p>叶知秋闭上眼睛，嘴唇无声地翕动。空气中弥漫着某种沉重的气息，像是有什么东西从她身上剥离了。</p>
+<p class="system-hint">能力已施展。诅咒/还魂剩余：<strong><<print Game.witchRemaining()>></strong>/3</p>
+<</if>>
+<div class="choice-list">
+[[返回女巫面板|God_Witch]]
+</div>
+
+
+:: Map_Courtyard
+<<run Game.visit()>>
+<h2>庭院</h2>
+<p class="system-hint">刺骨的风雪。你只能在中庭短暂停留。枯死的花园尽头有一口古井和一座废弃的小教堂。</p>
+<div class="choice-list">
+[[前往中庭|Explore_Courtyard]]
+[[前往花园|Explore_Garden]]
+[[查看古井|Explore_Well]]
+[[进入小教堂|Explore_Chapel]]
+[[返回地图|Common_Map]]
+</div>
+
+:: Map_EastWing
+<<run Game.visit()>>
+<h2>东厢房</h2>
+<p class="system-hint">长廊连接着图书室、音乐室、温室和广播室。玻璃窗外的风雪把走廊照得惨白。</p>
+<div class="choice-list">
+[[前往图书室|Explore_Library]]
+[[前往音乐室|Explore_MusicRoom]]
+[[前往温室|Explore_Conservatory]]
+[[前往广播室|Explore_Broadcast]]
+[[返回地图|Common_Map]]
+</div>
+
+:: Map_Main1F
+<<run Game.visit()>>
+<h2>主楼一层</h2>
+<p class="system-hint">庄园的核心区域。壁炉的火光能照到门厅，所有人的房间钥匙都挂在前台的木架上。</p>
+<div class="choice-list">
+[[前往大厅|Explore_GrandHall]]
+[[前往餐厅|Explore_DiningRoom]]
+[[前往厨房|Explore_Kitchen]]
+[[前往储藏室|Explore_Pantry]]
+[[前往会客厅|Explore_DrawingRoom]]
+[[前往书房|Explore_Study]]
+[[前往画廊|Explore_Gallery]]
+[[返回地图|Common_Map]]
+</div>
+
+:: Map_Main2F
+<<run Game.visit()>>
+<h2>主楼二层</h2>
+<p class="system-hint">客房区。十二扇门沿着走廊排开，夜间是各自的安全屋。走廊尽头有一面落地镜，镜面发暗。</p>
+<div class="choice-list">
+[[查看客房走廊|Explore_GuestCorridor]]
+[[进入主卧|Explore_MasterBedroom]]
+[[进入儿童房|Explore_ChildrenRoom]]
+[[进入缝纫室|Explore_SewingRoom]]
+[[走上阳台|Explore_Balcony]]
+[[返回地图|Common_Map]]
+</div>
+
+:: Map_Main3F
+<<run Game.visit()>>
+<h2>阁楼 / 档案室</h2>
+<p class="system-hint">楼梯尽头是一扇低矮的木门。空气里弥漫着灰尘和旧纸的味道。</p>
+<div class="choice-list">
+[[进入阁楼|Explore_Attic]]
+<<if Game.hasItem('old_key')>>
+[[进入档案室|Explore_ArchiveRoom]]
+<</if>>
+[[返回地图|Common_Map]]
+</div>
+
+:: Map_Underground
+<<run Game.visit()>>
+<h2>地下空间</h2>
+<p class="system-hint">你用旧钥匙打开酒窖深处的铁门，走下潮湿的楼梯。空气里有血腥味和某种古老的气息。</p>
+<div class="choice-list">
+<<if not Game.hasClue('ritual_tablet')>>
+[[深入酒窖|Explore_Cellar]]
+<</if>>
+<<if Game.hasClue('cellar_door')>>
+[[前往祭祀空间|Explore_Altar]]
+<</if>>
+<<if Game.hasClue('ritual_tablet')>>
+[[探索地下墓穴|Explore_Crypt]]
+<</if>>
+[[返回地图|Common_Map]]
+</div>
+
+:: Map_WestWing
+<<run Game.visit()>>
+<h2>西厢房</h2>
+<p class="system-hint">这里更冷。配电室的嗡鸣声在走廊里回荡。酒窖的入口在走廊尽头。</p>
+<div class="choice-list">
+[[前往配电室|Explore_Generator]]
+[[前往工坊|Explore_Workshop]]
+[[前往杂物间|Explore_Armory]]
+[[前往酒窖|Explore_WineCellar]]
+[[返回地图|Common_Map]]
+</div>
+
+:: Pursuit_Engine
+<<run Game.visit()>>
+<<set _turn to $game.pursuit.turn>>
+<<set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name>>
+<<set _posName to GameState.MAP[$game.pursuit.playerPos].name>>
+<<set _wolfPosName to GameState.MAP[$game.pursuit.wolfPos].name>>
+<<set _dist to Game.pursuitDistance($game.pursuit.wolfPos, $game.pursuit.playerPos)>>
+
+<h2>追击战 · 第 <<print _turn>> 回合</h2>
+
+<<if $game.pursuit.playerInjured>>
+<p class="danger">你受伤了。每一步都伴随着剧痛。</p>
+<</if>>
+
+<p>你在<strong><<print _posName>></strong>。<strong><<print _wolfName>></strong>在<strong><<print _wolfPosName>></strong>，距离你 <<print _dist>> 步。</p>
+
+<<if _dist lte 1>>
+<p class="danger">它就在附近！你能闻到它身上的血腥味。</p>
+<<elseif _dist lte 3>>
+<p>脚步声越来越近了。</p>
+<</if>>
+
+<<if Game.canHideAt($game.pursuit.playerPos) and not $game.pursuit.hiding>>
+<p class="system-hint">这里可以躲藏。</p>
+<</if>>
+
+<div class="choice-list">
+<<if Game.canHideAt($game.pursuit.playerPos) and not $game.pursuit.hiding>>
+<<link "躲藏起来">><<set $game.pursuit.hiding to true>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if $game.pursuit.hiding>>
+<<link "继续躲藏">><<goto "Pursuit_Resolve">><</link>>
+<<link "放弃躲藏，继续逃跑">><<set $game.pursuit.hiding to false>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('flashlight')>>
+<<link "用手电筒照狼人">><<run Game.pursuitUseItem('flashlight')>>"<<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('lighter')>>
+<<link "用打火机点燃障碍">><<run Game.pursuitUseItem('lighter')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('wire')>>
+<<link "布下金属丝绊索">><<run Game.pursuitUseItem('wire')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('pocket_knife')>>
+<<link "用折叠小刀反击">><<run Game.pursuitUseItem('pocket_knife')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('ritual_dagger')>>
+<<link "举起祭祀骨刀">><<run Game.pursuitUseItem('ritual_dagger')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+<<if Game.hasItem('first_aid_kit') and $game.pursuit.playerInjured>>
+<<link "用急救包治疗伤口">><<run Game.pursuitUseItem('first_aid_kit')>><<goto "Pursuit_Resolve">><</link>>
+<</if>>
+</div>
+
+<hr>
+<p class="muted">移动到相邻区域：</p>
+<div class="choice-list">
+<<link "前往大厅">><<run Game.pursuitMove('grand_hall')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往餐厅">><<run Game.pursuitMove('dining_room')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往厨房">><<run Game.pursuitMove('kitchen')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往储藏室">><<run Game.pursuitMove('pantry')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往会客厅">><<run Game.pursuitMove('drawing_room')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往书房">><<run Game.pursuitMove('study')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往画廊">><<run Game.pursuitMove('gallery')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往主卧">><<run Game.pursuitMove('master_bedroom')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往儿童房">><<run Game.pursuitMove('children_room')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往缝纫室">><<run Game.pursuitMove('sewing_room')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往阳台">><<run Game.pursuitMove('balcony')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往门厅">><<run Game.pursuitMove('foyer')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往中庭">><<run Game.pursuitMove('courtyard')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往花园">><<run Game.pursuitMove('garden')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往小教堂">><<run Game.pursuitMove('chapel')>><<goto "Pursuit_Resolve">><</link>>
+<<link "前往古井">><<run Game.pursuitMove('well')>><<goto "Pursuit_Resolve">><</link>>
+</div>
+<p class="muted">部分地点可能无法到达，游戏会提示移动失败。</p>
+
+
+:: Pursuit_Resolve
+<<set _result to Game.pursuitNextTurn()>>
+<<run Game.visit()>>
+<<set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name>>
+
+<<if _result is 'defeated'>>
+<h1 class="ending-bad">追击战失败</h1>
+<p>你的理智彻底崩溃了。黑暗中传来 <<print _wolfName>> 的低笑。</p>
+<p>你倒在地上，看着天花板上的水渍变成了无数只眼睛。</p>
+<p class="system-hint">理智归零。追击战失败。</p>
+<div class="choice-list">
+[[继续|Chapter07_Bad]]
+</div>
+<<elseif _result is 'dawn'>>
+<h2>黎明</h2>
+<p>你撑过了这一夜。窗外的天空开始泛白，风雪的声音渐渐平息。</p>
+<p class="thought">陈默（内心）：天亮了……我还活着。</p>
+<<run Game.endPursuit()>>
+<<if $game.pursuit.playerInjured>>
+<p class="system-hint">你带着伤活了下来。但你知道，下一个夜晚会更难。</p>
+<<else>>
+<p class="system-hint">你毫发无伤地活了下来。这是胜利，但只是暂时的。</p>
+<</if>>
+<div class="choice-list">
+[[继续新的一天|Chapter03_06_Framework]]
+</div>
+<<else>>
+<h2>追击战 · 结算</h2>
+<<if _result is 'found'>>
+<p class="danger">你的躲藏被发现了！<<print _wolfName>> 扑了上来，你勉强挣脱，但受了伤。理智 -10。</p>
+<<elseif _result is 'attacked'>>
+<p class="danger"><<print _wolfName>> 追上了你！利爪划过你的肩膀。理智 -15。</p>
+<<elseif _result is 'caught_up'>>
+<p class="danger">它追到了你的位置！你被击倒，鲜血滴在地上。理智 -15。</p>
+<<elseif _result is 'missed'>>
+<p>它经过了你躲藏的地方，但没有发现你。你屏住呼吸，一动不动。</p>
+<<elseif _result is 'moved'>>
+<p>脚步声在移动。它正在搜索其他房间。</p>
+<</if>>
+<div class="choice-list">
+[[下一回合|Pursuit_Engine]]
+</div>
+<</if>>
+
+
+:: Pursuit_Start
+<<run Game.startPursuit()>>
+<<run Game.visit()>>
+<h2>夜间追击战</h2>
+<p>存活的人越来越少了。走廊里只剩下你的脚步声。</p>
+<p>突然，大厅方向传来沉重的脚步声——不是人的脚步，是某种东西用前掌着地行走。</p>
+<p>狼人不再遵守"一晚一间"的规则了。它们开始主动猎杀。</p>
+<p class="system-hint">追击战开始。你需要撑过 5 个回合直到天亮。选择行动谨慎。</p>
+<<set _wolf to Game.getPursuitWolf()>>
+<<set _wolfName to GameState.PROFILES[_wolf].name>>
+<p class="danger">追击你的是：<strong><<print _wolfName>></strong></p>
+<div class="choice-list">
+[[开始逃跑|Pursuit_Engine]]
+</div>
+
+
+:: Start
+<<set $game.visited[passage()] to 1>>
+<h1>无尽雪夜</h1>
+<p>窗外是铅灰色的雪幕。风像钝刀，一下下刮着玻璃。</p>
+<p>陈默睁开眼。天花板有水渍，形状像一张闭眼的人脸。他眨了眨眼，水渍没有变化。</p>
+<p>床头柜上有一行字，像是用指甲或者刀尖刻在木头上的：</p>
+<blockquote><strong>“23:00 前，必须回到房间。”</strong></blockquote>
+<p>你被困在了落雁山庄。大雪封山，没有信号，食物只够两天。更可怕的是——你们之中有人会在夜里杀人。</p>
+<p class="system-hint">本作是文字冒险游戏，你的每个选择都会影响信任、线索与结局。点击选项推进剧情。</p>
+<div class="choice-list">
+[[开始游戏|Chapter01_Start]]
+[[查看人物|Common_Characters]]
+</div>
+
+
+
+:: StoryCaption
+<<set _status to Game.getStatus()>>
+<<set _sanClass to _status.san > 60 ? 'safe' : (_status.san > 30 ? '' : 'danger')>>
+<<set _breaking to Game.trueEndingProgress()>>
+<div class="status-panel">
+  <div class="row"><span class="status-label">??</span><span class="status-value">? <<print _status.loop>> ?</span></div>
+  <div class="row"><span class="status-label">??</span><span class="status-value">? <<print _status.day>> ?</span></div>
+  <div class="row"><span class="status-label">??</span><span class="status-value"><<print _status.time>></span></div>
+  <div class="row"><span class="status-label">??</span><span class="status-value"><<print _status.san>>/100</span></div>
+  <div class="bar"><div class="bar-fill <<print _sanClass>>" style="width: <<print _status.san>>%"></div></div>
+  <div class="row" style="margin-top:0.6rem;"><span class="status-label">??</span><span class="status-value"><<print _status.aliveCount>>/12</span></div>
+</div>
+<div class="status-panel">
+  <div class="row"><span class="status-label">[[??|Common_Inventory]]</span><span class="status-value"><<print Object.keys($game.inventory).length>></span></div>
+  <div class="row"><span class="status-label">[[??|Common_ClueList]]</span><span class="status-value"><<print Object.keys($game.clues).length>></span></div>
+  <div class="row"><span class="status-label">[[??|Common_Characters]]</span><span class="status-value">12</span></div>
+  <div class="row"><span class="status-label">[[??|Common_Map]]</span><span class="status-value">??</span></div>
+  <div class="row"><span class="status-label">[[??|Common_Memory]]</span><span class="status-value"><<print $game.memories.length>></span></div>
+  <div class="row"><span class="status-label">[[??|God_Panel]]</span><span class="status-value">??</span></div>
+</div>
+<div class="status-panel">
+  <div class="row"><span class="status-label">????</span><span class="status-value"><<print _breaking.collected>>/<<print _breaking.total>></span></div>
+  <div class="bar"><div class="bar-fill" style="width: <<print Math.round(_breaking.collected / _breaking.total * 100)>>%"></div></div>
+  <<if $game.flags.breaking_ready>>
+  <p class="system-hint" style="margin-top:0.4rem;">??????????????????</p>
+  <</if>>
+</div>
+
+
+:: StoryInit
+<<set $game to GameState.create()>>
+<<set $game.visited[passage()] to 1>>
+

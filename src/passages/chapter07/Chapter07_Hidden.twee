@@ -1,0 +1,15 @@
+:: Chapter07_Hidden
+<<run Game.unlockEnding('god_of_gods')>>
+<<run Game.visit()>>
+<div class="ending-page">
+<h1 class="ending-hidden">隐藏结局：万神之神</h1>
+<p>你站在祭祀空间的中心。你同时拥有无限记忆、骑士的决斗、先知的洞察。</p>
+<p>你的影子分裂成三个，每一个都属于你曾经杀死的神。</p>
+<blockquote>系统音：“你收集了他们。你成为了他们。现在，你需要做一个选择。”<br>陈默：“什么选择？”<br>系统音：“这个世界即将崩塌。它需要一个新的系统。你可以拒绝，让一切归零；或者接受，成为下一轮循环的规则本身。”</blockquote>
+<div class="choice-list">
+[[拒绝成神|Chapter07_Hidden_Refuse]]
+[[接受成神|Chapter07_Hidden_Accept]]
+</div>
+</div>
+
+

@@ -1,0 +1,14 @@
+:: Chapter02_AloneYes
+<<run Game.changeTrust('zhou_ye', 5)>>
+<<run Game.addClue('wolf_knife')>>
+<<run Game.changeSan(-5)>>
+<<run Game.visit()>>
+<p>你点点头：“好。但去配电室之前，我想先看看你口袋里是什么。”</p>
+<p>周阳的表情僵了一瞬，然后慢慢把手从口袋里拿出来。</p>
+<p>那是一把折叠刀，刃口有暗红色的痕迹。</p>
+<blockquote>周阳：“……防身用的。你信吗？”</blockquote>
+<p>你没有回答。你们对视了很久，然后他转身离开。</p>
+<p class="system-hint">周阳信任度 +5。你发现了狼爪刀。理智 -5。</p>
+<p>[[夜晚降临|Chapter02_NightReturn]]</p>
+
+

@@ -1,0 +1,24 @@
+:: Chapter06_KillGod
+<<run Game.visit()>>
+<h2>Day 6 · 弑神</h2>
+<p>你趁所有人争论的时候，一个人溜到了地下祭坛。</p>
+<p>铁门还开着。祭坛上的符文在烛光中像是活过来了一样——它们在呼吸。</p>
+<p>你走近祭坛中央的那本书。你读到了更多内容：</p>
+<blockquote><em>"掌祭者即掌生死。存者若取祭者之位，则轮回终，新神立。"</em></blockquote>
+<<run Game.addClue("god_kill_method")>>
+<<run Game.setFlag("knows_god_kill")>>
+<p class="system-hint">你知道了弑神的方法：取代祭坛的守护者，就能终结轮回。</p>
+<p>但代价是什么？</p>
+<p>你感到有人在看你。</p>
+<p>回头——沈慎站在门口，手里握着一把刀。</p>
+<p>"你也读到了。"他说，声音平静得不像在杀人现场。</p>
+<p>"你一直在跟踪我？"</p>
+<p>"我一直在保护这道门。"他走进来，把刀放在祭坛上，"不是你想象的那样。我不是来杀你的。"</p>
+<p>他看你的眼神里有一种奇怪的……悲伤。</p>
+<p>"因为如果你要弑神，你会需要我的帮助。"</p>
+<<run Game.setFlag("shenshen_offered_help")>>
+<<run Game.changeTrust("shen_shen", 10)>>
+<div class="choice-list">
+[[接受沈慎的帮助|Chapter06_KillGod_Accept]]
+[[拒绝他，独自行动|Chapter06_NightReturn]]
+</div>

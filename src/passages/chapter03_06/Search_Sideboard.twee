@@ -1,0 +1,11 @@
+:: Search_Sideboard
+<<run Game.addItem('bread')>>
+<<run Game.addItem('medicine_bottle')>>
+<<run Game.visit()>>
+<h2>餐柜</h2>
+<p>餐柜深处藏着几袋密封的干粮，还有一个小药瓶。药瓶的标签被撕掉了，摇晃时能听到药片的声音。</p>
+<p class="thought">陈默（内心）：止痛药？安眠药？还是……毒药？这东西出现在餐厅而不是医务室，有点奇怪。</p>
+<p class="system-hint">你获得了道具：干粮、药瓶。</p>
+<div class="choice-list">
+[[返回餐厅|Explore_DiningRoom]]
+</div>

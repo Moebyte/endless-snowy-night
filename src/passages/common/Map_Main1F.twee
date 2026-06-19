@@ -1,0 +1,14 @@
+:: Map_Main1F
+<<run Game.visit()>>
+<h2>主楼一层</h2>
+<p class="system-hint">庄园的核心区域。壁炉的火光能照到门厅，所有人的房间钥匙都挂在前台的木架上。</p>
+<div class="choice-list">
+[[前往大厅|Explore_GrandHall]]
+[[前往餐厅|Explore_DiningRoom]]
+[[前往厨房|Explore_Kitchen]]
+[[前往储藏室|Explore_Pantry]]
+[[前往会客厅|Explore_DrawingRoom]]
+[[前往书房|Explore_Study]]
+[[前往画廊|Explore_Gallery]]
+[[返回地图|Common_Map]]
+</div>

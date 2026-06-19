@@ -1,0 +1,4 @@
+:: StoryInit
+<<set $game to GameState.create()>>
+<<set $game.visited[passage()] to 1>>
+

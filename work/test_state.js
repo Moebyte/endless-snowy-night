@@ -1,0 +1,12 @@
+global.window = global;
+var GameState = window.GameState = window.GameState || {};
+require('./src/scripts/state.js');
+var GS = window.GameState;
+console.log('=== state.js validation ===');
+console.log('BREAKING_CLUES count:', GS.BREAKING_CLUES.length);
+console.log('Breaking clues:', GS.BREAKING_CLUES.join(', '));
+console.log('Items:', Object.keys(GS.ITEMS).length);
+console.log('Clues:', Object.keys(GS.CLUES).length);
+console.log('Map locations:', Object.keys(GS.MAP).length);
+console.log('Backstory keys:', Object.keys(GS.BACKSTORY_KEYS).length);
+console.log('=== All OK ===');

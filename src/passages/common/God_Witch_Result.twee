@@ -1,0 +1,16 @@
+:: God_Witch_Result
+<<run Game.visit()>>
+<<if Game.witchBroken()>>
+<h2>精神崩溃</h2>
+<p class="danger">叶知秋施完最后一次能力后，整个人像被抽空了。她的瞳孔涣散，嘴角不受控制地抽搐。</p>
+<blockquote>叶知秋：「我……我看到了。那些被我害死的人。他们都在看着我……」</blockquote>
+<p class="system-hint">叶知秋精神崩溃。她永久失去了女巫能力。她的医疗事故黑历史可能被触发，有黑化风险。</p>
+<<run Game.revealInfo('ye_zhiqiu', 'witch_broken')>>
+<<else>>
+<h2>完成</h2>
+<p>叶知秋闭上眼睛，嘴唇无声地翕动。空气中弥漫着某种沉重的气息，像是有什么东西从她身上剥离了。</p>
+<p class="system-hint">能力已施展。诅咒/还魂剩余：<strong><<print Game.witchRemaining()>></strong>/3</p>
+<</if>>
+<div class="choice-list">
+[[返回女巫面板|God_Witch]]
+</div>

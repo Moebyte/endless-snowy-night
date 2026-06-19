@@ -1,0 +1,13 @@
+{
+  "name": "endless-snowy-night",
+  "version": "0.1.0",
+  "description": "Twine 2 + SugarCube 2 \u6587\u5b57\u5192\u9669\u6e38\u620f\uff1a\u65e0\u5c3d\u96ea\u591c",
+  "scripts": {
+    "dev": "node tools/build.js --watch",
+    "build": "node tools/build.js",
+    "check": "node tools/check-links.js"
+  },
+  "keywords": ["twine", "sugarcube", "visual-novel", "interactive-fiction"],
+  "author": "",
+  "license": "MIT"
+}

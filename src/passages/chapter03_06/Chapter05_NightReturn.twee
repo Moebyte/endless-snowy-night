@@ -1,0 +1,27 @@
+:: Chapter05_NightReturn
+<<set $game.time to '21:00'>>
+<<run Game.visit()>>
+<h2>Day 5 · 入夜</h2>
+<<if Game.hasFlag('zhou_jiang_downhill')>>
+<p>周阳和江白没有回来。</p>
+<p>天已经黑了三个小时。你站在大厅门口，看着门外漆黑的雪地。</p>
+<p>没有人说话。沉默比风声更沉重。</p>
+<p>方衡第一个开口："他们不会回来了。至少今夜不会。"</p>
+<p>苏晚紧紧地握着你的手。她的手指冰凉。</p>
+<</if>>
+<<if Game.hasFlag('mystery_room_opened')>>
+<p>那扇门背后的房间在你记忆中留下了深刻的印记——书架上摆满了关于"仪式"和"献祭"的旧书。桌上有一本日志，最后一页写着一行字：</p>
+<p>"他们不会永远沉默。当第一个人死去，轮回就已经开始了。"</p>
+<p>你把日志藏进口袋。</p>
+<<run Game.addItem("ritual_log")>>
+<<run Game.addClue("ritual_tablet")>>
+<</if>>
+<<if not Game.hasFlag('zhou_jiang_downhill') and not Game.hasFlag('mystery_room_opened')>>
+<p>今天没有新的死亡。但饥饿在每个人脸上刻下了痕迹。</p>
+<p>苏晚分完最后一口面包后，林小满小声说了一句让所有人都听见的话："如果明天还没有吃的，我们就得考虑吃别的东西了。"没有人接话。</p>
+<</if>>
+<p>你回到房间。躺在床上，你感到一种奇怪的平静——像是在暴风雪的中心，一切嘈杂都被隔离在外。</p>
+<p class="system-hint">第 5 天结束。你已经接近真相的边缘。</p>
+<div class="choice-list">
+[[等待夜晚过去|Chapter06_Start]]
+</div>

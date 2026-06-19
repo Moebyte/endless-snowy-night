@@ -1,0 +1,13 @@
+:: Explore_GrandHall
+<<run Game.visitLocation('grand_hall')>>
+<<run Game.visit()>>
+<h2>大厅</h2>
+<p>壁炉里的火劈啪作响。前台是一张沉重的橡木桌，上面挂满了房间钥匙，每把钥匙都系着一条褪色的绸带，编号从 1 到 12。</p>
+<p>墙上挂着一幅巨大的油画：庄园建成时的样子。画里的天空是蓝色的，花园里开满玫瑰，完全不像现在这样被风雪吞没。</p>
+<p>角落里有一台老式座钟，钟摆有节奏地摆动。时间永远停在 11:58。</p>
+<p class="thought">陈默（内心）：11:58……还有两分钟到午夜。然后是 23:00 的规则。这个庄园的时间是不是被设计过的？</p>
+<div class="choice-list">
+[[检查前台抽屉|Search_FrontDesk]]
+[[细看那幅油画|Search_Painting]]
+[[返回|Map_Main1F]]
+</div>

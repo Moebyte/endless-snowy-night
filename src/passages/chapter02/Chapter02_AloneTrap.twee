@@ -1,0 +1,15 @@
+:: Chapter02_AloneTrap
+<<set $game.time to '14:00'>>
+<<run Game.visit()>>
+<h2>Day 2 · 独处陷阱</h2>
+<p>周阳主动找到你，提议两人一起去检查配电室。</p>
+<blockquote>周阳：“那个姓陈的有点怪。我想单独跟你聊聊。”</blockquote>
+<p>你记得上一周目他在酒窖说过的话：“我闻到了。”</p>
+<p>现在他要和你独处。这是危险的，但也可能是获取情报的机会。</p>
+<div class="choice-list">
+[[答应独处，试探周阳|Chapter02_AloneYes]]
+[[拒绝，坚持三人同行|Chapter02_AloneNo]]
+[[假装答应，实际把江白也叫上|Chapter02_AloneChen]]
+</div>
+
+

@@ -1,0 +1,12 @@
+:: Map_Main2F
+<<run Game.visit()>>
+<h2>主楼二层</h2>
+<p class="system-hint">客房区。十二扇门沿着走廊排开，夜间是各自的安全屋。走廊尽头有一面落地镜，镜面发暗。</p>
+<div class="choice-list">
+[[查看客房走廊|Explore_GuestCorridor]]
+[[进入主卧|Explore_MasterBedroom]]
+[[进入儿童房|Explore_ChildrenRoom]]
+[[进入缝纫室|Explore_SewingRoom]]
+[[走上阳台|Explore_Balcony]]
+[[返回地图|Common_Map]]
+</div>

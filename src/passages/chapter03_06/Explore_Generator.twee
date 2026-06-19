@@ -1,0 +1,19 @@
+:: Explore_Generator
+<<run Game.visitLocation('generator_room')>>
+<<if Game.isAlive('jiang_bai')>>
+<<run Game.addItem('wire')>>
+<<run Game.addItem('flashlight')>>
+<</if>>
+<<run Game.visit()>>
+<h2>配电室</h2>
+<<if Game.isAlive('jiang_bai')>>
+<p>江白正在这里检修电路。看到你来，他递过来一截金属丝和修好的手电筒。</p>
+<blockquote>江白：「这地方线路老化得厉害。我勉强修好了手电筒，金属丝你拿着，说不定有用。」</blockquote>
+<p>他的右手腕又露出来了，那道整齐的旧疤在灯光下格外显眼。</p>
+<p class="system-hint">你获得了道具：金属丝、手电筒。</p>
+<<else>>
+<p>配电室空无一人，设备发出低沉的嗡鸣。没有了江白，这里的电路无人维护。</p>
+<</if>>
+<div class="choice-list">
+[[返回|Map_WestWing]]
+</div>

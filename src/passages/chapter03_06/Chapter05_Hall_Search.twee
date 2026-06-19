@@ -1,0 +1,12 @@
+:: Chapter05_Hall_Search
+<<run Game.visit()>>
+<p>"下山太危险了。"你说，"我们还没搜查完整个山庄。地下酒窖的铁门后面可能藏着出口，或者至少是通讯设备。"</p>
+<p>周阳不说话了。他转身踢了一脚墙壁，发出沉闷的响声。</p>
+<p>方衡沉吟片刻："他说得有道理。我们在往外跑之前，应该先弄清楚这座山庄到底藏着什么。"</p>
+<p>赵明城冷冷地补了一句："如果真有东西的话。"</p>
+<<run Game.setFlag('search_remaining')>>
+<p class="system-hint">你成功说服大家继续搜查山庄。铁门和隐藏夹层成为今天的重点。</p>
+<div class="choice-list">
+[[找林小满一起去搜索|Chapter05_LinXiaoman]]
+[[找赵明城调查他那边的线索|Chapter05_ZhaoMingcheng]]
+</div>

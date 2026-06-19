@@ -1,0 +1,11 @@
+:: Search_Mirror2F
+<<run Game.addClue('mirror_exit')>>
+<<run Game.visit()>>
+<h2>落地镜</h2>
+<p>你站在镜子前。镜面有一道细微的裂纹，从右上角延伸到左下角。</p>
+<p>你注意到裂纹的形状和祭祀空间的镜子完全一致。似乎庄园里的每一面镜子，都连接着同一个出口。</p>
+<p class="thought">陈默（内心）：镜子是出口。打碎它，也许就能离开。但需要先知道全部规则。</p>
+<p class="system-hint">你获得了破局线索：镜子出口。</p>
+<div class="choice-list">
+[[返回走廊|Explore_GuestCorridor]]
+</div>

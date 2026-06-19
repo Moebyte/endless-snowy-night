@@ -1,0 +1,16 @@
+:: Explore_Crypt
+<<run Game.visitLocation('crypt')>>
+<<run Game.addClue('recruitment_tablet')>>
+<<run Game.changeSan(-10)>>
+<<run Game.visit()>>
+<h2>地下墓穴</h2>
+<p>祭祀空间后方有一条狭窄的甬道，通向地下墓穴。两侧排列着石棺，每口石棺上都刻着一个名字和年份。</p>
+<p>你数了数——总共十二口石棺。最早的几口已经斑驳，最新的那口还是空的，棺盖半开，里面铺着白色的绸缎。</p>
+<p>空棺的边缘刻着一行字：</p>
+<blockquote>"等待第十二位继承者。"</blockquote>
+<p>甬道尽头的墙壁上密密麻麻刻满了名字，你认出了其中几个——和画廊肖像上的名字一致。这些人都曾是"继承者"，都曾以为自己能打破轮回。</p>
+<p class="thought">陈默（内心）：我不是第一个。在我之前，有多少人走到了这里，又失败了？</p>
+<p class="system-hint">你确认了破局线索：招聘碑。地下墓穴有十二口石棺，等待第十二位继承者。理智 -10。</p>
+<div class="choice-list">
+[[返回祭祀空间|Explore_Altar]]
+</div>

@@ -1,0 +1,27 @@
+:: God_Prophet_Result
+<<run Game.visit()>>
+<<set _results to Game.prophetResults()>>
+<<set _last to _results[_results.length - 1]>>
+<<set _targetName to GameState.PROFILES[_last.target].name>>
+<h2>预言家的感知</h2>
+<p>方衡凝视了许久。他的瞳孔微微放大，像是看到了某种常人看不到的东西。许久之后，他缓缓开口：</p>
+<blockquote><<print _last.text>></blockquote>
+<p class="muted">方衡无法给出明确的答案。他感知到的只是气息和意象——是盟友还是敌人，需要你自己判断。</p>
+<p class="warning">注意：有些气息具有误导性。完美的善意可能是伪装，空洞的存在可能隐藏着危险。</p>
+
+<<set _allResults to Game.prophetResults()>>
+<<if _allResults.length > 1>>
+<h3>历史感知记录</h3>
+<<for _i to 0>>_HIST
+<<if _i < _allResults.length - 1>>
+<<set _r to _allResults[_i]>>
+<p class="muted">第 <<print _r.loop>> 轮第 <<print _r.day>> 天 · <<print GameState.PROFILES[_r.target].name>>：<<print _r.text>></p>
+<</if>>
+_HIST
+<</for>>
+<</if>>
+
+<div class="choice-list">
+[[继续探查|God_Prophet]]
+[[返回|Start]]
+</div>

@@ -1,0 +1,13 @@
+:: Explore_ArchiveRoom
+<<run Game.visitLocation('archive_room')>>
+<<run Game.addItem('old_photo')>>
+<<run Game.addClue('shenshen_identity')>>
+<<run Game.visit()>>
+<h2>档案室</h2>
+<p>锁着的铁柜被你的旧钥匙打开了。里面是庄园二十年来的文件：账本、住客名单、员工档案。</p>
+<p>员工档案里有一份赌场荷官的入职申请，照片上是沈慎，日期是二十年前。职位一栏写着："祭祀执行人"。</p>
+<p>你还在档案夹里找到一张泛黄的合影。照片上是十二个年轻人，背景就是这座庄园。最后一排左边第三个，长得很像年轻时的老郑。</p>
+<p class="system-hint">你获得了破局线索：沈慎的真身。道具：泛黄照片。</p>
+<div class="choice-list">
+[[返回|Map_Main3F]]
+</div>

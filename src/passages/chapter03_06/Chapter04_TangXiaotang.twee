@@ -1,0 +1,17 @@
+:: Chapter04_TangXiaotang
+<<set $game.time to '09:20'>>
+<<run Game.visit()>>
+<h2>Day 4 · 唐小棠</h2>
+<p>你把唐小棠叫到走廊拐角。她一直低着头，手指绞着衣角。</p>
+<p>"你说昨晚看到有人上三楼？"</p>
+<p>她点点头，小声说："我……睡不着。听到楼梯有声音，就从门缝看了一眼。有个人影上了三楼。"</p>
+<p>"你看清是谁了吗？"</p>
+<p>"没有。但身高——不像林小满，也不像苏晚姐。"她犹豫了一下，"也不像你。"</p>
+<p>你注意到她说"不像你"的时候，语气有一点……失望？</p>
+<p>她又补充道："那个人走路很轻。像是故意不让人听到。"</p>
+<<run Game.setFlag('talked_tangxiaotang_day4')>>
+<p class="system-hint">唐小棠提供的信息：身高判断排除林小满、苏晚、你；行走轻盈，可能是练过的人。</p>
+<div class="choice-list">
+[[继续问她对其他人的看法|Chapter04_TangXiaotang_Opinion]]
+[[结束对话|Chapter04_NightReturn]]
+</div>

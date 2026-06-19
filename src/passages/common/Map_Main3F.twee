@@ -1,0 +1,11 @@
+:: Map_Main3F
+<<run Game.visit()>>
+<h2>阁楼 / 档案室</h2>
+<p class="system-hint">楼梯尽头是一扇低矮的木门。空气里弥漫着灰尘和旧纸的味道。</p>
+<div class="choice-list">
+[[进入阁楼|Explore_Attic]]
+<<if Game.hasItem('old_key')>>
+[[进入档案室|Explore_ArchiveRoom]]
+<</if>>
+[[返回地图|Common_Map]]
+</div>

@@ -1,0 +1,11 @@
+:: Chapter02_AloneChen
+<<run Game.changeTrust('chenmo', 5)>>
+<<run Game.setFlag('chen_zhou_confront')>>
+<<run Game.visit()>>
+<p>你假装答应周阳，却在出发前悄悄叫上了江白。</p>
+<p>配电室里，周阳看见江白时脸色变了。</p>
+<blockquote>周阳：“你耍我？”<br>陈默：“我怕你耍我。”</blockquote>
+<p>江白没说话，只是把手按在右手腕的旧疤上。周阳盯着那个动作，最终退了一步。</p>
+<p class="system-hint">江白信任度 +5。你察觉到江白的旧疤对周阳有威慑力。</p>
+<p>[[夜晚降临|Chapter02_NightReturn]]</p>
+

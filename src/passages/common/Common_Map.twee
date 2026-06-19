@@ -1,0 +1,34 @@
+:: Common_Map
+<<run Game.visit()>>
+<h2>庄园地图</h2>
+<p class="system-hint">这是一座建造在雪山深处的老式庄园。主楼三层，东西两翼各有厢房，中庭被风雪包围，地下还有未知的空间。点击区域进入探索。</p>
+
+<div class="zone-list">
+<h3>主楼一层</h3>
+<p class="muted">门厅、大厅、餐厅、厨房、储藏室、会客厅、书房、画廊</p>
+<h3>主楼二层</h3>
+<p class="muted">客房走廊、主卧、儿童房、缝纫室、阳台</p>
+<h3>主楼三层 / 阁楼</h3>
+<p class="muted">阁楼、档案室</p>
+<h3>东厢房</h3>
+<p class="muted">图书室、音乐室、温室、广播室</p>
+<h3>西厢房</h3>
+<p class="muted">配电室、工坊、杂物间、酒窖</p>
+<h3>庭院</h3>
+<p class="muted">中庭、花园、古井、小教堂</p>
+<h3>地下空间</h3>
+<p class="muted">地下铁门、祭祀空间、地下墓穴</p>
+</div>
+
+<div class="choice-list">
+[[主楼一层|Map_Main1F]]
+[[主楼二层|Map_Main2F]]
+[[阁楼 / 档案室|Map_Main3F]]
+[[东厢房|Map_EastWing]]
+[[西厢房|Map_WestWing]]
+[[庭院|Map_Courtyard]]
+<<if Game.hasItem('old_key')>>
+[[地下空间|Map_Underground]]
+<</if>>
+[[返回|Start]]
+</div>

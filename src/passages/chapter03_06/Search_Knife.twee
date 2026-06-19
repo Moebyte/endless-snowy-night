@@ -1,0 +1,10 @@
+:: Search_Knife
+<<run Game.addItem('pocket_knife')>>
+<<run Game.visit()>>
+<h2>厨师刀</h2>
+<p>你拿起砧板上的厨师刀。刀身沉重，刃口磨得锃亮。这不是一把普通的厨房刀具——刀柄上刻着一个狼头图案。</p>
+<p class="thought">陈默（内心）：狼头……这把刀和狼人有关？还是说，庄园的主人本身就是猎人？</p>
+<p class="system-hint">你获得了道具：折叠小刀（刻有狼头图案）。</p>
+<div class="choice-list">
+[[返回厨房|Explore_Kitchen]]
+</div>

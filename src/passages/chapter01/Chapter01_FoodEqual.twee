@@ -1,0 +1,13 @@
+:: Chapter01_FoodEqual
+<<run Game.changeTrust('suwan', 5)>>
+<<run Game.changeTrust('shen', 5)>>
+<<run Game.setFlag('food_equal_split')>>
+<<run Game.addItem('bread', 1)>>
+<<run Game.visit()>>
+<p>你举手打断他们：“不如所有人平分，每份都称重、记录。这样谁都别想多拿，也别想栽赃。”</p>
+<p>苏晚点点头：“我同意。”方衡也附和：“公平是最低成本的信任。”</p>
+<p>周阳哼了一声，但没再反对。</p>
+<p class="system-hint">苏晚、方衡信任度 +5。你获得了一份干粮。</p>
+<p>[[继续|Chapter01_Cellar]]</p>
+
+

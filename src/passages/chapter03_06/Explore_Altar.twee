@@ -1,0 +1,19 @@
+:: Explore_Altar
+<<run Game.visitLocation('altar')>>
+<<run Game.addClue('ritual_tablet')>>
+<<run Game.addClue('recruitment_tablet')>>
+<<run Game.addClue('god_kill_method')>>
+<<run Game.addItem('ritual_dagger')>>
+<<run Game.addItem('mirror_shard')>>
+<<run Game.visit()>>
+<h2>祭祀空间</h2>
+<p>铁门后的空间比想象的更大。石壁上刻满了名字，有些模糊，有些清晰。</p>
+<p>中央有一块倾斜的石碑，刻着规则：</p>
+<blockquote><strong>"七日为一轮。轮末未出神者，循环重置。神死者，其力归弑神者。弑神需以骨刀，于祭祀空间内行之。"</strong></blockquote>
+<p>另一块石碑刻着名单，最下方是你的名字。祭坛上放着一把骨刀，刀刃泛着幽光。祭坛后的镜面完整，但映出的不是你的倒影，而是一个闭着眼的人脸。</p>
+<p class="thought">陈默（内心）：骨刀是弑神的唯一工具。镜子是出口。我终于看清了全部规则。</p>
+<p class="system-hint">你获得了破局线索：规则石碑、招聘碑、弑神之法。道具：祭祀骨刀、镜子碎片。</p>
+<div class="choice-list">
+[[探索地下墓穴|Explore_Crypt]]
+[[返回|Map_Underground]]
+</div>

@@ -1,0 +1,14 @@
+:: Chapter03_FangHeng_Suspect
+<<run Game.visit()>>
+<p>"你怀疑谁？"你问。</p>
+<p>方衡没有立刻回答。他重新点了一根烟，火光映在他脸上，表情晦暗。</p>
+<p>"老郑。他太熟悉这里了。一个退休导游，对山庄的地形比自己的家还熟。而且他总在回避一些问题。"</p>
+<p>你想起老郑在酒窖里的自言自语。"还有呢？"</p>
+<p>"顾言。他看人的方式不对。不是观察，是……估价。"</p>
+<p>方衡看着你："你问我的看法，这就是我的看法。"</p>
+<<run Game.setFlag('fangheng_suspects_laozheng')>>
+<<run Game.changeTrust('fang_heng', 5)>>
+<p class="system-hint">方衡信任度 +5。他怀疑老郑和顾言。</p>
+<div class="choice-list">
+[[回到大厅|Chapter03_NightReturn]]
+</div>

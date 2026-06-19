@@ -1,0 +1,14 @@
+:: Explore_Library
+<<run Game.visitLocation('library')>>
+<<run Game.addItem('guest_register')>>
+<<run Game.addClue('old_guests')>>
+<<run Game.visit()>>
+<h2>图书室</h2>
+<p>满架的旧书蒙着厚厚的灰。你在前台抽屉里找到一本住客登记簿，上面密密麻麻写满了名字，有些被划掉，旁边标注着日期。</p>
+<p>书架深处藏着一本日记，记录着庄园二十年前的往事：曾经有一群大学生在这里失踪，只有一个导游活了下来。</p>
+<p>日记的最后一页写着：</p>
+<blockquote>"仪式需要十二个人。必须有一个人觉醒，必须有一个人弑神。否则循环不会结束。"</blockquote>
+<p class="system-hint">你获得了道具：住客登记簿。线索：之前的客人。</p>
+<div class="choice-list">
+[[返回|Map_EastWing]]
+</div>

@@ -1,0 +1,11 @@
+:: Chapter02_NightReturn
+<<set $game.time to '23:00'>>
+<<run Game.visit()>>
+<h2>Day 2 · 23:00</h2>
+<p>钟声再次响起。</p>
+<p class="system-hint">安全屋规则已生效：狼人每晚只能强闯一间房。</p>
+<p>十二个人各自回房。你锁好门，把椅子抵在门后。</p>
+<p>今晚和上周目不一样。你知道的更多了，但也更害怕了。</p>
+<p>你盯着天花板，等待黎明的到来。</p>
+<p>[[06:00|Chapter02_SanCost]]</p>
+

@@ -1,0 +1,18 @@
+:: Explore_Workshop
+<<run Game.visitLocation('workshop')>>
+<<run Game.addItem('wire')>>
+<<run Game.addItem('flashlight')>>
+<<run Game.visit()>>
+<h2>工坊</h2>
+<p>木工和金工工具整齐地挂在墙上。工作台上有一盏修好的手电筒，旁边是一卷金属丝。</p>
+<p>墙角堆着几个未完工的木箱，其中一个箱盖上刻着和画廊肖像下方一样的文字："候选继承者"。</p>
+<p class="thought">陈默（内心）：这个庄园一直在为"继承者"做准备。箱子是给我准备的。</p>
+<p class="system-hint">你获得了道具：手电筒、金属丝。</p>
+
+<<if not Game.witchHasMaterial('chemical_vial')>>
+<<run Game.witchAddMaterial('chemical_vial')>>
+<p class="system-hint">你发现了女巫材料：化学试剂瓶。工坊的架子上有一瓶化学试剂。叶知秋制作高级毒药可能需要。</p>
+<</if>>
+<div class="choice-list">
+[[返回|Map_WestWing]]
+</div>

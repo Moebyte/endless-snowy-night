@@ -1,0 +1,14 @@
+:: Chapter07_Hidden_Refuse
+<<run Game.unlockEnding('refuse_god')>>
+<<run Game.visit()>>
+<div class="ending-page">
+<h1 class="ending-hidden">万神之神 · 拒绝</h1>
+<p>陈默：“我不是你的电池。”</p>
+<p>世界像一张纸被揉皱。你看见苏晚、江白、所有人，在光芒中碎成粉末。</p>
+<p>最后的画面是空的。没有山庄，没有雪，没有轮回。只有你一个人，站在白茫茫的虚无里。</p>
+<p>你还记得他们。这就是你的惩罚。</p>
+<p class="system-hint">结局已解锁：万神之神 · 拒绝。</p>
+<p>[[重新开始|Start]]</p>
+</div>
+
+

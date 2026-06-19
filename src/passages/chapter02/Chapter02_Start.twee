@@ -1,0 +1,27 @@
+:: Chapter02_Start
+<<set $game.day to 2>>
+<<set $game.time to '06:00'>>
+<<run Game.setFlag('loop_awakened')>>
+<<run Game.changeSan(-5)>>
+<<run Game.addMemory('我记得。老郑会死。这一切我已经经历过一次。')>>
+<<run Game.visit()>>
+<h2>Day 2 · 循环觉醒</h2>
+<p>陈默睁开眼。</p>
+<p>天花板的水渍，形状像一张闭眼的人脸。</p>
+<p>床头柜上刻着那行字：</p>
+<blockquote><strong>“23:00 前，必须回到房间。”</strong></blockquote>
+<p>他猛地坐起来，心跳得像要从喉咙里跳出来。</p>
+<p>窗外还是那一场雪。时间显示：被困第三天 06:17。</p>
+<p>但这不是最可怕的。最可怕的是——他记得。他记得老郑会死。记得周阳在酒窖说的话。记得江白手腕上的疤。</p>
+<p>他冲出门，正好撞见苏晚。</p>
+<blockquote>苏晚：“你脸色好差，做噩梦了？”<br>陈默：（抓住她的肩膀）“老郑呢？”<br>苏晚：“老郑？他在楼下生火啊。你怎么了？”</blockquote>
+<p>陈默松开她，慢慢退后一步。</p>
+<p class="thought">陈默（内心）：……老郑还活着。这不是梦。这一周，我已经经历过一次。</p>
+<p class="system-hint">你觉醒了无限记忆能力。当前为第 <<print $game.loop>> 轮轮回，第 <<print $game.day>> 天。你可以利用上一周目的情报改变事件。</p>
+<p>[[回到房间记录情报|Chapter02_Notebook]]</p>
+<<if $game.loop > 1>>
+<p class="system-hint">一个噩梦的碎片在记忆里闪回……</p>
+<p>[[狼人的第一夜|Chapter01_WolfMeeting]]</p>
+<</if>>
+
+

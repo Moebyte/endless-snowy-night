@@ -1,0 +1,21 @@
+:: Chapter01_LaoZhouDeath
+<<set $game.day to 2>>
+<<set $game.time to '06:00'>>
+<<run Game.kill('zheng_shoushan')>>
+<<run Game.setFlag('SAW_LAOZHENG_DIE')>>
+<<run Game.changeSan(-10)>>
+<<run Game.addMemory('第一轮第 2 天，老郑被杀了。脖子被撕开，没有搏斗痕迹。')>>
+<<run Game.visit()>>
+<h2>Day 2 · 06:00 · 第一具尸体</h2>
+<p>你被尖叫声惊醒。</p>
+<p>冲出门，你看见林小满跌坐在二楼走廊上，手指着斜对面的房间。</p>
+<p>房门大开。</p>
+<p>老郑倒在血泊里。脖子被撕开，血已经凝固成黑色。房间里没有搏斗痕迹，窗户从内部锁死。</p>
+<blockquote>苏晚：（跪下来检查）“死了……至少六个小时。也就是说，昨晚 23:00 到 24:00 之间。”<br>周阳：“也就是说，我们之中有人杀了他。”</blockquote>
+<p>没有人反驳。</p>
+<p>方衡慢慢说：“门窗都锁着。凶手要么有钥匙，要么……根本不需要出去。”</p>
+<p>江白站在人群最后，右手无意识地按住手腕上的旧疤。</p>
+<p>唐小棠死死捂住嘴，眼泪流下来。林小满抱住她，两个人一起发抖。</p>
+<p class="system-hint">老郑死亡。理智 -10。你获得了记忆碎片。</p>
+<p>[[新的一天|Chapter02_Start]]</p>
+

@@ -1,0 +1,14 @@
+:: Chapter02_Observations
+<<run Game.setFlag('zhou_suspicious')>>
+<<run Game.setFlag('tang_suspicious')>>
+<<run Game.visit()>>
+<h2>Day 2 · 观察</h2>
+<p>你不再像上周目那样被动。你开始观察每一个人。</p>
+<p>周阳的右手还是插在口袋里。但你现在注意到，唐小棠也会不时看向那个方向——不是看周阳，是看他的口袋。</p>
+<p>沈慎坐在角落，目光扫过每个人的脖子。那种目光不像审视，像……在确认要害。</p>
+<p>顾言在纸上写写画画，嘴里念念有词：“神职、村民、狼、信仰……”</p>
+<p class="thought">陈默（内心）：不止一头狼。这个山庄里，至少有两个人在夜里杀人。</p>
+<p class="system-hint">你标记了周阳和唐小棠为可疑对象。</p>
+<p>[[午后，周阳来找你|Chapter02_AloneTrap]]</p>
+
+
