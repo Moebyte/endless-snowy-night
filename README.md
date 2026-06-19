@@ -64,6 +64,28 @@ outputs/
   暴风雪山庄_无限流_剧本_Pilot.md  # 原始剧本
 ```
 
+
+## 维护说明
+
+### 关于当前工作目录
+
+由于原目录 .git 元数据权限损坏，Codex 无法直接在原目录执行 git push。因此已在新目录 iles-mentioned-by-the-user-md-push 中完成仓库修复，并成功推送到 GitHub。
+
+后续操作建议：
+
+- **继续开发**：可以在任意一个目录编辑源文件（src/、docs/ 等），两者内容一致。
+- **提交/推送**：请切换到 iles-mentioned-by-the-user-md-push 目录执行 git add、git commit、git push。
+- **目录整理**：如果你想保持只有一个工作目录，可以手动重命名：
+  1. 关闭 Codex 或退出当前线程。
+  2. 把 iles-mentioned-by-the-user-md 重命名为 iles-mentioned-by-the-user-md-old。
+  3. 把 iles-mentioned-by-the-user-md-push 重命名为 iles-mentioned-by-the-user-md。
+  4. 删除 iles-mentioned-by-the-user-md-old（可选）。
+
+### 安全提醒
+
+- 本地 .ssh/ 目录存放了 GitHub Deploy Key 私钥，已加入 .gitignore，不会被提交。
+- 之前生成的 Personal Access Token ghp_6S8jZY... 已不再需要，请尽快到 GitHub Settings → Developer settings → Personal access tokens 中删除，避免泄露风险。
+
 ## 开发指南
 
 ### 写新剧情
