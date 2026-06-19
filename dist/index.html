@@ -4873,7 +4873,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;/if&gt;&gt;
 
 &lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Start]]
+&lt;&lt;back &quot;返回&quot;&gt;&gt;
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="109" name="Common_ClueList" tags="" position="100,100" size="100,100">&lt;&lt;set _clues to Object.keys($game.clues)&gt;&gt;
 &lt;h2&gt;线索簿&lt;/h2&gt;
@@ -4885,7 +4885,7 @@ Game.resetGodSkillsLoop = function () {
   &lt;p class=&quot;muted&quot;&gt;&lt;&lt;print Game.clueDesc(_id)&gt;&gt;&lt;/p&gt;
 &lt;&lt;/for&gt;&gt;
 &lt;&lt;/if&gt;&gt;
-&lt;p&gt;[[返回|passage()]]&lt;/p&gt;</tw-passagedata>
+&lt;p&gt;&lt;&lt;back &quot;返回&quot;&gt;&gt;&lt;/p&gt;</tw-passagedata>
   <tw-passagedata pid="110" name="Common_DayTransition" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _advanced to Game.advanceDay()&gt;&gt;
 &lt;&lt;if _advanced&gt;&gt;
@@ -4904,7 +4904,7 @@ Game.resetGodSkillsLoop = function () {
   &lt;p class=&quot;muted&quot;&gt;&lt;&lt;print GameState.ITEMS[_id].desc&gt;&gt;&lt;/p&gt;
 &lt;&lt;/for&gt;&gt;
 &lt;&lt;/if&gt;&gt;
-&lt;p&gt;[[返回|passage()]]&lt;/p&gt;</tw-passagedata>
+&lt;p&gt;&lt;&lt;back &quot;返回&quot;&gt;&gt;&lt;/p&gt;</tw-passagedata>
   <tw-passagedata pid="112" name="Common_Map" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;庄园地图&lt;/h2&gt;
 &lt;p class=&quot;system-hint&quot;&gt;这是一座建造在雪山深处的老式庄园。主楼三层，东西两翼各有厢房，中庭被风雪包围，地下还有未知的空间。点击区域进入探索。&lt;/p&gt;
@@ -4936,7 +4936,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;if Game.hasItem(&#39;old_key&#39;)&gt;&gt;
 [[地下空间|Map_Underground]]
 &lt;&lt;/if&gt;&gt;
-[[返回|Start]]
+&lt;&lt;back &quot;返回&quot;&gt;&gt;
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="113" name="Common_Memory" tags="" position="100,100" size="100,100">&lt;&lt;set _memories to $game.memories&gt;&gt;
 &lt;h2&gt;记忆碎片&lt;/h2&gt;
@@ -4949,7 +4949,7 @@ Game.resetGodSkillsLoop = function () {
   &lt;hr&gt;
 &lt;&lt;/for&gt;&gt;
 &lt;&lt;/if&gt;&gt;
-&lt;p&gt;[[返回|passage()]]&lt;/p&gt;</tw-passagedata>
+&lt;p&gt;&lt;&lt;back &quot;返回&quot;&gt;&gt;&lt;/p&gt;</tw-passagedata>
   <tw-passagedata pid="114" name="Common_NightResolution" tags="" position="100,100" size="100,100">&lt;&lt;set _kill to Game.executeWolfKill()&gt;&gt;
 &lt;&lt;run Game.setLastWolfKill(_kill)&gt;&gt;
 &lt;&lt;run Game.witchSenseDeath()&gt;&gt;

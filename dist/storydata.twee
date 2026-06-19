@@ -5069,7 +5069,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <</if>>
 
 <div class="choice-list">
-[[返回|Start]]
+<<back "返回">>
 </div>
 
 :: Common_ClueList
@@ -5083,7 +5083,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
   <p class="muted"><<print Game.clueDesc(_id)>></p>
 <</for>>
 <</if>>
-<p>[[返回|passage()]]</p>
+<p><<back "返回">></p>
 
 
 
@@ -5109,7 +5109,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
   <p class="muted"><<print GameState.ITEMS[_id].desc>></p>
 <</for>>
 <</if>>
-<p>[[返回|passage()]]</p>
+<p><<back "返回">></p>
 
 
 
@@ -5145,7 +5145,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <<if Game.hasItem('old_key')>>
 [[地下空间|Map_Underground]]
 <</if>>
-[[返回|Start]]
+<<back "返回">>
 </div>
 
 
@@ -5161,7 +5161,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
   <hr>
 <</for>>
 <</if>>
-<p>[[返回|passage()]]</p>
+<p><<back "返回">></p>
 
 
 

@@ -9,5 +9,5 @@
   <p class="muted"><<print GameState.ITEMS[_id].desc>></p>
 <</for>>
 <</if>>
-<p>[[返回|passage()]]</p>
+<p><<back "返回">></p>
 

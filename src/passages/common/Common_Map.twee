@@ -30,5 +30,5 @@
 <<if Game.hasItem('old_key')>>
 [[地下空间|Map_Underground]]
 <</if>>
-[[返回|Start]]
+<<back "返回">>
 </div>

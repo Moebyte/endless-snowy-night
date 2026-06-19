@@ -35,5 +35,5 @@
 <</if>>
 
 <div class="choice-list">
-[[返回|Start]]
+<<back "返回">>
 </div>
