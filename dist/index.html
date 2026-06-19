@@ -159,7 +159,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 </style>
   <script role="script" id="twine-user-script" type="text/twine-javascript">/*
  * game.js
- * ???? API???/??/Flag/??/??/??/???/????
+ * Game API: items, clues, flags, endings, loop, safehouse
  */
 
 (function () {
@@ -386,7 +386,7 @@ Game.nextLoop = function () {
 
     var g = ensureState();
 
-    // ????????????
+    // save current breaking_ready state
 
     var wasBreakingReady = !!g.flags.breaking_ready;
 
@@ -400,11 +400,10 @@ Game.nextLoop = function () {
 
     g.chapter = 1;
 
-    // ??????????????????????
-
+    // save current breaking_ready state
     Game.resetLoopState();
 
-    // ?? breaking_ready ???????
+    // preserve breaking_ready across loop reset
 
     if (wasBreakingReady || breakingJustCompleted) {
 
@@ -412,7 +411,7 @@ Game.nextLoop = function () {
 
     }
 
-    // ?????? SAN??????????????????
+    // sanity penalty if still stuck in loop
 
     if (!g.flags.breaking_ready) {
 
@@ -420,7 +419,7 @@ Game.nextLoop = function () {
 
     }
 
-    Game.addMemory('???? ' + g.loop + ' ????' + (breakingJustCompleted ? '?????????????????????' : ''));
+    Game.addMemory('Loop ' + g.loop + ' begins' + (breakingJustCompleted ? ' (breaking ready)' : ''));
 
   }
 
@@ -432,13 +431,13 @@ Game.nextDay = function () {
 
     g.time = '06:00';
 
-    // 闁哄倹澹嗗▓鎴炵▔閿熻姤寰勯埡鍛缂傚喛鎷烽悗鐟?濠傚伎閻忕偛  婵???
+    // reset safehouse status for the new day
 
     g.safehouse = { intruded: false, target: null };
 
     if (g.day > 7) {
 
-      // ??7 濠㈠灈鏅濈划 寮堕悢鍓佺煗闁哄牞鎷烽梺 閸?姣夐柨娑樿嫰瀹搁亶宕氶幆鎵闁稿繈鍎扮粭鍛▔閿???
+      // after day 7, start next loop
 
       Game.nextLoop();
 
@@ -516,13 +515,13 @@ Game.resetLoopState = function () {
 
     g.stats.hunger = 0;
 
-    // 闂佹彃绉堕悿鍡?鐟?濠傚伎閻忕偛  婵???
+    // reset safehouse status
 
     g.safehouse = { intruded: false, target: null };
 
-    // 濞ｅ洦绻勯弳  clues闁靛棔娌焑mories闁靛棔韬琻dings
+    // reset clues, memories, endings
 
-    // 闂佹彃绉堕悿鍡欑矈閻愭湹鎹嶉柟璁规嫹闁艰櫕鏋荤槐娆?韫囨氨鏋傞梺鎻掔Ф閻???
+    // reset god skills for new loop
 
     Game.resetGodSkillsLoop();
 
@@ -1116,8 +1115,8 @@ Game.getStatus = function () {
 })();
 
  /*
- * magician
- * ???????????????????????
+ * magician.js
+ * Magician (Shen Shen) skill: illusion swap
  */
 
 (function () {
@@ -2487,8 +2486,8 @@ GameState.getProfile = function (charId) {
 })();
 
  /*
- * mech-wolf
- * ????????????? + ????
+ * mech-wolf.js
+ * Mechanical wolf (Gu Yan): steal god power
  */
 
 (function () {
@@ -2694,8 +2693,8 @@ Game.mechWolfAIActivatePower = function () {
 
 
  /*
- * night-kill
- * ???????? + ??/??????
+ * night-kill.js
+ * Night kill resolution + god/wolf action checks
  */
 
 (function () {
@@ -4769,70 +4768,30 @@ Game.resetGodSkillsLoop = function () {
 
 &lt;p&gt;[[重新开始|Start]]&lt;/p&gt;
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="108" name="Common_Characters" tags="" position="100,100" size="100,100">&lt;h2&gt;????&lt;/h2&gt;
-&lt;p class=&quot;system-hint&quot;&gt;???????????????????????????????????&lt;/p&gt;
+  <tw-passagedata pid="108" name="Common_Characters" tags="" position="100,100" size="100,100">&lt;h2&gt;人物档案&lt;/h2&gt;
+&lt;p class=&quot;system-hint&quot;&gt;你目前掌握的人物信息。随着剧情推进，更多隐藏情报会被解锁。&lt;/p&gt;
 
-&lt;p&gt;&lt;strong&gt;??&lt;/strong&gt; ? 22?????????????????????????&lt;/p&gt;
+&lt;&lt;set _chars = Object.keys(GameState.PROFILES)&gt;&gt;
+&lt;&lt;for _i to 0; _i lt _chars.length; _i++&gt;&gt;
+&lt;&lt;set _cid = _chars[_i]&gt;&gt;
+&lt;&lt;set _p = GameState.PROFILES[_cid]&gt;&gt;
+&lt;div class=&quot;character-card&quot;&gt;
+&lt;p&gt;&lt;strong&gt;&lt;&lt;print _p.name&gt;&gt;&lt;/strong&gt;，&lt;&lt;print _p.age&gt;&gt; 岁，&lt;&lt;print _p.job&gt;&gt;&lt;/p&gt;
+&lt;p class=&quot;character-desc&quot;&gt;性格：&lt;&lt;print _p.personality&gt;&gt;&lt;/p&gt;
+&lt;p class=&quot;character-desc&quot;&gt;特长：&lt;&lt;print _p.talent&gt;&gt;&lt;/p&gt;
 
-&lt;p&gt;&lt;strong&gt;??&lt;/strong&gt; ? 21????????????????????????????&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;??&lt;/strong&gt; ? 22????????????????????????????????&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;??&lt;/strong&gt; ? 35????????????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;fang_heng&quot;, &quot;zhao_connection&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;?????????????????????&lt;/p&gt;
+&lt;&lt;if Game.hasRevealed(_cid, &quot;backstory&quot;)&gt;&gt;
+&lt;p class=&quot;system-hint&quot;&gt;已解锁：隐藏背景&lt;/p&gt;
 &lt;&lt;/if&gt;&gt;
+&lt;&lt;if Game.hasRevealed(_cid, &quot;identity&quot;)&gt;&gt;
+&lt;p class=&quot;system-hint&quot;&gt;已解锁：真实身份&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;/div&gt;
+&lt;&lt;/for&gt;&gt;
 
-&lt;p&gt;&lt;strong&gt;???&lt;/strong&gt; ? 32????????????????????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;ye_zhiqiu&quot;, &quot;medical_background&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;?????????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;p&gt;&lt;strong&gt;??&lt;/strong&gt; ? 38?????????????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;shen_shen&quot;, &quot;gambler&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;????????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasRevealed(&quot;shen_shen&quot;, &quot;cellar_connection&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;p&gt;&lt;strong&gt;???????&lt;/strong&gt; ? 58???????????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;zheng_shoushan&quot;, &quot;previous_survivor&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;p&gt;&lt;strong&gt;???&lt;/strong&gt; ? 20??????????????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;lin_xiaoman&quot;, &quot;protector&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;????????????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;p&gt;&lt;strong&gt;??&lt;/strong&gt; ? 23??????????????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;zhou_yang&quot;, &quot;aggressive&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;???????????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasRevealed(&quot;zhou_yang&quot;, &quot;wolf_king&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;p&gt;&lt;strong&gt;???&lt;/strong&gt; ? 20?????????????????????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;tang_xiaotang&quot;, &quot;unstable&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;????????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasRevealed(&quot;tang_xiaotang&quot;, &quot;hidden_wolf&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;p&gt;&lt;strong&gt;???&lt;/strong&gt; ? 45???????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;zhao_mingcheng&quot;, &quot;ruthless&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;?????????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;p&gt;&lt;strong&gt;??&lt;/strong&gt; ? 24???????????????????????????&lt;/p&gt;
-&lt;&lt;if Game.hasRevealed(&quot;gu_yan&quot;, &quot;observer&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;??????????????????????&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;p&gt;[[??|Start]]&lt;/p&gt;</tw-passagedata>
+&lt;div class=&quot;choice-list&quot;&gt;
+[[返回|Start]]
+&lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="109" name="Common_ClueList" tags="" position="100,100" size="100,100">&lt;&lt;set _clues to Object.keys($game.clues)&gt;&gt;
 &lt;h2&gt;线索簿&lt;/h2&gt;
 &lt;&lt;if _clues.length is 0&gt;&gt;
@@ -5855,26 +5814,26 @@ _HIST
 &lt;&lt;set _sanClass to _status.san &gt; 60 ? &#39;safe&#39; : (_status.san &gt; 30 ? &#39;&#39; : &#39;danger&#39;)&gt;&gt;
 &lt;&lt;set _breaking to Game.trueEndingProgress()&gt;&gt;
 &lt;div class=&quot;status-panel&quot;&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;??&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;? &lt;&lt;print _status.loop&gt;&gt; ?&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;??&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;? &lt;&lt;print _status.day&gt;&gt; ?&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;??&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _status.time&gt;&gt;&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;??&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _status.san&gt;&gt;/100&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;轮回&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;第 &lt;&lt;print _status.loop&gt;&gt; 轮&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;天数&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;第 &lt;&lt;print _status.day&gt;&gt; 天&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;时间&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _status.time&gt;&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;理智&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _status.san&gt;&gt;/100&lt;/span&gt;&lt;/div&gt;
   &lt;div class=&quot;bar&quot;&gt;&lt;div class=&quot;bar-fill &lt;&lt;print _sanClass&gt;&gt;&quot; style=&quot;width: &lt;&lt;print _status.san&gt;&gt;%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot; style=&quot;margin-top:0.6rem;&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;??&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _status.aliveCount&gt;&gt;/12&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot; style=&quot;margin-top:0.6rem;&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;存活&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _status.aliveCount&gt;&gt;/12&lt;/span&gt;&lt;/div&gt;
 &lt;/div&gt;
 &lt;div class=&quot;status-panel&quot;&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[??|Common_Inventory]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print Object.keys($game.inventory).length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[??|Common_ClueList]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print Object.keys($game.clues).length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[??|Common_Characters]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;12&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[??|Common_Map]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;??&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[??|Common_Memory]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print $game.memories.length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[??|God_Panel]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;??&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[道具|Common_Inventory]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print Object.keys($game.inventory).length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[线索|Common_ClueList]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print Object.keys($game.clues).length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[人物|Common_Characters]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;12&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[地图|Common_Map]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;查看&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[记忆|Common_Memory]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print $game.memories.length&gt;&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;[[神职|God_Panel]]&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;技能&lt;/span&gt;&lt;/div&gt;
 &lt;/div&gt;
 &lt;div class=&quot;status-panel&quot;&gt;
-  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;????&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _breaking.collected&gt;&gt;/&lt;&lt;print _breaking.total&gt;&gt;&lt;/span&gt;&lt;/div&gt;
+  &lt;div class=&quot;row&quot;&gt;&lt;span class=&quot;status-label&quot;&gt;破局进度&lt;/span&gt;&lt;span class=&quot;status-value&quot;&gt;&lt;&lt;print _breaking.collected&gt;&gt;/&lt;&lt;print _breaking.total&gt;&gt;&lt;/span&gt;&lt;/div&gt;
   &lt;div class=&quot;bar&quot;&gt;&lt;div class=&quot;bar-fill&quot; style=&quot;width: &lt;&lt;print Math.round(_breaking.collected / _breaking.total * 100)&gt;&gt;%&quot;&gt;&lt;/div&gt;&lt;/div&gt;
   &lt;&lt;if $game.flags.breaking_ready&gt;&gt;
-  &lt;p class=&quot;system-hint&quot; style=&quot;margin-top:0.4rem;&quot;&gt;??????????????????&lt;/p&gt;
+  &lt;p class=&quot;system-hint&quot; style=&quot;margin-top:0.4rem;&quot;&gt;你已收集足够的破局线索，轮回可以被终结。&lt;/p&gt;
   &lt;&lt;/if&gt;&gt;
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="139" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;

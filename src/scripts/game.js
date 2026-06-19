@@ -1,6 +1,6 @@
 /*
  * game.js
- * ???? API???/??/Flag/??/??/??/???/????
+ * Game API: items, clues, flags, endings, loop, safehouse
  */
 
 (function () {
@@ -227,7 +227,7 @@ Game.nextLoop = function () {
 
     var g = ensureState();
 
-    // ????????????
+    // save current breaking_ready state
 
     var wasBreakingReady = !!g.flags.breaking_ready;
 
@@ -241,11 +241,10 @@ Game.nextLoop = function () {
 
     g.chapter = 1;
 
-    // ??????????????????????
-
+    // save current breaking_ready state
     Game.resetLoopState();
 
-    // ?? breaking_ready ???????
+    // preserve breaking_ready across loop reset
 
     if (wasBreakingReady || breakingJustCompleted) {
 
@@ -253,7 +252,7 @@ Game.nextLoop = function () {
 
     }
 
-    // ?????? SAN??????????????????
+    // sanity penalty if still stuck in loop
 
     if (!g.flags.breaking_ready) {
 
@@ -261,7 +260,7 @@ Game.nextLoop = function () {
 
     }
 
-    Game.addMemory('???? ' + g.loop + ' ????' + (breakingJustCompleted ? '?????????????????????' : ''));
+    Game.addMemory('Loop ' + g.loop + ' begins' + (breakingJustCompleted ? ' (breaking ready)' : ''));
 
   }
 
@@ -273,13 +272,13 @@ Game.nextDay = function () {
 
     g.time = '06:00';
 
-    // 闁哄倹澹嗗▓鎴炵▔閿熻姤寰勯埡鍛缂傚喛鎷烽悗鐟?濠傚伎閻忕偛  婵???
+    // reset safehouse status for the new day
 
     g.safehouse = { intruded: false, target: null };
 
     if (g.day > 7) {
 
-      // ??7 濠㈠灈鏅濈划 寮堕悢鍓佺煗闁哄牞鎷烽梺 閸?姣夐柨娑樿嫰瀹搁亶宕氶幆鎵闁稿繈鍎扮粭鍛▔閿???
+      // after day 7, start next loop
 
       Game.nextLoop();
 
@@ -357,13 +356,13 @@ Game.resetLoopState = function () {
 
     g.stats.hunger = 0;
 
-    // 闂佹彃绉堕悿鍡?鐟?濠傚伎閻忕偛  婵???
+    // reset safehouse status
 
     g.safehouse = { intruded: false, target: null };
 
-    // 濞ｅ洦绻勯弳  clues闁靛棔娌焑mories闁靛棔韬琻dings
+    // reset clues, memories, endings
 
-    // 闂佹彃绉堕悿鍡欑矈閻愭湹鎹嶉柟璁规嫹闁艰櫕鏋荤槐娆?韫囨氨鏋傞梺鎻掔Ф閻???
+    // reset god skills for new loop
 
     Game.resetGodSkillsLoop();
 
