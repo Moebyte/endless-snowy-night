@@ -1,4 +1,0 @@
-﻿:: Map_Courtyard
-<<run Game.visit()>>
-<<set _zoneId to 'courtyard'>>
-<<include "Common_ZoneMap">>

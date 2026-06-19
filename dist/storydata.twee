@@ -3044,137 +3044,158 @@ Game.mechWolfAIActivatePower = function () {
 })();
 
 :: StoryStylesheet
-:root { --bg-color: #1a1a1d; --panel-color: #242428; --text-color: #e8e6e3; --muted-color: #a8a4a0; --accent-color: #c0392b; --accent-hover: #e74c3c; --link-color: #5dade2; --border-color: #3a3a3e; --danger-color: #e74c3c; --safe-color: #58d68d; --font-body: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", sans-serif; }
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-family: var(--font-body); font-size: 16px; line-height: 1.8; -webkit-font-smoothing: antialiased; }
-#ui-bar { background-color: var(--panel-color); border-right: 1px solid var(--border-color); }
-#story { max-width: 720px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
-#passages { background-color: var(--panel-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
-.passage { font-size: 1.05rem; line-height: 1.9; }
-h1 { font-size: 1.8rem; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.4em; margin-top: 1.5em; margin-bottom: 0.8em; }
-h2 { font-size: 1.4rem; color: var(--muted-color); margin-top: 1.5em; margin-bottom: 0.8em; }
-h3 { font-size: 1.15rem; margin-top: 1.5em; margin-bottom: 0.8em; }
-p { margin: 0 0 1.2em 0; }
-.muted { color: var(--muted-color); }
-.danger { color: var(--danger-color); }
-.safe { color: var(--safe-color); }
-.system-hint { color: var(--muted-color); font-size: 0.9rem; border-left: 3px solid var(--accent-color); padding-left: 1rem; margin: 1.2rem 0; }
-.thought { color: var(--link-color); font-style: italic; }
-a { color: var(--link-color); text-decoration: none; transition: color 0.2s; }
-a:hover { color: var(--accent-hover); }
-.link-button, button, .ui-button { display: inline-block; background-color: var(--accent-color); color: #fff; border: none; border-radius: 4px; padding: 0.75rem 1.2rem; margin: 0.4rem 0.3rem 0.4rem 0; font-size: 1rem; font-family: inherit; cursor: pointer; transition: background-color 0.2s, transform 0.1s; min-width: 120px; text-align: center; }
-.link-button:hover, button:hover, .ui-button:hover { background-color: var(--accent-hover); }
-.link-button:active, button:active, .ui-button:active { transform: translateY(1px); }
-.choice-list { margin-top: 1.5rem; }
-.choice-list .link-button { display: block; width: 100%; text-align: left; margin: 0.5rem 0; }
-.status-panel { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.8rem; margin-bottom: 1rem; font-size: 0.9rem; }
-.status-panel .row { display: flex; justify-content: space-between; margin: 0.3rem 0; }
-.status-label { color: var(--muted-color); }
-.status-value { font-weight: bold; }
-.bar { height: 6px; background-color: var(--border-color); border-radius: 3px; overflow: hidden; margin-top: 0.3rem; }
-.bar-fill { height: 100%; background-color: var(--accent-color); transition: width 0.3s; }
-.bar-fill.safe { background-color: var(--safe-color); }
-.bar-fill.danger { background-color: var(--danger-color); }
-ul, ol { margin: 0 0 1.2em 0; padding-left: 1.5em; }
-blockquote { border-left: 3px solid var(--link-color); margin: 1.2rem 0; padding: 0.5rem 1rem; background-color: rgba(93,173,226,0.08); font-style: italic; }
-hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
-@media (max-width: 600px) { html, body { font-size: 15px; } #story { padding: 0.5rem 0.5rem 3rem; } #passages { padding: 1rem; border-radius: 0; border-left: none; border-right: none; } .passage { font-size: 1rem; line-height: 1.85; } h1 { font-size: 1.5rem; } .link-button, button, .ui-button { width: 100%; margin: 0.4rem 0; padding: 0.85rem 1rem; } }
-@media (min-width: 1024px) { #story { max-width: 800px; padding-top: 2rem; } .passage { font-size: 1.1rem; } }
-.ending-page { text-align: center; padding: 2rem 1rem; }
-.ending-page h1 { font-size: 2rem; border-bottom: none; }
-.ending-good { color: var(--safe-color); }
-.ending-bad { color: var(--danger-color); }
-.ending-hidden { color: var(--link-color); }
+/* === 无尽雪夜 · 最小样式 === */
 
-.ending-true { color: #f4d03f; text-shadow: 0 0 10px rgba(244,208,63,0.3); }
-.location-list p { padding: 0.4rem 0; border-bottom: 1px solid var(--border-color); }
-.location-list p:last-child { border-bottom: none; }
-
-.zone-list h3 { font-size: 1.1rem; color: var(--accent-color); margin-top: 1.2rem; margin-bottom: 0.3rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3rem; }
-.zone-list h3:first-child { margin-top: 0; }
-
-.warning { color: #f39c12; }
-.danger { color: var(--danger-color); font-weight: bold; }
-
-/* progressive map: zone + location cards */
-.zone-list { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1rem; }
-.zone-card { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.8rem 1rem; }
-.zone-card.known { border-left: 3px solid var(--accent-color); }
-.zone-card.unknown { border-left: 3px solid var(--border-color); opacity: 0.7; }
-.zone-card h3 { font-size: 1.1rem; color: var(--accent-color); margin: 0 0 0.3rem; border-bottom: none; padding-bottom: 0; }
-.zone-card.unknown h3 { color: var(--muted-color); }
-.zone-card .muted { font-size: 0.85rem; margin: 0.15rem 0; }
-.zone-card a { display: inline-block; margin-top: 0.4rem; }
-
-.location-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
-.location-card { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.7rem 0.9rem; }
-.location-card.known { border-left: 3px solid var(--link-color); }
-.location-card.unknown { border-left: 3px solid var(--border-color); opacity: 0.65; }
-.location-card h4 { font-size: 1rem; margin: 0 0 0.25rem; color: var(--text-color); }
-.location-card.unknown h4 { color: var(--muted-color); letter-spacing: 0.1em; }
-.location-card .muted { font-size: 0.82rem; margin: 0; }
-
-@media (max-width: 600px) {
-  .location-list { grid-template-columns: 1fr; }
-  .zone-card { padding: 0.7rem 0.8rem; }
+:root {
+  --bg: #0d1117;
+  --text: #c9d1d9;
+  --heading: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --danger: #f85149;
+  --border: #30363d;
+  --card: #161b22;
 }
 
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-:: Common_Characters [utility]
-<<setReturnTarget>>
-<h2>人物档案</h2>
-<p class="system-hint">你目前掌握的人物信息。对外身份默认可见，深层性格、特长与不可告人的秘密需要剧情解锁。</p>
+body {
+  font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.8;
+  font-size: 16px;
+}
 
-<<set _met = $game.metCharacters || {}>>
-<<set _chars = Object.keys(_met).filter(function (k) { return _met[k]; })>>
-<<if _chars.length == 0>>
-<p>你还没有遇到过可以记录的人。</p>
-<<else>>
-<<for _i to 0; _i lt _chars.length; _i++>>
-<<set _cid = _chars[_i]>>
-<<set _p = GameState.PROFILES[_cid]>>
-<div class="character-card">
-<p><strong><<print _p.name>></strong>，<<print _p.age>> 岁，<<print _p.job>></p>
-<p class="character-desc">第一印象：<<print _p.firstImpression>></p>
+#passages {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
 
-<<if Game.hasRevealedCharacterAspect(_cid, "personality")>>
-<p class="character-desc">性格：<<print _p.personality>></p>
-<</if>>
-<<if Game.hasRevealedCharacterAspect(_cid, "talent")>>
-<p class="character-desc">特长：<<print _p.talent>></p>
-<</if>>
-<<if Game.hasRevealedCharacterAspect(_cid, "secret") && _p.secret>>
-<p class="danger">不能说的秘密：<<print _p.secret>></p>
-<</if>>
+.passage h1 {
+  color: var(--heading);
+  font-size: 1.8em;
+  margin-bottom: 16px;
+}
 
-<<if Game.hasRevealed(_cid, "backstory")>>
-<p class="system-hint">已解锁：隐藏背景</p>
-<</if>>
-<<if Game.hasRevealed(_cid, "identity")>>
-<p class="system-hint">已解锁：真实身份</p>
-<</if>>
-</div>
-<</for>>
-<</if>>
+.passage h2 {
+  color: var(--heading);
+  font-size: 1.4em;
+  margin: 20px 0 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
 
-<div class="choice-list">
-[[返回|$returnTarget]]
-</div>
+.passage h3 {
+  color: var(--accent);
+  font-size: 1.1em;
+  margin: 16px 0 8px;
+}
 
-:: Common_ClueList [utility]
-<<setReturnTarget>>
-<<set _clues to Object.keys($game.clues)>>
-<h2>线索簿</h2>
-<<if _clues.length is 0>>
-<p class="muted">你还没有收集到任何线索。</p>
-<<else>>
-<<for _id range _clues>>
-  <p><strong><<print Game.clueName(_id)>></strong></p>
-  <p class="muted"><<print Game.clueDesc(_id)>></p>
-<</for>>
-<</if>>
-<p>[[返回|$returnTarget]]</p>
+.passage p {
+  margin-bottom: 12px;
+}
 
+.passage .muted {
+  color: var(--muted);
+  font-size: 0.85em;
+}
+
+.passage .system-hint {
+  color: var(--accent);
+  font-size: 0.9em;
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  margin: 12px 0;
+}
+
+.passage .danger {
+  color: var(--danger);
+  font-weight: bold;
+}
+
+.passage blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 14px;
+  margin: 12px 0;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.passage .alive-list {
+  color: var(--muted);
+  font-size: 0.9em;
+  margin: 12px 0;
+}
+
+.choice-list {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.choice-list a {
+  display: block;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 16px;
+  color: var(--accent);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+  font-size: 0.95em;
+}
+
+.choice-list a:hover {
+  background: #1f2937;
+  border-color: var(--accent);
+}
+
+.night-log {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 16px 0;
+}
+
+.night-log summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.85em;
+}
+
+.night-log .muted {
+  font-size: 0.85em;
+  margin: 4px 0;
+}
+
+.hud {
+  display: flex;
+  gap: 16px;
+  padding: 6px 16px;
+  font-size: 0.85em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.hud-item { white-space: nowrap; }
+
+#sidebar, #ui-bar {
+  display: none;
+}
+
+#story {
+  margin-top: 0;
+}
+
+@media (max-width: 600px) {
+  #passages { padding: 16px 12px 40px; }
+  .passage h1 { font-size: 1.5em; }
+  .passage h2 { font-size: 1.2em; }
+}
 
 
 :: Common_DayTransition
@@ -3185,87 +3206,6 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <<else>>
 <<goto "Day_Morning">>
 <</if>>
-
-:: Common_Inventory [utility]
-<<setReturnTarget>>
-<<set _inv to Object.keys($game.inventory)>>
-<h2>道具栏</h2>
-<<if _inv.length is 0>>
-<p class="muted">你身上没有任何道具。</p>
-<<else>>
-<<for _id range _inv>>
-  <p><strong><<print Game.itemName(_id)>></strong> × <<print $game.inventory[_id]>></p>
-  <p class="muted"><<print GameState.ITEMS[_id].desc>></p>
-<</for>>
-<</if>>
-<p>[[返回|$returnTarget]]</p>
-
-
-
-:: Common_Map [utility]
-<<setReturnTarget>>
-<<run Game.visit()>>
-<h2>庄园地图</h2>
-<p class="system-hint">这是一座建造在雪山深处的老式庄园。地图上只标记你已经亲自踏足的区域；尚未探索的地方仍笼罩在风雪之中。</p>
-<<set _zones to ['main_1f','main_2f','main_3f','east_wing','west_wing','courtyard','underground']>>
-<<set _zonePassage to {
-  'main_1f':'Map_Main1F',
-  'main_2f':'Map_Main2F',
-  'main_3f':'Map_Main3F',
-  'east_wing':'Map_EastWing',
-  'west_wing':'Map_WestWing',
-  'courtyard':'Map_Courtyard',
-  'underground':'Map_Underground'
-}>>
-<div class="zone-list">
-<<for _i to 0; _i lt _zones.length; _i++>>
-<<set _zid to _zones[_i]>>
-<<set _zinfo to GameState.ZONES[_zid]>>
-<<set _discovered to Game.isZoneDiscovered(_zid)>>
-<<if _zid == 'underground' && !Game.hasItem('old_key')>>
-<<elseif _discovered>>
-<div class="zone-card known">
-<h3>_zinfo.name</h3>
-<p class="muted">_zinfo.desc</p>
-<<set _visitedCount to Game.getVisitedLocationsInZone(_zid).length>>
-<<set _totalCount to Game.getLocationsByZone(_zid).length>>
-<p class="muted">已探索 _visitedCount / _totalCount。</p>
-<<capture _zid>>
-<<link "进入" _zonePassage[_zid]>><</link>>
-<</capture>>
-</div>
-<<else>>
-<div class="zone-card unknown">
-<h3>？？？</h3>
-<p class="muted">风雪未散，此处尚未发现。</p>
-</div>
-<</if>>
-<</for>>
-</div>
-<div class="choice-list">
-<<if $returnTarget>>
-[[返回|$returnTarget]]
-<<else>>
-[[返回|Start]]
-<</if>>
-</div>
-
-
-:: Common_Memory [utility]
-<<setReturnTarget>>
-<<set _memories to $game.memories>>
-<h2>记忆碎片</h2>
-<<if _memories.length is 0>>
-<p class="muted">你还没有记录下任何跨循环记忆。</p>
-<<else>>
-<<for _m range _memories>>
-  <p class="muted">第 <<print _m.loop>> 轮 · 第 <<print _m.day>> 天</p>
-  <p><<print _m.text>></p>
-  <hr>
-<</for>>
-<</if>>
-<p>[[返回|$returnTarget]]</p>
-
 
 
 :: Common_NightResolution
@@ -3513,914 +3453,31 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <</if>>
 
 
-:: Common_SetReturnTarget [widget]
-<<widget "setReturnTarget">>
-<<set _prev to previous()>>
-<<if _prev && !tags(_prev).includes('utility')>>
-<<set $returnTarget to _prev>>
-<</if>>
-<</widget>>
-
-
-:: Common_ZoneMap [utility]
-<<set _zone to _zoneId>>
-<<set _zoneInfo to GameState.ZONES[_zone]>>
-<<set _visited to Game.getVisitedLocationsInZone(_zone)>>
-<<set _all to Game.getLocationsByZone(_zone)>>
-<<set _total to _all.length>>
-<<set _found to _visited.length>>
-<h2>_zoneInfo.name</h2>
-<p class="system-hint">_zoneInfo.desc</p>
-<p class="muted">已探索 _found / _total 处。</p>
-<div class="location-list">
-<<for _i to 0; _i lt _all.length; _i++>>
-<<set _loc to _all[_i]>>
-<<if Game.hasVisitedLocation(_loc.id)>>
-<div class="location-card known">
-<h4>_loc.name</h4>
-<p class="muted">_loc.desc</p>
-</div>
-<<else>>
-<div class="location-card unknown">
-<h4>？？？</h4>
-<p class="muted">尚未踏足此处。</p>
-</div>
-<</if>>
-<</for>>
-</div>
-<div class="choice-list">
-[[返回地图|Common_Map]]
-<<if $returnTarget && $returnTarget != "Common_Map">>
-[[返回剧情|$returnTarget]]
-<</if>>
-</div>
-
-
-:: God_Knight
-<<run Game.visit()>>
-<h2>林小满 · 骑士</h2>
-<<if Game.knightDuelOnCooldown() and Game.knightGuardOnCooldown()>>
-<p class="danger">林小满虚弱地靠在墙上，决斗和守卫的消耗都还没恢复。她今天和今晚都无法行动。</p>
-<div class="choice-list">
-[[返回|Start]]
-</div>
-<<else>>
-<p>林小满正在擦拭她的折叠小刀。看到你走近，她挑了挑眉：</p>
-<blockquote>林小满：「说吧，是让我去盯着谁，还是直接上去砍人？」</blockquote>
-<p class="system-hint">骑士有白天与夜晚两种能力，<strong>各自独立冷却</strong>，互不影响：</p>
-<ul>
-<li><strong>决斗（白天）</strong>：指认一人为狼。若真是狼则斩杀；若不是则林小满自己死。狼王同归于尽。决斗后次日白天无法再次决斗，但不影响守卫。</li>
-<li><strong>守卫（夜晚）</strong>：保护一人，今晚狼人袭击该人时被挡下。不可连续两晚守同一人。守卫后次夜无法再次守卫，但不影响决斗。与女巫救人冲突时互相抵消。</li>
-</ul>
-
-<div class="choice-list">
-<<if Game.knightDuelOnCooldown()>>
-<span class="muted">决斗冷却中（明日可用）</span>
-<<else>>
-<<link "决斗——指认某人">><<goto 'God_Knight_Duel'>><</link>>
-<</if>>
-<<if Game.knightGuardOnCooldown()>>
-<span class="muted">守卫冷却中（明夜可用）</span>
-<<else>>
-<<link "守卫——保护某人">><<goto 'God_Knight_Guard'>><</link>>
-<</if>>
-</div>
-<div class="choice-list">
-[[算了，不打搅她|Start]]
-</div>
-<</if>>
-
-
-:: God_Knight_Duel
-<<run Game.visit()>>
-<h2>林小满 · 决斗</h2>
-<p>林小满握紧小刀：</p>
-<blockquote>林小满：「你如果有目标，就告诉我。但我要提醒你——如果我砍错了人，死的会是我。」</blockquote>
-<p class="system-hint">骑士决斗：若目标是狼人，斩杀之；若不是，林小满自己死。若目标是狼王，同归于尽。</p>
-<p class="warning">决斗后林小满次日白天无法再次决斗，但夜晚仍可守卫。</p>
-<div class="choice-list">
-<<if Game.isAlive('zhou_yang')>>
-<<link "指认周阳是狼">><<run Game.knightDuel('zhou_yang')>><<goto 'God_Knight_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('tang_xiaotang')>>
-<<link "指认唐小棠是狼">><<run Game.knightDuel('tang_xiaotang')>><<goto 'God_Knight_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zhao_mingcheng')>>
-<<link "指认赵明城是狼">><<run Game.knightDuel('zhao_mingcheng')>><<goto 'God_Knight_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('gu_yan')>>
-<<link "指认顾言是狼">><<run Game.knightDuel('gu_yan')>><<goto 'God_Knight_Result'>><</link>>
-<</if>>
-</div>
-<div class="choice-list">
-[[放弃决斗|God_Knight]]
-</div>
-
-:: God_Knight_Guard
-<<run Game.visit()>>
-<h2>林小满 · 守卫</h2>
-<<if Game.knightGuardOnCooldown()>>
-<p class="danger">林小满虚弱地靠在墙上，上次行动的消耗还没恢复。守卫的消耗还没恢复，今夜无法再守卫（但白天决斗不受影响）。</p>
-<div class="choice-list">
-[[返回|Start]]
-</div>
-<<else>>
-<p>林小满收起折叠小刀，压低声音：</p>
-<blockquote>林小满：「你想让我守着谁？我只能护一个人，而且下一晚不能再守卫——但白天砍人不受影响。你确定？」</blockquote>
-<p class="system-hint">守卫：今晚狼人袭击该目标时，林小满会挡下。守卫后次夜无法再次守卫，但白天决斗不受影响。</p>
-<p class="warning">守卫与女巫救人冲突时，两者互相抵消，目标仍会死亡。</p>
-
-<div class="choice-list">
-<<if Game.isAlive('su_wan')>>
-<<link "保护苏晚">><<run Game.knightGuard('su_wan')>><<goto 'God_Knight_Guard_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai')>>
-<<link "保护江白">><<run Game.knightGuard('jiang_bai')>><<goto 'God_Knight_Guard_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zheng_shoushan')>>
-<<link "保护老郑">><<run Game.knightGuard('zheng_shoushan')>><<goto 'God_Knight_Guard_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('ye_zhiqiu')>>
-<<link "保护叶知秋">><<run Game.knightGuard('ye_zhiqiu')>><<goto 'God_Knight_Guard_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng')>>
-<<link "保护方衡">><<run Game.knightGuard('fang_heng')>><<goto 'God_Knight_Guard_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen')>>
-<<link "保护沈慎">><<run Game.knightGuard('shen_shen')>><<goto 'God_Knight_Guard_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('chen_mo')>>
-<<link "保护陈默">><<run Game.knightGuard('chen_mo')>><<goto 'God_Knight_Guard_Result'>><</link>>
-<</if>>
-</div>
-<div class="choice-list">
-[[算了，返回|God_Knight]]
-</div>
-<</if>>
-
-:: God_Knight_Guard_Result
-<<run Game.visit()>>
-<<set _guardResult to $game.godSkills.knight>>
-<h2>守卫</h2>
-<<set _guardName to GameState.PROFILES[_guardResult.lastGuard].name>>
-<p>林小满点了点头，收起小刀：</p>
-<blockquote>林小满：「我去盯着 <<print _guardName>> 的房间。今晚不会有东西靠近他/她。」</blockquote>
-<p>她的背影消失在走廊拐角。你希望这个决定是对的。</p>
-<p class="system-hint">林小满正在守卫 <<print _guardName>>。今夜如果狼人袭击 <<print _guardName>>，林小满会挡下。</p>
-<p class="warning">林小满次夜无法再次守卫，但白天决斗不受影响。</p>
-<div class="choice-list">
-[[返回|Start]]
-</div>
-
-:: God_Knight_Result
-<<run Game.visit()>>
-<<set _result to $game.godSkills.knight>>
-<h2>决斗</h2>
-<<if not Game.isAlive('lin_xiaoman')>>
-<p class="danger">林小满倒下了。她砍错了人，骑士的代价是自己的命。</p>
-<blockquote>林小满（最后的话）：「棠棠……对不起……」</blockquote>
-<p class="system-hint">林小满死亡。骑士能力消失。好人阵营失去了唯一的武力淘汰手段。</p>
-<<else>>
-<p>林小满擦掉刀上的血，面无表情地看着倒下的尸体。</p>
-<blockquote>林小满：「它果然是狼。干得漂亮，陈默。」</blockquote>
-<p class="system-hint">一只狼被斩杀。林小满次日白天无法再次决斗，但夜晚守卫不受影响。</p>
-<p class="danger">如果是狼王，林小满会与之同归于尽。</p>
-<</if>>
-<div class="choice-list">
-[[返回|Start]]
-</div>
-
-
-:: God_Magician
-<<run Game.visit()>>
-<h2>沈慎 · 魔术师</h2>
-<<set _remaining to Game.magicianSwapsRemaining()>>
-<<set _currentSwap to Game.getMagicianSwap()>>
-
-<p>沈慎坐在壁炉旁的阴影里，手指不停地搓着一张扑克牌。</p>
-<blockquote>沈慎：「我可以让两个人在夜里互换身份。狼只会看到交换后的样子。如果它们冲着一个人去……杀的其实是另一个。」</blockquote>
-<p class="system-hint">身份交换：选择两人互换，只有夜晚狼人形态能感知。交换在当夜生效，次日重置。每天可用一次。</p>
-<p class="warning">限制：不能连续两晚交换同一个人。上一晚参与交换的人今晚无法再被交换。</p>
-
-<<if _currentSwap>>
-<p class="warning">今晚已设置交换：<strong><<print GameState.PROFILES[_currentSwap.a].name>></strong> ↔ <strong><<print GameState.PROFILES[_currentSwap.b].name>></strong></p>
-<p class="muted">交换已生效，无法更改。</p>
-<<else>>
-<p>剩余交换次数：<strong><<print _remaining>></strong>/7</p>
-
-<<if _remaining > 0>>
-<h3>选择交换的两人</h3>
-<div class="choice-list">
-<<if Game.isAlive('su_wan') and Game.isAlive('jiang_bai') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('jiang_bai')>>
-<<link "苏晚 ↔ 江白">><<run Game.magicianSwap('su_wan', 'jiang_bai')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('fang_heng') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('fang_heng')>>
-<<link "苏晚 ↔ 方衡">><<run Game.magicianSwap('su_wan', 'fang_heng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('shen_shen') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('shen_shen')>>
-<<link "苏晚 ↔ 沈慎">><<run Game.magicianSwap('su_wan', 'shen_shen')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('ye_zhiqiu') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('ye_zhiqiu')>>
-<<link "苏晚 ↔ 叶知秋">><<run Game.magicianSwap('su_wan', 'ye_zhiqiu')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('zheng_shoushan')>>
-<<link "苏晚 ↔ 老郑">><<run Game.magicianSwap('su_wan', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('lin_xiaoman')>>
-<<link "苏晚 ↔ 林小满">><<run Game.magicianSwap('su_wan', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('zhou_yang')>>
-<<link "苏晚 ↔ 周阳">><<run Game.magicianSwap('su_wan', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('tang_xiaotang')>>
-<<link "苏晚 ↔ 唐小棠">><<run Game.magicianSwap('su_wan', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "苏晚 ↔ 赵明城">><<run Game.magicianSwap('su_wan', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('su_wan') and not Game.wasInLastSwap('gu_yan')>>
-<<link "苏晚 ↔ 顾言">><<run Game.magicianSwap('su_wan', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('fang_heng') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('fang_heng')>>
-<<link "江白 ↔ 方衡">><<run Game.magicianSwap('jiang_bai', 'fang_heng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('shen_shen') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('shen_shen')>>
-<<link "江白 ↔ 沈慎">><<run Game.magicianSwap('jiang_bai', 'shen_shen')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('ye_zhiqiu') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('ye_zhiqiu')>>
-<<link "江白 ↔ 叶知秋">><<run Game.magicianSwap('jiang_bai', 'ye_zhiqiu')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('zheng_shoushan')>>
-<<link "江白 ↔ 老郑">><<run Game.magicianSwap('jiang_bai', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('lin_xiaoman')>>
-<<link "江白 ↔ 林小满">><<run Game.magicianSwap('jiang_bai', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('zhou_yang')>>
-<<link "江白 ↔ 周阳">><<run Game.magicianSwap('jiang_bai', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('tang_xiaotang')>>
-<<link "江白 ↔ 唐小棠">><<run Game.magicianSwap('jiang_bai', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "江白 ↔ 赵明城">><<run Game.magicianSwap('jiang_bai', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('jiang_bai') and not Game.wasInLastSwap('gu_yan')>>
-<<link "江白 ↔ 顾言">><<run Game.magicianSwap('jiang_bai', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng') and Game.isAlive('shen_shen') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('shen_shen')>>
-<<link "方衡 ↔ 沈慎">><<run Game.magicianSwap('fang_heng', 'shen_shen')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng') and Game.isAlive('ye_zhiqiu') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('ye_zhiqiu')>>
-<<link "方衡 ↔ 叶知秋">><<run Game.magicianSwap('fang_heng', 'ye_zhiqiu')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('zheng_shoushan')>>
-<<link "方衡 ↔ 老郑">><<run Game.magicianSwap('fang_heng', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('lin_xiaoman')>>
-<<link "方衡 ↔ 林小满">><<run Game.magicianSwap('fang_heng', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('zhou_yang')>>
-<<link "方衡 ↔ 周阳">><<run Game.magicianSwap('fang_heng', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('tang_xiaotang')>>
-<<link "方衡 ↔ 唐小棠">><<run Game.magicianSwap('fang_heng', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "方衡 ↔ 赵明城">><<run Game.magicianSwap('fang_heng', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('fang_heng') and not Game.wasInLastSwap('gu_yan')>>
-<<link "方衡 ↔ 顾言">><<run Game.magicianSwap('fang_heng', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen') and Game.isAlive('ye_zhiqiu') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('ye_zhiqiu')>>
-<<link "沈慎 ↔ 叶知秋">><<run Game.magicianSwap('shen_shen', 'ye_zhiqiu')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('zheng_shoushan')>>
-<<link "沈慎 ↔ 老郑">><<run Game.magicianSwap('shen_shen', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('lin_xiaoman')>>
-<<link "沈慎 ↔ 林小满">><<run Game.magicianSwap('shen_shen', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('zhou_yang')>>
-<<link "沈慎 ↔ 周阳">><<run Game.magicianSwap('shen_shen', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('tang_xiaotang')>>
-<<link "沈慎 ↔ 唐小棠">><<run Game.magicianSwap('shen_shen', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "沈慎 ↔ 赵明城">><<run Game.magicianSwap('shen_shen', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('shen_shen') and not Game.wasInLastSwap('gu_yan')>>
-<<link "沈慎 ↔ 顾言">><<run Game.magicianSwap('shen_shen', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('zheng_shoushan') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('zheng_shoushan')>>
-<<link "叶知秋 ↔ 老郑">><<run Game.magicianSwap('ye_zhiqiu', 'zheng_shoushan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('lin_xiaoman')>>
-<<link "叶知秋 ↔ 林小满">><<run Game.magicianSwap('ye_zhiqiu', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('zhou_yang')>>
-<<link "叶知秋 ↔ 周阳">><<run Game.magicianSwap('ye_zhiqiu', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('tang_xiaotang')>>
-<<link "叶知秋 ↔ 唐小棠">><<run Game.magicianSwap('ye_zhiqiu', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "叶知秋 ↔ 赵明城">><<run Game.magicianSwap('ye_zhiqiu', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('ye_zhiqiu') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('ye_zhiqiu') and not Game.wasInLastSwap('gu_yan')>>
-<<link "叶知秋 ↔ 顾言">><<run Game.magicianSwap('ye_zhiqiu', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zheng_shoushan') and Game.isAlive('lin_xiaoman') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('lin_xiaoman')>>
-<<link "老郑 ↔ 林小满">><<run Game.magicianSwap('zheng_shoushan', 'lin_xiaoman')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zheng_shoushan') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('zhou_yang')>>
-<<link "老郑 ↔ 周阳">><<run Game.magicianSwap('zheng_shoushan', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zheng_shoushan') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('tang_xiaotang')>>
-<<link "老郑 ↔ 唐小棠">><<run Game.magicianSwap('zheng_shoushan', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zheng_shoushan') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "老郑 ↔ 赵明城">><<run Game.magicianSwap('zheng_shoushan', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zheng_shoushan') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('zheng_shoushan') and not Game.wasInLastSwap('gu_yan')>>
-<<link "老郑 ↔ 顾言">><<run Game.magicianSwap('zheng_shoushan', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('lin_xiaoman') and Game.isAlive('zhou_yang') and not Game.wasInLastSwap('lin_xiaoman') and not Game.wasInLastSwap('zhou_yang')>>
-<<link "林小满 ↔ 周阳">><<run Game.magicianSwap('lin_xiaoman', 'zhou_yang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('lin_xiaoman') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('lin_xiaoman') and not Game.wasInLastSwap('tang_xiaotang')>>
-<<link "林小满 ↔ 唐小棠">><<run Game.magicianSwap('lin_xiaoman', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('lin_xiaoman') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('lin_xiaoman') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "林小满 ↔ 赵明城">><<run Game.magicianSwap('lin_xiaoman', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('lin_xiaoman') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('lin_xiaoman') and not Game.wasInLastSwap('gu_yan')>>
-<<link "林小满 ↔ 顾言">><<run Game.magicianSwap('lin_xiaoman', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zhou_yang') and Game.isAlive('tang_xiaotang') and not Game.wasInLastSwap('zhou_yang') and not Game.wasInLastSwap('tang_xiaotang')>>
-<<link "周阳 ↔ 唐小棠">><<run Game.magicianSwap('zhou_yang', 'tang_xiaotang')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zhou_yang') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('zhou_yang') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "周阳 ↔ 赵明城">><<run Game.magicianSwap('zhou_yang', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zhou_yang') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('zhou_yang') and not Game.wasInLastSwap('gu_yan')>>
-<<link "周阳 ↔ 顾言">><<run Game.magicianSwap('zhou_yang', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('tang_xiaotang') and Game.isAlive('zhao_mingcheng') and not Game.wasInLastSwap('tang_xiaotang') and not Game.wasInLastSwap('zhao_mingcheng')>>
-<<link "唐小棠 ↔ 赵明城">><<run Game.magicianSwap('tang_xiaotang', 'zhao_mingcheng')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('tang_xiaotang') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('tang_xiaotang') and not Game.wasInLastSwap('gu_yan')>>
-<<link "唐小棠 ↔ 顾言">><<run Game.magicianSwap('tang_xiaotang', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zhao_mingcheng') and Game.isAlive('gu_yan') and not Game.wasInLastSwap('zhao_mingcheng') and not Game.wasInLastSwap('gu_yan')>>
-<<link "赵明城 ↔ 顾言">><<run Game.magicianSwap('zhao_mingcheng', 'gu_yan')>><<goto 'God_Magician_Result'>><</link>>
-<</if>>
-</div>
-<</if>>
-<</if>>
-
-<div class="choice-list">
-[[返回神职面板|God_Panel]]
-</div>
-
-
-:: God_Magician_Result
-<<run Game.visit()>>
-<<set _swap to Game.getMagicianSwap()>>
-<h2>交换已设置</h2>
-<p>沈慎微微点头，手中的扑克牌无声地翻转。</p>
-<blockquote>沈慎：「<strong><<print GameState.PROFILES[_swap.a].name>></strong>和<strong><<print GameState.PROFILES[_swap.b].name>></strong>。今晚，在狼的眼里，他们就是彼此。」</blockquote>
-<p class="system-hint">交换将在今夜生效。如果狼人攻击其中一人，实际被杀的是另一人。</p>
-<p class="muted">沈慎不知道这是否有用。赌博就是这样——你永远不知道牌面是什么，直到翻开。</p>
-<div class="choice-list">
-[[返回神职面板|God_Panel]]
-</div>
-
-
-:: God_Panel
-<<run Game.visit()>>
-<<if Game.hasFlag('god_panel_unlocked')>>
-<h2>神职联络</h2>
-<p class="system-hint">你可以联络已确认的神职，请他们使用能力。神职能力来源于村民，<strong>白天和夜晚均可发动</strong>。</p>
-<p class="muted">但白天当众使用能力会暴露身份。狼人能力仅夜晚可用，除非机械狼已弑神偷取神力。</p>
-
-<div class="choice-list">
-<<if Game.isAlive('ye_zhiqiu')>>
-[[联络叶知秋（女巫）|God_Witch]]
-<<else>>
-<p class="muted">叶知秋已死亡。女巫能力消失。</p>
-<</if>>
-
-<<if Game.isAlive('lin_xiaoman')>>
-[[联络林小满（骑士）|God_Knight]]
-<<else>>
-<p class="muted">林小满已死亡。骑士能力消失。</p>
-<</if>>
-
-<<if Game.isAlive('fang_heng')>>
-[[联络方衡（预言家）|God_Prophet]]
-<<else>>
-<p class="muted">方衡已死亡。预言家能力消失。</p>
-<</if>>
-
-<<if Game.isAlive('shen_shen')>>
-[[联络沈慎（魔术师）|God_Magician]]
-<<else>>
-<p class="muted">沈慎已死亡。魔术师能力消失。</p>
-<</if>>
-</div>
-
-<<if Game.witchBroken()>>
-<p class="danger">叶知秋已精神崩溃，无法再使用女巫能力。</p>
-<</if>>
-<<if Game.knightDuelOnCooldown()>>
-<p class="warning">林小满明日白天无法决斗（但夜晚守卫不受影响）。</p>
-<</if>>
-<<if Game.knightGuardOnCooldown()>>
-<p class="warning">林小满今夜无法守卫（但白天决斗不受影响）。</p>
-<</if>>
-<</if>>
-
-<div class="choice-list">
-[[返回|Start]]
-</div>
-<<else>>
-<h2>神职联络</h2>
-<p>你尚未发现神职系统的存在。</p>
-<div class="choice-list">
-[[返回|Start]]
-</div>
-<</if>>
-
-:: God_Prophet
-<<run Game.visit()>>
-<h2>方衡 · 预言家</h2>
-<p>方衡站在窗边，目光扫过大厅里的每一个人。</p>
-<blockquote>方衡：「我能感知到一个人身上的气息。但我看到的不是身份，是意象——雾气、火焰、空洞、涟漪。怎么解读，取决于你自己。」</blockquote>
-<p class="system-hint">预言家感知：方衡会描述他感受到的气息和意象。你需要自己判断这些描述意味着什么。</p>
-<p class="muted">有些气息具有误导性。隐狼看起来可能像好人，机械狼的空洞感可能是前所未有的新东西。不要急于下结论。</p>
-
-<<set _results to Game.prophetResults()>>
-<<if _results.length > 0>>
-<h3>已探查记录</h3>
-<<for _i to 0>>_SHOW
-<<if _i < _results.length>>
-<<set _r to _results[_i]>>
-<p class="muted"><strong><<print GameState.PROFILES[_r.target].name>></strong>（第 <<print _r.day>> 天）：<<print _r.text>></p>
-<</if>>
-_SHOW
-<</for>>
-<</if>>
-
-<h3>选择探查目标</h3>
-<div class="choice-list">
-<<if Game.isAlive('zhou_yang')>>
-<<link "探查周阳">><<run Game.prophetCheck('zhou_yang')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('tang_xiaotang')>>
-<<link "探查唐小棠">><<run Game.prophetCheck('tang_xiaotang')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zhao_mingcheng')>>
-<<link "探查赵明城">><<run Game.prophetCheck('zhao_mingcheng')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('gu_yan')>>
-<<link "探查顾言">><<run Game.prophetCheck('gu_yan')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('shen_shen')>>
-<<link "探查沈慎">><<run Game.prophetCheck('shen_shen')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('ye_zhiqiu')>>
-<<link "探查叶知秋">><<run Game.prophetCheck('ye_zhiqiu')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('fang_heng')>>
-<<link "探查方衡（自己）">><<run Game.prophetCheck('fang_heng')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('lin_xiaoman')>>
-<<link "探查林小满">><<run Game.prophetCheck('lin_xiaoman')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('su_wan')>>
-<<link "探查苏晚">><<run Game.prophetCheck('su_wan')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('jiang_bai')>>
-<<link "探查江白">><<run Game.prophetCheck('jiang_bai')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zheng_shoushan')>>
-<<link "探查老郑">><<run Game.prophetCheck('zheng_shoushan')>><<goto 'God_Prophet_Result'>><</link>>
-<</if>>
-</div>
-<div class="choice-list">
-[[返回|Start]]
-</div>
-
-
-:: God_Prophet_Result
-<<run Game.visit()>>
-<<set _results to Game.prophetResults()>>
-<<set _last to _results[_results.length - 1]>>
-<<set _targetName to GameState.PROFILES[_last.target].name>>
-<h2>预言家的感知</h2>
-<p>方衡凝视了许久。他的瞳孔微微放大，像是看到了某种常人看不到的东西。许久之后，他缓缓开口：</p>
-<blockquote><<print _last.text>></blockquote>
-<p class="muted">方衡无法给出明确的答案。他感知到的只是气息和意象——是盟友还是敌人，需要你自己判断。</p>
-<p class="warning">注意：有些气息具有误导性。完美的善意可能是伪装，空洞的存在可能隐藏着危险。</p>
-
-<<set _allResults to Game.prophetResults()>>
-<<if _allResults.length > 1>>
-<h3>历史感知记录</h3>
-<<for _i to 0>>_HIST
-<<if _i < _allResults.length - 1>>
-<<set _r to _allResults[_i]>>
-<p class="muted">第 <<print _r.loop>> 轮第 <<print _r.day>> 天 · <<print GameState.PROFILES[_r.target].name>>：<<print _r.text>></p>
-<</if>>
-_HIST
-<</for>>
-<</if>>
-
-<div class="choice-list">
-[[继续探查|God_Prophet]]
-[[返回|Start]]
-</div>
-
-
-:: God_Witch
-<<run Game.visit()>>
-<h2>叶知秋 · 女巫</h2>
-<<set _remaining to Game.witchRemaining()>>
-<<set _uses to Game.witchUses()>>
-<<set _broken to Game.witchBroken()>>
-<<set _sensed to Game.witchGetSensedDeath()>>
-
-<<if _broken>>
-<p class="danger">叶知秋已经精神崩溃了。她的眼神空洞，手指不停地颤抖。她再也无法使用诅咒或还魂的能力。</p>
-<div class="choice-list">
-[[返回|God_Panel]]
-</div>
-<<else>>
-<p>叶知秋坐在角落，手指无意识地摩挲着一支空注射器。</p>
-<blockquote>叶知秋：「我能感知生命的流逝。如果有人死了，我会知道。我能把生命推回去——但每一次，都是从我自己身上剜掉一块。」</blockquote>
-
-<hr>
-<h3>生命感知</h3>
-<<if _sensed>>
-<p class="warning">叶知秋感知到：<strong><<print GameState.PROFILES[_sensed].name>></strong> 正在死去。她可以在今夜将生命推回去。</p>
-<<if _remaining > 0>>
-<div class="choice-list">
-<<link "还魂 <<print GameState.PROFILES[_sensed].name>>（消耗 1 次）">><<run Game.witchRevive(_sensed, false)>><<goto 'God_Witch_Result'>><</link>>
-<<link "在众人面前还魂（会暴露身份）">><<run Game.witchRevive(_sensed, true)>><<goto 'God_Witch_Result'>><</link>>
-</div>
-<<else>>
-<p class="danger">但她已经没有余力了。再使用一次就会崩溃。</p>
-<</if>>
-<<else>>
-<p class="muted">目前没有感知到生命流逝。</p>
-<</if>>
-
-<hr>
-<h3>诅咒与还魂（已用 <<print _uses>>/3）</h3>
-<<if _remaining > 0>>
-<p class="muted">诅咒是神力，直接夺走生命。还魂是神力，将生命推回。合计 3 次/轮。</p>
-<div class="choice-list">
-<<if Game.isAlive('zhou_yang')>>
-<<link "诅咒周阳（杀人）">><<run Game.witchCurse('zhou_yang')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('tang_xiaotang')>>
-<<link "诅咒唐小棠（杀人）">><<run Game.witchCurse('tang_xiaotang')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('zhao_mingcheng')>>
-<<link "诅咒赵明城（杀人）">><<run Game.witchCurse('zhao_mingcheng')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('gu_yan')>>
-<<link "诅咒顾言（杀人）">><<run Game.witchCurse('gu_yan')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-</div>
-<<else>>
-<p class="danger">诅咒/还魂额度已用完。</p>
-<</if>>
-
-<hr>
-<h3>毒药制作（不消耗额度，需要材料）</h3>
-<<set _mats to $game.godSkills.witch.materials>>
-<p class="muted">材料：药瓶 <<print _mats.medicine_bottle || 0>> | 注射器 <<print _mats.syringe || 0>> | 草药束 <<print _mats.herb_bundle || 0>> | 化学试剂 <<print _mats.chemical_vial || 0>></p>
-<div class="choice-list">
-<<if Game.witchCanCraft('sleeping_potion')>>
-<<link "制作安眠药（药瓶 x1）">><<run Game.witchCraftPotion('sleeping_potion')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<<if Game.witchCanCraft('paralytic')>>
-<<link "制作麻痹剂（药瓶 x1 + 注射器 x1）">><<run Game.witchCraftPotion('paralytic')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<<if Game.witchCanCraft('deep_sedative')>>
-<<link "制作强效镇静剂（注射器 + 草药 + 试剂）">><<run Game.witchCraftPotion('deep_sedative')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<<if Game.witchCanCraft('truth_serum')>>
-<<link "制作吐真剂（草药 + 试剂）">><<run Game.witchCraftPotion('truth_serum')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-</div>
-<p class="muted">材料可通过探索庄园（餐厅、主卧、温室、工坊）获得。</p>
-
-<hr>
-<h3>使用毒药</h3>
-<<set _pots to $game.godSkills.witch.potions>>
-<div class="choice-list">
-<<if _pots.sleeping_potion > 0>>
-<<if Game.isAlive('zhou_yang')>>
-<<link "对周阳使用安眠药">><<run Game.witchUsePotion('sleeping_potion', 'zhou_yang')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('tang_xiaotang')>>
-<<link "对唐小棠使用安眠药">><<run Game.witchUsePotion('sleeping_potion', 'tang_xiaotang')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<</if>>
-<<if _pots.paralytic > 0>>
-<<if Game.isAlive('zhou_yang')>>
-<<link "对周阳使用麻痹剂">><<run Game.witchUsePotion('paralytic', 'zhou_yang')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<<if Game.isAlive('tang_xiaotang')>>
-<<link "对唐小棠使用麻痹剂">><<run Game.witchUsePotion('paralytic', 'tang_xiaotang')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<</if>>
-<<if _pots.deep_sedative > 0>>
-<<if Game.isAlive('zhao_mingcheng')>>
-<<link "对赵明城使用强效镇静剂">><<run Game.witchUsePotion('deep_sedative', 'zhao_mingcheng')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<</if>>
-<<if _pots.truth_serum > 0>>
-<<if Game.isAlive('gu_yan')>>
-<<link "对顾言使用吐真剂">><<run Game.witchUsePotion('truth_serum', 'gu_yan')>><<goto 'God_Witch_Result'>><</link>>
-<</if>>
-<</if>>
-</div>
-
-<hr>
-<h3>治愈重伤</h3>
-<<if $game.pursuit and $game.pursuit.playerInjured>>
-<p class="warning">你在追击战中受了伤。叶知秋可以治愈你，但这会暴露她的女巫身份。</p>
-<div class="choice-list">
-<<link "让叶知秋治愈重伤（暴露身份）">><<run Game.witchHeal('chen_mo')>><<goto 'God_Witch_Result'>><</link>>
-</div>
-<<else>>
-<p class="muted">目前没有需要治愈的重伤。</p>
-<</if>>
-
-<</if>>
-
-<div class="choice-list">
-[[返回神职面板|God_Panel]]
-</div>
-
-
-:: God_Witch_Result
-<<run Game.visit()>>
-<<if Game.witchBroken()>>
-<h2>精神崩溃</h2>
-<p class="danger">叶知秋施完最后一次能力后，整个人像被抽空了。她的瞳孔涣散，嘴角不受控制地抽搐。</p>
-<blockquote>叶知秋：「我……我看到了。那些被我害死的人。他们都在看着我……」</blockquote>
-<p class="system-hint">叶知秋精神崩溃。她永久失去了女巫能力。她的医疗事故黑历史可能被触发，有黑化风险。</p>
-<<run Game.revealInfo('ye_zhiqiu', 'witch_broken')>>
-<<else>>
-<h2>完成</h2>
-<p>叶知秋闭上眼睛，嘴唇无声地翕动。空气中弥漫着某种沉重的气息，像是有什么东西从她身上剥离了。</p>
-<p class="system-hint">能力已施展。诅咒/还魂剩余：<strong><<print Game.witchRemaining()>></strong>/3</p>
-<</if>>
-<div class="choice-list">
-[[返回女巫面板|God_Witch]]
-</div>
-
-
-:: Map_Courtyard
-<<run Game.visit()>>
-<<set _zoneId to 'courtyard'>>
-<<include "Common_ZoneMap">>
-
-
-:: Map_EastWing
-<<run Game.visit()>>
-<<set _zoneId to 'east_wing'>>
-<<include "Common_ZoneMap">>
-
-
-:: Map_Main1F
-<<run Game.visit()>>
-<<set _zoneId to 'main_1f'>>
-<<include "Common_ZoneMap">>
-
-
-:: Map_Main2F
-<<run Game.visit()>>
-<<set _zoneId to 'main_2f'>>
-<<include "Common_ZoneMap">>
-
-
-:: Map_Main3F
-<<run Game.visit()>>
-<<set _zoneId to 'main_3f'>>
-<<include "Common_ZoneMap">>
-
-
-:: Map_Underground
-<<run Game.visit()>>
-<<set _zoneId to 'underground'>>
-<<include "Common_ZoneMap">>
-
-
-:: Map_WestWing
-<<run Game.visit()>>
-<<set _zoneId to 'west_wing'>>
-<<include "Common_ZoneMap">>
-
-
-:: Pursuit_Engine
-<<run Game.visit()>>
-<<set _turn to $game.pursuit.turn>>
-<<set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name>>
-<<set _posName to GameState.MAP[$game.pursuit.playerPos].name>>
-<<set _wolfPosName to GameState.MAP[$game.pursuit.wolfPos].name>>
-<<set _dist to Game.pursuitDistance($game.pursuit.wolfPos, $game.pursuit.playerPos)>>
-
-<h2>追击战 · 第 <<print _turn>> 回合</h2>
-
-<<if $game.pursuit.playerInjured>>
-<p class="danger">你受伤了。每一步都伴随着剧痛。</p>
-<</if>>
-
-<p>你在<strong><<print _posName>></strong>。<strong><<print _wolfName>></strong>在<strong><<print _wolfPosName>></strong>，距离你 <<print _dist>> 步。</p>
-
-<<if _dist lte 1>>
-<p class="danger">它就在附近！你能闻到它身上的血腥味。</p>
-<<elseif _dist lte 3>>
-<p>脚步声越来越近了。</p>
-<</if>>
-
-<<if Game.canHideAt($game.pursuit.playerPos) and not $game.pursuit.hiding>>
-<p class="system-hint">这里可以躲藏。</p>
-<</if>>
-
-<div class="choice-list">
-<<if Game.canHideAt($game.pursuit.playerPos) and not $game.pursuit.hiding>>
-<<link "躲藏起来">><<set $game.pursuit.hiding to true>><<goto "Pursuit_Resolve">><</link>>
-<</if>>
-<<if $game.pursuit.hiding>>
-<<link "继续躲藏">><<goto "Pursuit_Resolve">><</link>>
-<<link "放弃躲藏，继续逃跑">><<set $game.pursuit.hiding to false>><<goto "Pursuit_Resolve">><</link>>
-<</if>>
-<<if Game.hasItem('flashlight')>>
-<<link "用手电筒照狼人">><<run Game.pursuitUseItem('flashlight')>>"<<goto "Pursuit_Resolve">><</link>>
-<</if>>
-<<if Game.hasItem('lighter')>>
-<<link "用打火机点燃障碍">><<run Game.pursuitUseItem('lighter')>><<goto "Pursuit_Resolve">><</link>>
-<</if>>
-<<if Game.hasItem('wire')>>
-<<link "布下金属丝绊索">><<run Game.pursuitUseItem('wire')>><<goto "Pursuit_Resolve">><</link>>
-<</if>>
-<<if Game.hasItem('pocket_knife')>>
-<<link "用折叠小刀反击">><<run Game.pursuitUseItem('pocket_knife')>><<goto "Pursuit_Resolve">><</link>>
-<</if>>
-<<if Game.hasItem('ritual_dagger')>>
-<<link "举起祭祀骨刀">><<run Game.pursuitUseItem('ritual_dagger')>><<goto "Pursuit_Resolve">><</link>>
-<</if>>
-<<if Game.hasItem('first_aid_kit') and $game.pursuit.playerInjured>>
-<<link "用急救包治疗伤口">><<run Game.pursuitUseItem('first_aid_kit')>><<goto "Pursuit_Resolve">><</link>>
-<</if>>
-</div>
-
-<hr>
-<p class="muted">移动到相邻区域：</p>
-<div class="choice-list">
-<<link "前往大厅">><<run Game.pursuitMove('grand_hall')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往餐厅">><<run Game.pursuitMove('dining_room')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往厨房">><<run Game.pursuitMove('kitchen')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往储藏室">><<run Game.pursuitMove('pantry')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往会客厅">><<run Game.pursuitMove('drawing_room')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往书房">><<run Game.pursuitMove('study')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往画廊">><<run Game.pursuitMove('gallery')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往主卧">><<run Game.pursuitMove('master_bedroom')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往儿童房">><<run Game.pursuitMove('children_room')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往缝纫室">><<run Game.pursuitMove('sewing_room')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往阳台">><<run Game.pursuitMove('balcony')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往门厅">><<run Game.pursuitMove('foyer')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往中庭">><<run Game.pursuitMove('courtyard')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往花园">><<run Game.pursuitMove('garden')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往小教堂">><<run Game.pursuitMove('chapel')>><<goto "Pursuit_Resolve">><</link>>
-<<link "前往古井">><<run Game.pursuitMove('well')>><<goto "Pursuit_Resolve">><</link>>
-</div>
-<p class="muted">部分地点可能无法到达，游戏会提示移动失败。</p>
-
-
-:: Pursuit_Resolve
-<<set _result to Game.pursuitNextTurn()>>
-<<run Game.visit()>>
-<<set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name>>
-
-<<if _result is 'defeated'>>
-<h1 class="ending-bad">追击战失败</h1>
-<p>你的理智彻底崩溃了。黑暗中传来 <<print _wolfName>> 的低笑。</p>
-<p>你倒在地上，看着天花板上的水渍变成了无数只眼睛。</p>
-<p class="system-hint">理智归零。追击战失败。</p>
-<div class="choice-list">
-[[继续|Day7_Ending]]
-</div>
-<<elseif _result is 'dawn'>>
-<h2>黎明</h2>
-<p>你撑过了这一夜。窗外的天空开始泛白，风雪的声音渐渐平息。</p>
-<p class="thought">陈默（内心）：天亮了……我还活着。</p>
-<<run Game.endPursuit()>>
-<<if $game.pursuit.playerInjured>>
-<p class="system-hint">你带着伤活了下来。但你知道，下一个夜晚会更难。</p>
-<<else>>
-<p class="system-hint">你毫发无伤地活了下来。这是胜利，但只是暂时的。</p>
-<</if>>
-<div class="choice-list">
-[[继续新的一天|Common_DayTransition]]
-</div>
-<<else>>
-<h2>追击战 · 结算</h2>
-<<if _result is 'found'>>
-<p class="danger">你的躲藏被发现了！<<print _wolfName>> 扑了上来，你勉强挣脱，但受了伤。理智 -10。</p>
-<<elseif _result is 'attacked'>>
-<p class="danger"><<print _wolfName>> 追上了你！利爪划过你的肩膀。理智 -15。</p>
-<<elseif _result is 'caught_up'>>
-<p class="danger">它追到了你的位置！你被击倒，鲜血滴在地上。理智 -15。</p>
-<<elseif _result is 'missed'>>
-<p>它经过了你躲藏的地方，但没有发现你。你屏住呼吸，一动不动。</p>
-<<elseif _result is 'moved'>>
-<p>脚步声在移动。它正在搜索其他房间。</p>
-<</if>>
-<div class="choice-list">
-[[下一回合|Pursuit_Engine]]
-</div>
-<</if>>
-
-
-:: Pursuit_Start
-<<run Game.startPursuit()>>
-<<run Game.visit()>>
-<h2>夜间追击战</h2>
-<p>存活的人越来越少了。走廊里只剩下你的脚步声。</p>
-<p>突然，大厅方向传来沉重的脚步声——不是人的脚步，是某种东西用前掌着地行走。</p>
-<p>狼人不再遵守"一晚一间"的规则了。它们开始主动猎杀。</p>
-<p class="system-hint">追击战开始。你需要撑过 5 个回合直到天亮。选择行动谨慎。</p>
-<<set _wolf to Game.getPursuitWolf()>>
-<<set _wolfName to GameState.PROFILES[_wolf].name>>
-<p class="danger">追击你的是：<strong><<print _wolfName>></strong></p>
-<div class="choice-list">
-[[开始逃跑|Pursuit_Engine]]
-</div>
-
-
 :: Start
 <<set $game.visited[passage()] to 1>>
 <h1>无尽雪夜</h1>
-<p>窗外是铅灰色的雪幕。风像锑刀，一下下刮着玻璃。</p>
-<p>陈默睑开眼。天花板有水渍，形状像一张哭泣的人脸。他眨了眨眼，水渍没有变化。</p>
-<p>床头柜上有一行字，像是用指甲或者刀尖刻在木头上的：</p>
+<p>窗外是铅灰色的雪幕。风像锝子，一下下划着玻璃。</p>
+<p>陈默睑开眼。天花板有水渍，形状像一张哭泣的人脸。</p>
+<p>床头柜上刻着一行字：</p>
 <blockquote><strong>"23:00 前，必须回到房间。"</strong></blockquote>
-<p>你被困在了暴雪山庄。大雪封山，没有信号，食物只够两天。更可怕的是——你们之中有人在夜里杀人。</p>
-<p class="system-hint">本作是文字冒险游戏，你的每个选择都会影响信任、线索与结局。点击选项推进剧情。</p>
+<p>你被困在了暴雪山庄。没有信号，没有出路，食物只够两天。更可怕的是——你们之中有人会在夜里杀人。</p>
 <div class="choice-list">
 [[开始游戏->Day_Morning]]
-[[查看人物|Common_Characters]]
 </div>
 
+
 :: StoryCaption
-<<set _status to Game.getStatus()>>
-<<set _sanClass to _status.san > 60 ? 'safe' : (_status.san > 30 ? '' : 'danger')>>
-<<set _breaking to Game.trueEndingProgress()>>
-<<set _met = $game.metCharacters || {}>>
-<<set _metCount to Object.keys(_met).filter(function (k) { return _met[k]; }).length>>
-<div class="status-panel">
-  <div class="row"><span class="status-label">轮回</span><span class="status-value">第 <<print _status.loop>> 轮</span></div>
-  <div class="row"><span class="status-label">天数</span><span class="status-value">第 <<print _status.day>> 天</span></div>
-  <div class="row"><span class="status-label">时间</span><span class="status-value"><<print _status.time>></span></div>
-  <div class="row"><span class="status-label">理智</span><span class="status-value"><<print _status.san>>/100</span></div>
-  <div class="bar"><div class="bar-fill <<print _sanClass>>" style="width: <<print _status.san>>%"></div></div>
-  <div class="row" style="margin-top:0.6rem;"><span class="status-label">存活</span><span class="status-value"><<print _status.aliveCount>>/12</span></div>
+<div class="hud">
+<span class="hud-item">轮回 <<print $game.loop>></span>
+<span class="hud-item">DAY <<print $game.day>></span>
+<span class="hud-item">理智 <<print Math.round($game.stats.san)>></span>
 </div>
-<div class="status-panel">
-  <div class="row"><span class="status-label">[[道具|Common_Inventory]]</span><span class="status-value"><<print Object.keys($game.inventory).length>></span></div>
-  <div class="row"><span class="status-label">[[线索|Common_ClueList]]</span><span class="status-value"><<print Object.keys($game.clues).length>></span></div>
-  <div class="row"><span class="status-label">[[人物|Common_Characters]]</span><span class="status-value"><<print _metCount>>/12</span></div>
-  <<if Game.hasFlag('map_unlocked') || Object.keys($game.visitedLocations || {}).length > 0>>
-  <div class="row"><span class="status-label">[[地图|Common_Map]]</span><span class="status-value">查看</span></div>
-  <</if>>
-  <div class="row"><span class="status-label">[[记忆|Common_Memory]]</span><span class="status-value"><<print $game.memories.length>></span></div>
-  <<if Game.hasFlag('god_panel_unlocked')>>
-  <div class="row"><span class="status-label">[[神职|God_Panel]]</span><span class="status-value">技能</span></div>
-  <</if>>
-</div>
-<<if Game.hasFlag('breaking_progress_unlocked')>>
-<div class="status-panel">
-  <div class="row"><span class="status-label">破局进度</span><span class="status-value"><<print _breaking.collected>>/<<print _breaking.total>></span></div>
-  <div class="bar"><div class="bar-fill" style="width: <<print Math.round(_breaking.collected / _breaking.total * 100)>>%"></div></div>
-  <<if $game.flags.breaking_ready>>
-  <p class="system-hint" style="margin-top:0.4rem;">你已收集足够的破局线索，轮回可以被终结。</p>
-  <</if>>
-</div>
-<</if>>
+
 
 :: StoryInit
 <<set $game to GameState.create()>>
 <<set $game.visited[passage()] to 1>>
 <<set $returnTarget to 'Start'>>
-
 
 
 :: Day7_Ending
@@ -4439,21 +3496,27 @@ _HIST
 </div>
 <</if>>
 
+
 :: Day_Evening
 <<run Game.visit()>>
-<<if not $game.day>><<set $game.day to 1>><</if>>
-<h2>DAY <<print $game.day>> 晚</h2>
+<<set $game.time to '20:00'>>
+<h2>DAY <<print $game.day>> 夜晚</h2>
 <p>[待填剧情]</p>
 <p class="system-hint">夜幕降临，所有人回到各自的房间。</p>
 <div class="choice-list">
 [[入睡->Common_NightResolution]]
 </div>
 
+
 :: Day_Morning
 <<run Game.visit()>>
-<<if not $game.day>><<set $game.day to 1>><</if>>
-<h2>DAY <<print $game.day>> 早</h2>
+<<set $game.time to '06:00'>>
+<h2>DAY <<print $game.day>> 早晨</h2>
+<p class="muted">第 <<print $game.loop>> 轮回 · 第 <<print $game.day>> 天</p>
 <p>[待填剧情]</p>
+<div class="alive-list">
+<p class="muted">存活人数：<<print Game.aliveCount()>></p>
+</div>
 <div class="choice-list">
-[[DAY <<print $game.day>> 晚->Day_Evening]]
+[[进入夜晚->Day_Evening]]
 </div>

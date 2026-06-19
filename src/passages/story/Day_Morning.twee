@@ -1,8 +1,12 @@
 :: Day_Morning
 <<run Game.visit()>>
-<<if not $game.day>><<set $game.day to 1>><</if>>
-<h2>DAY <<print $game.day>> 早</h2>
+<<set $game.time to '06:00'>>
+<h2>DAY <<print $game.day>> 早晨</h2>
+<p class="muted">第 <<print $game.loop>> 轮回 · 第 <<print $game.day>> 天</p>
 <p>[待填剧情]</p>
+<div class="alive-list">
+<p class="muted">存活人数：<<print Game.aliveCount()>></p>
+</div>
 <div class="choice-list">
-[[DAY <<print $game.day>> 晚->Day_Evening]]
+[[进入夜晚->Day_Evening]]
 </div>

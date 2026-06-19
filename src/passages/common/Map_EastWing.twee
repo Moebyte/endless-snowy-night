@@ -1,4 +1,0 @@
-﻿:: Map_EastWing
-<<run Game.visit()>>
-<<set _zoneId to 'east_wing'>>
-<<include "Common_ZoneMap">>

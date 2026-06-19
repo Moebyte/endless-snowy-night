@@ -1,4 +1,0 @@
-﻿:: Map_Main1F
-<<run Game.visit()>>
-<<set _zoneId to 'main_1f'>>
-<<include "Common_ZoneMap">>

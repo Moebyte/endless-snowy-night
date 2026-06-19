@@ -1,4 +1,0 @@
-﻿:: Map_Main3F
-<<run Game.visit()>>
-<<set _zoneId to 'main_3f'>>
-<<include "Common_ZoneMap">>

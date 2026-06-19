@@ -1,4 +1,0 @@
-﻿:: Map_Underground
-<<run Game.visit()>>
-<<set _zoneId to 'underground'>>
-<<include "Common_ZoneMap">>

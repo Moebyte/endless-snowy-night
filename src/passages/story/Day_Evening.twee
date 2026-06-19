@@ -1,7 +1,7 @@
 :: Day_Evening
 <<run Game.visit()>>
-<<if not $game.day>><<set $game.day to 1>><</if>>
-<h2>DAY <<print $game.day>> 晚</h2>
+<<set $game.time to '20:00'>>
+<h2>DAY <<print $game.day>> 夜晚</h2>
 <p>[待填剧情]</p>
 <p class="system-hint">夜幕降临，所有人回到各自的房间。</p>
 <div class="choice-list">

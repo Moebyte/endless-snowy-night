@@ -1,7 +1,0 @@
-:: Common_SetReturnTarget [widget]
-<<widget "setReturnTarget">>
-<<set _prev to previous()>>
-<<if _prev && !tags(_prev).includes('utility')>>
-<<set $returnTarget to _prev>>
-<</if>>
-<</widget>>
