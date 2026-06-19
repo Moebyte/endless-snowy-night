@@ -2,8 +2,7 @@
 <<run Game.visit()>>
 <<set _advanced to Game.advanceDay()>>
 <<if _advanced>>
-<<set _chapter to 'Chapter03_06_Framework'>>
+<<goto "Day7_Ending">>
 <<else>>
-<<set _chapter to 'Chapter0' + $game.day + '_Start'>>
+<<goto "Day_Morning">>
 <</if>>
-<<goto _chapter>>

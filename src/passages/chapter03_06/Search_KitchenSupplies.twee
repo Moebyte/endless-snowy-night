@@ -1,9 +1,0 @@
-:: Search_KitchenSupplies
-<<run Game.addItem('bread')>>
-<<run Game.visit()>>
-<h2>[待填剧情]</h2>
-<p>[待填剧情]</p>
-<p class="system-hint">[待填剧情]</p>
-<div class="choice-list">
-[[返回厨房|Explore_Kitchen]]
-</div>

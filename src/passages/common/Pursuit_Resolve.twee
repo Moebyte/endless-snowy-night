@@ -9,7 +9,7 @@
 <p>你倒在地上，看着天花板上的水渍变成了无数只眼睛。</p>
 <p class="system-hint">理智归零。追击战失败。</p>
 <div class="choice-list">
-[[继续|Chapter07_Bad]]
+[[继续|Day7_Ending]]
 </div>
 <<elseif _result is 'dawn'>>
 <h2>黎明</h2>
@@ -22,7 +22,7 @@
 <p class="system-hint">你毫发无伤地活了下来。这是胜利，但只是暂时的。</p>
 <</if>>
 <div class="choice-list">
-[[继续新的一天|Chapter03_06_Framework]]
+[[继续新的一天|Common_DayTransition]]
 </div>
 <<else>>
 <h2>追击战 · 结算</h2>

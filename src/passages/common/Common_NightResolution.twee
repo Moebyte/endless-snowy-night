@@ -235,7 +235,7 @@
 <p>你知道这不是终点。你知道你会再次醒来。</p>
 <p class="system-hint">陈默死亡。轮回即将重置。你将带着这一轮的记忆进入下一轮。</p>
 <<run Game.nextLoop()>>
-[[进入下一轮回|Chapter02_Start]]
+[[进入下一轮回|Day_Morning]]
 <<else>>
 <div class="choice-list">
 [[继续新的一天|Common_DayTransition]]

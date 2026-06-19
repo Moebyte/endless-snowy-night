@@ -1,0 +1,8 @@
+:: Day_Morning
+<<run Game.visit()>>
+<<if not $game.day>><<set $game.day to 1>><</if>>
+<h2>DAY <<print $game.day>> 早</h2>
+<p>[待填剧情]</p>
+<div class="choice-list">
+[[DAY <<print $game.day>> 晚->Day_Evening]]
+</div>

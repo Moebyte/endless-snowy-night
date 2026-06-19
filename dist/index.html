@@ -104,7 +104,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 		<div id="init-lacking"><p>Browser lacks capabilities required to play.</p><p>Upgrade or switch to another browser.</p></div>
 		<div id="init-loading"><div>Loading&hellip;</div></div>
 	</div>
-	<tw-storydata name="无尽雪夜" startnode="139" creator="Twine" creator-version="2.10.0" ifid="75844B93-430E-E599-4D6B-E878828384A7" format="SugarCube" format-version="2.37.3" options="" hidden>
+	<tw-storydata name="无尽雪夜" startnode="32" creator="Twine" creator-version="2.10.0" ifid="75844B93-430E-E599-4D6B-E878828384A7" format="SugarCube" format-version="2.37.3" options="" hidden>
   <style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">:root { --bg-color: #1a1a1d; --panel-color: #242428; --text-color: #e8e6e3; --muted-color: #a8a4a0; --accent-color: #c0392b; --accent-hover: #e74c3c; --link-color: #5dade2; --border-color: #3a3a3e; --danger-color: #e74c3c; --safe-color: #58d68d; --font-body: &quot;PingFang SC&quot;, &quot;Microsoft YaHei&quot;, &quot;Hiragino Sans GB&quot;, sans-serif; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-color); font-family: var(--font-body); font-size: 16px; line-height: 1.8; -webkit-font-smoothing: antialiased; }
@@ -3223,1646 +3223,7 @@ Game.mechWolfAIActivatePower = function () {
     return candidates[candidates.length - 1];
   };
 })();</script>
-  <tw-passagedata pid="1" name="Chapter01_Cellar" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addClue(&#39;cellar_door&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;cellar_blood&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;br&gt;&lt;br&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[回到大厅|Chapter01_Evening]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="2" name="Chapter01_CheckExit" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addClue(&#39;locked_doors&#39;)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;map_unlocked&#39;, true)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;strong&gt;[待填剧情]&lt;/strong&gt;&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[回到大厅|Chapter01_Hall]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="3" name="Chapter01_ComfortSuWan" tags="" position="100,100" size="100,100">&lt;&lt;run Game.changeTrust(&#39;suwan&#39;, 15)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;comforted_suwan&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[一起回到大厅|Chapter01_Hall]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="4" name="Chapter01_Evening" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;19:00&#39;&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;jiangbai_scar&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;fang_temperature&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;zhouyang_pocket&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[等待夜晚降临|Chapter01_NightReturn]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="5" name="Chapter01_FoodConflict" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[支持江白，稳定局面|Chapter01_FoodSupportChen]]
-[[支持周阳，质疑老郑|Chapter01_FoodSupportZhou]]
-[[提议平分并记录|Chapter01_FoodEqual]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="6" name="Chapter01_FoodEqual" tags="" position="100,100" size="100,100">&lt;&lt;run Game.changeTrust(&#39;suwan&#39;, 5)&gt;&gt;
-&lt;&lt;run Game.changeTrust(&#39;shen&#39;, 5)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;food_equal_split&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;bread&#39;, 1)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[继续|Chapter01_Cellar]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="7" name="Chapter01_FoodSupportChen" tags="" position="100,100" size="100,100">&lt;&lt;run Game.changeTrust(&#39;chenmo&#39;, 10)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;food_supported_chen&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;bread&#39;, 1)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[继续|Chapter01_Cellar]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="8" name="Chapter01_FoodSupportZhou" tags="" position="100,100" size="100,100">&lt;&lt;run Game.changeTrust(&#39;zhou_ye&#39;, 10)&gt;&gt;
-&lt;&lt;run Game.changeTrust(&#39;laozhou&#39;, -10)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;food_supported_zhou&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[继续|Chapter01_Cellar]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="9" name="Chapter01_Hall" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;09:17&#39;&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;met_everyone&#39;)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;map_unlocked&#39;, true)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[继续|Chapter01_FoodConflict]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="10" name="Chapter01_LaoZhouDeath" tags="" position="100,100" size="100,100">&lt;&lt;set $game.day to 2&gt;&gt;
-&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.kill(&#39;zheng_shoushan&#39;)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;SAW_LAOZHENG_DIE&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-10)&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;第一轮第 2 天，老郑被杀了。脖子被撕开，没有搏斗痕迹。&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;br&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[新的一天|Chapter02_Start]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="11" name="Chapter01_NightReturn" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;23:00&#39;&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;old_guests&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;br&gt;&lt;br&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[入睡|Chapter01_LaoZhouDeath]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="12" name="Chapter01_QuestionLaoZhou" tags="" position="100,100" size="100,100">&lt;&lt;run Game.setFlag(&#39;questioned_laozhou&#39;)&gt;&gt;
-&lt;&lt;run Game.changeTrust(&#39;zheng_shoushan&#39;, -10)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[回到大厅|Chapter01_Hall]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="13" name="Chapter01_Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.chapter to 1&gt;&gt;
-&lt;&lt;set $game.day to 1&gt;&gt;
-&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;phone_battery&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;chen_mo&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;su_wan&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;jiang_bai&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;fang_heng&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;shen_shen&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;ye_zhiqiu&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;zheng_shoushan&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;lin_xiaoman&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;gu_yan&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;zhou_yang&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;tang_xiaotang&#39;)&gt;&gt;
-&lt;&lt;run Game.meetCharacter(&#39;zhao_mingcheng&#39;)&gt;&gt;
-&lt;&lt;run Game.revealCharacterAspect(&#39;chen_mo&#39;, &#39;basic&#39;)&gt;&gt;
-&lt;&lt;run Game.revealCharacterAspect(&#39;chen_mo&#39;, &#39;personality&#39;)&gt;&gt;
-&lt;&lt;run Game.revealCharacterAspect(&#39;chen_mo&#39;, &#39;talent&#39;)&gt;&gt;&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;strong&gt;[待填剧情]&lt;/strong&gt;&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[检查山庄结构|Chapter01_CheckExit]]
-[[先安抚苏晚|Chapter01_ComfortSuWan]]
-[[追问老郑|Chapter01_QuestionLaoZhou]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="14" name="Chapter01_WolfMeeting" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;00:00&#39;&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;wolf_meeting_seen&#39;)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;god_panel_unlocked&#39;, true)&gt;&gt;
-
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;div class=&quot;choice-list&quot;&gt;
-[[从噩梦中醒来|Chapter02_Start]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="15" name="Chapter02_AloneChen" tags="" position="100,100" size="100,100">&lt;&lt;run Game.changeTrust(&#39;chenmo&#39;, 5)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;chen_zhou_confront&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;br&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[夜晚降临|Chapter02_NightReturn]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="16" name="Chapter02_AloneNo" tags="" position="100,100" size="100,100">&lt;&lt;run Game.changeTrust(&#39;zhou_ye&#39;, -5)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;refused_zhou&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[夜晚降临|Chapter02_NightReturn]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="17" name="Chapter02_AloneTrap" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;14:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[答应独处，试探周阳|Chapter02_AloneYes]]
-[[拒绝，坚持三人同行|Chapter02_AloneNo]]
-[[假装答应，实际把江白也叫上|Chapter02_AloneChen]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="18" name="Chapter02_AloneYes" tags="" position="100,100" size="100,100">&lt;&lt;run Game.changeTrust(&#39;zhou_ye&#39;, 5)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;wolf_knife&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[夜晚降临|Chapter02_NightReturn]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="19" name="Chapter02_Hall" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;09:17&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[继续观察众人|Chapter02_Observations]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="20" name="Chapter02_NightReturn" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;23:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[06:00|Common_NightResolution]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="21" name="Chapter02_Notebook" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addItem(&#39;notebook&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;strong&gt;[待填剧情]&lt;/strong&gt;&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[去大厅利用信息差|Chapter02_Hall]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="22" name="Chapter02_Observations" tags="" position="100,100" size="100,100">&lt;&lt;run Game.setFlag(&#39;zhou_suspicious&#39;)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;tang_suspicious&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[午后，周阳来找你|Chapter02_AloneTrap]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="23" name="Chapter02_Outcome" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;&lt;if Game.hasFlag(&#39;chen_zhou_confront&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run /* kill now handled by Common_NightResolution */ &gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;chen_exposed&#39;)&gt;&gt;
-&lt;&lt;elseif Game.hasFlag(&#39;refused_zhou&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run /* kill now handled by Common_NightResolution */ &gt;&gt;
-&lt;&lt;else&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[[继续|Chapter03_Start]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="24" name="Chapter02_SanCost" tags="intro" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[查看昨晚的结果|Chapter02_Outcome]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="25" name="Chapter02_Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.day to 2&gt;&gt;
-&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;loop_awakened&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;我记得。老郑会死。这一切我已经经历过一次。&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;strong&gt;[待填剧情]&lt;/strong&gt;&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;br&gt;&lt;br&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;&lt;&lt;print $game.loop&gt;&lt;&lt;print $game.day&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[回到房间记录情报|Chapter02_Notebook]]&lt;/p&gt;
-&lt;&lt;if $game.loop &gt; 1&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;god_panel_unlocked&#39;, true)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[狼人的第一夜|Chapter01_WolfMeeting]]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="26" name="Chapter03_06_Framework" tags="" position="100,100" size="100,100">&lt;&lt;set $game.day to 7&gt;&gt;
-&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;&lt;if Game.hasClue(&quot;cellar_door&quot;) and Game.hasClue(&quot;altar_inscription&quot;) and Game.hasClue(&quot;god_kill_method&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.checkBreakingReady()&gt;&gt;
-&lt;&lt;if $game.flags.breaking_ready&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;else&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-&lt;&lt;if Game.canReachTrueEnding()&gt;&gt;
-[[收集所有破局线索——走向真结局|Chapter07_True]]
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasClue(&quot;ritual_tablet&quot;) and Game.hasClue(&quot;cellar_door&quot;) and Game.san() &gt; 30&gt;&gt;
-[[用祭坛之力逃出山庄|Chapter07_Good]]
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.san() &lt; 20 and Game.hasFlag(&quot;knows_god_kill&quot;)&gt;&gt;
-[[以弑神者的身份，面对最终抉择|Chapter07_Hidden]]
-&lt;&lt;/if&gt;&gt;
-[[在饥饿和绝望中等待结局|Chapter07_Bad]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="27" name="Chapter03_Cellar" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;10:15&#39;&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;visited_cellar&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;em&gt;[待填剧情]&lt;/em&gt;&lt;/blockquote&gt;
-&lt;&lt;run Game.addClue(&quot;cellar_door&quot;)&gt;&gt;
-&lt;&lt;run Game.addItem(&quot;old_note&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[追上去质问老郑|Chapter03_Cellar_Question]]
-[[继续探索酒窖|Explore_Cellar]]
-[[回到大厅|Chapter03_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="28" name="Chapter03_Cellar_Question" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;laozheng_promise_night&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;laozheng_survivor&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回到大厅|Chapter03_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="29" name="Chapter03_FangHeng" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;10:30&#39;&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;talked_fangheng_day3&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;fang_heng_theory&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[问他怀疑谁|Chapter03_FangHeng_Suspect]]
-[[说自己也觉得奇怪|Chapter03_FangHeng_Agree]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="30" name="Chapter03_FangHeng_Agree" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.changeTrust(&#39;fang_heng&#39;, 8)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回到大厅|Chapter03_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="31" name="Chapter03_FangHeng_Suspect" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;fangheng_suspects_laozheng&#39;)&gt;&gt;
-&lt;&lt;run Game.changeTrust(&#39;fang_heng&#39;, 5)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回到大厅|Chapter03_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="32" name="Chapter03_Hall" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;08:30&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;if Game.isAlive(&quot;gu_yan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[去地下酒窖调查铁门|Chapter03_Cellar]]
-[[找方衡私下聊聊|Chapter03_FangHeng]]
-[[找沈慎坐在角落|Chapter03_ShenShen]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="33" name="Chapter03_NightReturn" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;21:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;if Game.hasFlag(&#39;visited_cellar&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasClue(&#39;fang_heng_theory&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[入睡|Common_NightResolution]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="34" name="Chapter03_ShenShen" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;11:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;talked_shenshen_day3&#39;)&gt;&gt;
-&lt;&lt;run Game.changeTrust(&#39;shen_shen&#39;, 3)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[追问他的话|Chapter03_ShenShen_Probe]]
-[[结束对话，回到大厅|Chapter03_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="35" name="Chapter03_ShenShen_Probe" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&#39;shenshen_identity&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回到大厅|Chapter03_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="36" name="Chapter03_Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.day to 3&gt;&gt;
-&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;这是第 &#39; + $game.loop + &#39; 轮的第 3 天。我开始习惯这种重复。&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;&lt;if Game.hasFlag(&#39;chen_zhou_confront&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;elseif Game.hasFlag(&#39;refused_zhou&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;else&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[[去大厅集合|Chapter03_Hall]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="37" name="Chapter04_GuYan" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;11:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;hidden_floor&quot;)&gt;&gt;
-&lt;&lt;run Game.changeTrust(&#39;gu_yan&#39;, 5)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[继续聊他的学术背景|Chapter04_GuYan_Academia]]
-[[问他为什么来山庄|Chapter04_GuYan_Motive]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="38" name="Chapter04_GuYan_Academia" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;gu_yan_academic&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回大厅|Chapter04_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="39" name="Chapter04_GuYan_Motive" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;zhao_invited_gu&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回大厅|Chapter04_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="40" name="Chapter04_Hall" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;09:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;tang_saw_3f&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[问唐小棠更多细节|Chapter04_TangXiaotang]]
-[[找周阳单独谈谈|Chapter04_ZhouYang]]
-[[找顾言聊聊|Chapter04_GuYan]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="41" name="Chapter04_NightReturn" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;21:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[入睡|Common_NightResolution]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="42" name="Chapter04_Start" tags="intro" position="100,100" size="100,100">&lt;&lt;set $game.day to 4&gt;&gt;
-&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;if Game.isAlive(&quot;zheng_shoushan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.isAlive(&quot;gu_yan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if not Game.isAlive(&quot;zheng_shoushan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.kill(&quot;zheng_shoushan&quot;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[去大厅看看情况|Chapter04_Hall]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="43" name="Chapter04_TangXiaotang" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;09:20&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;talked_tangxiaotang_day4&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[继续问她对其他人的看法|Chapter04_TangXiaotang_Opinion]]
-[[结束对话|Chapter04_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="44" name="Chapter04_TangXiaotang_Opinion" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.changeTrust(&#39;tang_xiaotang&#39;, 5)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[结束对话|Chapter04_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="45" name="Chapter04_ZhouYang" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;10:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;fang_and_zhao_known&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.changeTrust(&#39;zhou_yang&#39;, 3)&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[进一步追问周阳|Chapter04_ZhouYang_Probe]]
-[[结束对话|Chapter04_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="46" name="Chapter04_ZhouYang_Probe" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;probed_zhouyang&#39;)&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回到大厅|Chapter04_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="47" name="Chapter05_Hall" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;08:30&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;day5_mountain_proposal&#39;)&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[支持周阳下山|Chapter05_Support_Zhou]]
-[[反对，建议继续搜查山庄|Chapter05_Hall_Search]]
-[[找叶知秋聊聊|Chapter05_YeZhiqiu]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="48" name="Chapter05_Hall_Search" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;search_remaining&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[找林小满一起去搜索|Chapter05_LinXiaoman]]
-[[找赵明城调查他那边的线索|Chapter05_ZhaoMingcheng]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="49" name="Chapter05_LinXiaoman" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;11:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;six_digit_lock&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[尝试破解密码|Chapter05_LinXiaoman_Puzzle]]
-[[先回大厅|Chapter05_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="50" name="Chapter05_LinXiaoman_Puzzle" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;mystery_room_opened&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;mystery_room&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[推开门进去探索|Explore_Study]]
-[[先退后，叫更多人过来|Chapter05_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="51" name="Chapter05_NightReturn" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;21:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;&lt;if Game.hasFlag(&#39;zhou_jiang_downhill&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasFlag(&#39;mystery_room_opened&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addItem(&quot;ritual_log&quot;)&gt;&gt;
-&lt;&lt;run Game.addClue(&quot;ritual_tablet&quot;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if not Game.hasFlag(&#39;zhou_jiang_downhill&#39;) and not Game.hasFlag(&#39;mystery_room_opened&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[入睡|Common_NightResolution]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="52" name="Chapter05_Start" tags="intro" position="100,100" size="100,100">&lt;&lt;set $game.day to 5&gt;&gt;
-&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;burned_notebook&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;if Game.isAlive(&quot;zheng_shoushan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if not Game.isAlive(&quot;zheng_shoushan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.isAlive(&quot;gu_yan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[去大厅看看今天的情况|Chapter05_Hall]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="53" name="Chapter05_Support_Zhou" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;zhou_jiang_downhill&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[等待|Chapter05_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="54" name="Chapter05_YeZhiqiu" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;09:30&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;ye_supernatural_wound&quot;)&gt;&gt;
-&lt;&lt;run Game.setFlag(&#39;talked_yezhiqiu_day5&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[追问她关于其他人的看法|Chapter05_YeZhiqiu_Opinion]]
-[[让她多休息|Chapter05_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="55" name="Chapter05_YeZhiqiu_Opinion" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;ye_opinion_fang_shen&quot;)&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[让她多休息|Chapter05_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="56" name="Chapter05_ZhaoMingcheng" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;11:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&#39;talked_zhao_day5&#39;)&gt;&gt;
-&lt;&lt;run Game.changeTrust(&#39;zhao_mingcheng&#39;, 2)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[追问他和方衡的交易|Chapter05_ZhaoMingcheng_Business]]
-[[回大厅|Chapter05_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="57" name="Chapter05_ZhaoMingcheng_Business" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.addClue(&quot;zhao_fang_deal&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回大厅|Chapter05_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="58" name="Chapter06_Hall" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;08:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;if Game.hasClue(&quot;zhao_fang_deal&quot;) or Game.hasClue(&quot;fang_and_zhao_known&quot;)&gt;&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[主张全体搜查山庄|Chapter06_Observe]]
-[[主张先指认凶手|Chapter06_PrepareRitual]]
-[[独自去地下祭坛|Chapter06_KillGod]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="59" name="Chapter06_KillGod" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;em&gt;[待填剧情]&lt;/em&gt;&lt;/blockquote&gt;
-&lt;&lt;run Game.addClue(&quot;god_kill_method&quot;)&gt;&gt;
-&lt;&lt;run Game.setFlag(&quot;knows_god_kill&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&quot;shenshen_offered_help&quot;)&gt;&gt;
-&lt;&lt;run Game.changeTrust(&quot;shen_shen&quot;, 10)&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[接受沈慎的帮助|Chapter06_KillGod_Accept]]
-[[拒绝他，独自行动|Chapter06_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="60" name="Chapter06_KillGod_Accept" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&quot;shenshen_sacrifice&quot;)&gt;&gt;
-&lt;&lt;run Game.addClue(&quot;ritual_tablet&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回到大厅|Chapter06_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="61" name="Chapter06_NightReturn" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;21:00&#39;&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.setFlag(&quot;suwan_farewell&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[入睡|Common_NightResolution]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="62" name="Chapter06_Observe" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;em&gt;[待填剧情]&lt;/em&gt;&lt;/blockquote&gt;
-&lt;&lt;run Game.addClue(&quot;altar_inscription&quot;)&gt;&gt;
-&lt;&lt;run Game.setFlag(&quot;found_altar&quot;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回大厅集结|Chapter06_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="63" name="Chapter06_PrepareRitual" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;ul&gt;
-&lt;&lt;if Game.hasClue(&quot;cellar_door&quot;)&gt;&gt;&lt;li&gt;地下酒窖的铁门——需要特定形状的钥匙&lt;/li&gt;&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasClue(&quot;fang_and_zhao_known&quot;)&gt;&gt;&lt;li&gt;方衡和赵明城认识——他们来山庄另有目的&lt;/li&gt;&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasClue(&quot;ye_supernatural_wound&quot;)&gt;&gt;&lt;li&gt;伤口不是人类能造成的——凶器不是普通刀具&lt;/li&gt;&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasClue(&quot;zhao_invited_gu&quot;)&gt;&gt;&lt;li&gt;赵明城介绍顾言来山庄——这趟旅行可能被精心安排&lt;/li&gt;&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.hasClue(&quot;hidden_floor&quot;)&gt;&gt;&lt;li&gt;山庄存在隐藏夹层——有人在暗中行动&lt;/li&gt;&lt;&lt;/if&gt;&gt;
-&lt;/ul&gt;
-&lt;&lt;if Game.hasClue(&quot;cellar_door&quot;) and Game.hasClue(&quot;altar_inscription&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;run Game.changeSan(-10)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[回房间整理思路|Chapter06_NightReturn]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="64" name="Chapter06_Start" tags="intro" position="100,100" size="100,100">&lt;&lt;set $game.day to 6&gt;&gt;
-&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;if Game.isAlive(&quot;zheng_shoushan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.isAlive(&quot;gu_yan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.isAlive(&quot;jiang_bai&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if not Game.isAlive(&quot;jiang_bai&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;if not Game.isAlive(&quot;gu_yan&quot;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[去大厅做最后的部署|Chapter06_Hall]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="65" name="Explore_Altar" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;altar&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;ritual_tablet&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;recruitment_tablet&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;god_kill_method&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;ritual_dagger&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;mirror_shard&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;strong&gt;[待填剧情]&lt;/strong&gt;&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[探索地下墓穴|Explore_Crypt]]
-[[返回|Map_Underground]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="66" name="Explore_ArchiveRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;archive_room&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;old_photo&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;shenshen_identity&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Main3F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="67" name="Explore_Armory" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;armory&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;first_aid_kit&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_WestWing]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="68" name="Explore_Attic" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;attic&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;old_photo&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;laozheng_survivor&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;bible&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Main3F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="69" name="Explore_Balcony" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;balcony&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;locked_doors&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Main2F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="70" name="Explore_Broadcast" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;broadcast_room&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;cassette_tape&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;system_origin&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_EastWing]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="71" name="Explore_Cellar" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;cellar_door&#39;)&gt;&gt;
-&lt;&lt;if not Game.hasClue(&#39;ritual_tablet&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;cellar_door&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;cellar_blood&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;else&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-&lt;&lt;if Game.hasClue(&#39;cellar_door&#39;)&gt;&gt;
-[[前往祭祀空间|Explore_Altar]]
-&lt;&lt;/if&gt;&gt;
-[[返回|Map_Underground]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="72" name="Explore_Chapel" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;chapel&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;bible&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;laozheng_survivor&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Courtyard]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="73" name="Explore_ChildrenRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;children_room&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;tangxiaotang_trauma&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Main2F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="74" name="Explore_Conservatory" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;conservatory&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;mirror_exit&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-
-&lt;&lt;if not Game.witchHasMaterial(&#39;herb_bundle&#39;)&gt;&gt;
-&lt;&lt;run Game.witchAddMaterial(&#39;herb_bundle&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_EastWing]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="75" name="Explore_Courtyard" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;courtyard&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;mirror_exit&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Courtyard]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="76" name="Explore_Crypt" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;crypt&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;recruitment_tablet&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-10)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回祭祀空间|Explore_Altar]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="77" name="Explore_DiningRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;dining_room&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;&lt;if not Game.witchHasMaterial(&#39;medicine_bottle&#39;)&gt;&gt;
-&lt;&lt;run Game.witchAddMaterial(&#39;medicine_bottle&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[检查餐柜|Search_Sideboard]]
-[[细看肖像画|Search_Portraits]]
-[[返回|Map_Main1F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="78" name="Explore_DrawingRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;drawing_room&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[弹一下钢琴|Search_Piano]]
-[[返回|Map_Main1F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="79" name="Explore_Gallery" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;gallery&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;chenmo_guilt&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Main1F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="80" name="Explore_Garden" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;garden&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Courtyard]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="81" name="Explore_Generator" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;generator_room&#39;)&gt;&gt;
-&lt;&lt;if Game.isAlive(&#39;jiang_bai&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;wire&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;flashlight&#39;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;&lt;if Game.isAlive(&#39;jiang_bai&#39;)&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;else&gt;&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_WestWing]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="82" name="Explore_GrandHall" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;grand_hall&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[检查前台抽屉|Search_FrontDesk]]
-[[细看那幅油画|Search_Painting]]
-[[返回|Map_Main1F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="83" name="Explore_GuestCorridor" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;guest_corridor&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[检查落地镜|Search_Mirror2F]]
-[[返回|Map_Main2F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="84" name="Explore_Kitchen" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;kitchen&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;bread&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[拿走干粮和水|Search_KitchenSupplies]]
-[[检查砧板上的刀|Search_Knife]]
-[[前往储藏室|Explore_Pantry]]
-[[返回|Map_Main1F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="85" name="Explore_Library" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;library&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;guest_register&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;old_guests&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_EastWing]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="86" name="Explore_MasterBedroom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;master_bedroom&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;syringe&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-
-&lt;&lt;if not Game.witchHasMaterial(&#39;syringe&#39;)&gt;&gt;
-&lt;&lt;run Game.witchAddMaterial(&#39;syringe&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Main2F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="87" name="Explore_MusicRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;music_room&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_EastWing]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="88" name="Explore_Pantry" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;pantry&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;compass&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回厨房|Explore_Kitchen]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="89" name="Explore_SewingRoom" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;sewing_room&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;wire&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Main2F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="90" name="Explore_Study" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;study&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;lighter&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;laozheng_knowledge&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Main1F]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="91" name="Explore_Well" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;well&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;system_origin&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_Courtyard]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="92" name="Explore_WineCellar" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;wine_cellar&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;cellar_blood&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;if Game.hasItem(&#39;old_key&#39;)&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[用旧钥匙打开铁门|Explore_Cellar]]
-&lt;&lt;/if&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_WestWing]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="93" name="Explore_Workshop" tags="location" position="100,100" size="100,100">&lt;&lt;run Game.visitLocation(&#39;workshop&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;wire&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;flashlight&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-
-&lt;&lt;if not Game.witchHasMaterial(&#39;chemical_vial&#39;)&gt;&gt;
-&lt;&lt;run Game.witchAddMaterial(&#39;chemical_vial&#39;)&gt;&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回|Map_WestWing]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="94" name="Search_FrontDesk" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addItem(&#39;guest_register&#39;)&gt;&gt;
-&lt;&lt;run Game.addClue(&#39;old_guests&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;br&gt;&lt;br&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回大厅|Explore_GrandHall]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="95" name="Search_KitchenSupplies" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addItem(&#39;bread&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回厨房|Explore_Kitchen]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="96" name="Search_Knife" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addItem(&#39;pocket_knife&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回厨房|Explore_Kitchen]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="97" name="Search_Mirror2F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addClue(&#39;mirror_exit&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回走廊|Explore_GuestCorridor]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="98" name="Search_Painting" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addClue(&#39;fang_temperature&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回大厅|Explore_GrandHall]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="99" name="Search_Piano" tags="" position="100,100" size="100,100">&lt;&lt;run Game.changeSan(-3)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回会客厅|Explore_DrawingRoom]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="100" name="Search_Portraits" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addClue(&#39;old_guests&#39;)&gt;&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回餐厅|Explore_DiningRoom]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="101" name="Search_Sideboard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addItem(&#39;bread&#39;)&gt;&gt;
-&lt;&lt;run Game.addItem(&#39;medicine_bottle&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;h2&gt;[待填剧情]&lt;/h2&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;thought&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[返回餐厅|Explore_DiningRoom]]
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="102" name="Chapter07_Bad" tags="" position="100,100" size="100,100">&lt;&lt;run Game.unlockEnding(&#39;starvation&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;div class=&quot;ending-page&quot;&gt;
-&lt;h1 class=&quot;ending-bad&quot;&gt;[待填剧情]&lt;/h1&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[重新开始|Start]]&lt;/p&gt;
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="103" name="Chapter07_Good" tags="" position="100,100" size="100,100">&lt;&lt;run Game.unlockEnding(&#39;good&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;div class=&quot;ending-page&quot;&gt;
-&lt;h1 class=&quot;ending-good&quot;&gt;[待填剧情]&lt;/h1&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;br&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[重新开始|Start]]&lt;/p&gt;
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="104" name="Chapter07_Hidden" tags="" position="100,100" size="100,100">&lt;&lt;run Game.unlockEnding(&#39;god_of_gods&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;div class=&quot;ending-page&quot;&gt;
-&lt;h1 class=&quot;ending-hidden&quot;&gt;[待填剧情]&lt;/h1&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;&lt;br&gt;&lt;br&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;div class=&quot;choice-list&quot;&gt;
-[[拒绝成神|Chapter07_Hidden_Refuse]]
-[[接受成神|Chapter07_Hidden_Accept]]
-&lt;/div&gt;
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="105" name="Chapter07_Hidden_Accept" tags="" position="100,100" size="100,100">&lt;&lt;run Game.unlockEnding(&#39;god_of_gods_accept&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;div class=&quot;ending-page&quot;&gt;
-&lt;h1 class=&quot;ending-hidden&quot;&gt;[待填剧情]&lt;/h1&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[重新开始|Start]]&lt;/p&gt;
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="106" name="Chapter07_Hidden_Refuse" tags="" position="100,100" size="100,100">&lt;&lt;run Game.unlockEnding(&#39;refuse_god&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;div class=&quot;ending-page&quot;&gt;
-&lt;h1 class=&quot;ending-hidden&quot;&gt;[待填剧情]&lt;/h1&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-&lt;p&gt;[[重新开始|Start]]&lt;/p&gt;
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="107" name="Chapter07_True" tags="" position="100,100" size="100,100">&lt;&lt;run Game.unlockEnding(&#39;true_ending&#39;)&gt;&gt;
-&lt;&lt;run Game.visit()&gt;&gt;
-&lt;div class=&quot;ending-page&quot;&gt;
-&lt;h1 class=&quot;ending-true&quot;&gt;[待填剧情]&lt;/h1&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;blockquote&gt;[待填剧情]&lt;/blockquote&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p class=&quot;system-hint&quot;&gt;[待填剧情]&lt;/p&gt;
-
-&lt;p&gt;[[重新开始|Start]]&lt;/p&gt;
-&lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="108" name="Common_Characters" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
+  <tw-passagedata pid="1" name="Common_Characters" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
 &lt;h2&gt;人物档案&lt;/h2&gt;
 &lt;p class=&quot;system-hint&quot;&gt;你目前掌握的人物信息。对外身份默认可见，深层性格、特长与不可告人的秘密需要剧情解锁。&lt;/p&gt;
 
@@ -4901,7 +3262,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|$returnTarget]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="109" name="Common_ClueList" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
+  <tw-passagedata pid="2" name="Common_ClueList" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
 &lt;&lt;set _clues to Object.keys($game.clues)&gt;&gt;
 &lt;h2&gt;线索簿&lt;/h2&gt;
 &lt;&lt;if _clues.length is 0&gt;&gt;
@@ -4913,15 +3274,14 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/for&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;p&gt;[[返回|$returnTarget]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="110" name="Common_DayTransition" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="3" name="Common_DayTransition" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _advanced to Game.advanceDay()&gt;&gt;
 &lt;&lt;if _advanced&gt;&gt;
-&lt;&lt;set _chapter to &#39;Chapter03_06_Framework&#39;&gt;&gt;
+&lt;&lt;goto &quot;Day7_Ending&quot;&gt;&gt;
 &lt;&lt;else&gt;&gt;
-&lt;&lt;set _chapter to &#39;Chapter0&#39; + $game.day + &#39;_Start&#39;&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;goto _chapter&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="111" name="Common_Inventory" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
+&lt;&lt;goto &quot;Day_Morning&quot;&gt;&gt;
+&lt;&lt;/if&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="4" name="Common_Inventory" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
 &lt;&lt;set _inv to Object.keys($game.inventory)&gt;&gt;
 &lt;h2&gt;道具栏&lt;/h2&gt;
 &lt;&lt;if _inv.length is 0&gt;&gt;
@@ -4933,7 +3293,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/for&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;p&gt;[[返回|$returnTarget]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="112" name="Common_Map" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
+  <tw-passagedata pid="5" name="Common_Map" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;庄园地图&lt;/h2&gt;
 &lt;p class=&quot;system-hint&quot;&gt;这是一座建造在雪山深处的老式庄园。地图上只标记你已经亲自踏足的区域；尚未探索的地方仍笼罩在风雪之中。&lt;/p&gt;
@@ -4979,7 +3339,7 @@ Game.mechWolfAIActivatePower = function () {
 [[返回|Start]]
 &lt;&lt;/if&gt;&gt;
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="113" name="Common_Memory" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
+  <tw-passagedata pid="6" name="Common_Memory" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
 &lt;&lt;set _memories to $game.memories&gt;&gt;
 &lt;h2&gt;记忆碎片&lt;/h2&gt;
 &lt;&lt;if _memories.length is 0&gt;&gt;
@@ -4992,7 +3352,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/for&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;p&gt;[[返回|$returnTarget]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="114" name="Common_NightResolution" tags="" position="100,100" size="100,100">/% 夜间结算顺序:
+  <tw-passagedata pid="7" name="Common_NightResolution" tags="" position="100,100" size="100,100">/% 夜间结算顺序:
  *   1. 魔术师致幻交换 (沈慎 AI 选两人)
  *   2. 预言家查验 + 信任分享 (方衡 AI)
  *   3. 骑士守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
@@ -5228,19 +3588,19 @@ Game.mechWolfAIActivatePower = function () {
 &lt;p&gt;你知道这不是终点。你知道你会再次醒来。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;陈默死亡。轮回即将重置。你将带着这一轮的记忆进入下一轮。&lt;/p&gt;
 &lt;&lt;run Game.nextLoop()&gt;&gt;
-[[进入下一轮回|Chapter02_Start]]
+[[进入下一轮回|Day_Morning]]
 &lt;&lt;else&gt;&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
 [[继续新的一天|Common_DayTransition]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="115" name="Common_SetReturnTarget" tags="widget" position="100,100" size="100,100">&lt;&lt;widget &quot;setReturnTarget&quot;&gt;&gt;
+  <tw-passagedata pid="8" name="Common_SetReturnTarget" tags="widget" position="100,100" size="100,100">&lt;&lt;widget &quot;setReturnTarget&quot;&gt;&gt;
 &lt;&lt;set _prev to previous()&gt;&gt;
 &lt;&lt;if _prev &amp;&amp; !tags(_prev).includes(&#39;utility&#39;)&gt;&gt;
 &lt;&lt;set $returnTarget to _prev&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/widget&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="116" name="Common_ZoneMap" tags="utility" position="100,100" size="100,100">&lt;&lt;set _zone to _zoneId&gt;&gt;
+  <tw-passagedata pid="9" name="Common_ZoneMap" tags="utility" position="100,100" size="100,100">&lt;&lt;set _zone to _zoneId&gt;&gt;
 &lt;&lt;set _zoneInfo to GameState.ZONES[_zone]&gt;&gt;
 &lt;&lt;set _visited to Game.getVisitedLocationsInZone(_zone)&gt;&gt;
 &lt;&lt;set _all to Game.getLocationsByZone(_zone)&gt;&gt;
@@ -5271,7 +3631,7 @@ Game.mechWolfAIActivatePower = function () {
 [[返回剧情|$returnTarget]]
 &lt;&lt;/if&gt;&gt;
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="117" name="God_Knight" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="10" name="God_Knight" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;林小满 · 骑士&lt;/h2&gt;
 &lt;&lt;if Game.knightDuelOnCooldown() and Game.knightGuardOnCooldown()&gt;&gt;
 &lt;p class=&quot;danger&quot;&gt;林小满虚弱地靠在墙上，决斗和守卫的消耗都还没恢复。她今天和今晚都无法行动。&lt;/p&gt;
@@ -5303,7 +3663,7 @@ Game.mechWolfAIActivatePower = function () {
 [[算了，不打搅她|Start]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="118" name="God_Knight_Duel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="11" name="God_Knight_Duel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;林小满 · 决斗&lt;/h2&gt;
 &lt;p&gt;林小满握紧小刀：&lt;/p&gt;
 &lt;blockquote&gt;林小满：「你如果有目标，就告诉我。但我要提醒你——如果我砍错了人，死的会是我。」&lt;/blockquote&gt;
@@ -5326,7 +3686,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[放弃决斗|God_Knight]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="119" name="God_Knight_Guard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="12" name="God_Knight_Guard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;林小满 · 守卫&lt;/h2&gt;
 &lt;&lt;if Game.knightGuardOnCooldown()&gt;&gt;
 &lt;p class=&quot;danger&quot;&gt;林小满虚弱地靠在墙上，上次行动的消耗还没恢复。守卫的消耗还没恢复，今夜无法再守卫（但白天决斗不受影响）。&lt;/p&gt;
@@ -5366,7 +3726,7 @@ Game.mechWolfAIActivatePower = function () {
 [[算了，返回|God_Knight]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="120" name="God_Knight_Guard_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="13" name="God_Knight_Guard_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _guardResult to $game.godSkills.knight&gt;&gt;
 &lt;h2&gt;守卫&lt;/h2&gt;
 &lt;&lt;set _guardName to GameState.PROFILES[_guardResult.lastGuard].name&gt;&gt;
@@ -5378,7 +3738,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="121" name="God_Knight_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="14" name="God_Knight_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _result to $game.godSkills.knight&gt;&gt;
 &lt;h2&gt;决斗&lt;/h2&gt;
 &lt;&lt;if not Game.isAlive(&#39;lin_xiaoman&#39;)&gt;&gt;
@@ -5394,7 +3754,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="122" name="God_Magician" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="15" name="God_Magician" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;沈慎 · 魔术师&lt;/h2&gt;
 &lt;&lt;set _remaining to Game.magicianSwapsRemaining()&gt;&gt;
 &lt;&lt;set _currentSwap to Game.getMagicianSwap()&gt;&gt;
@@ -5585,7 +3945,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回神职面板|God_Panel]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="123" name="God_Magician_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="16" name="God_Magician_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _swap to Game.getMagicianSwap()&gt;&gt;
 &lt;h2&gt;交换已设置&lt;/h2&gt;
 &lt;p&gt;沈慎微微点头，手中的扑克牌无声地翻转。&lt;/p&gt;
@@ -5595,7 +3955,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回神职面板|God_Panel]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="124" name="God_Panel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="17" name="God_Panel" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;if Game.hasFlag(&#39;god_panel_unlocked&#39;)&gt;&gt;
 &lt;h2&gt;神职联络&lt;/h2&gt;
 &lt;p class=&quot;system-hint&quot;&gt;你可以联络已确认的神职，请他们使用能力。神职能力来源于村民，&lt;strong&gt;白天和夜晚均可发动&lt;/strong&gt;。&lt;/p&gt;
@@ -5648,7 +4008,7 @@ Game.mechWolfAIActivatePower = function () {
 [[返回|Start]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="125" name="God_Prophet" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="18" name="God_Prophet" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;方衡 · 预言家&lt;/h2&gt;
 &lt;p&gt;方衡站在窗边，目光扫过大厅里的每一个人。&lt;/p&gt;
 &lt;blockquote&gt;方衡：「我能感知到一个人身上的气息。但我看到的不是身份，是意象——雾气、火焰、空洞、涟漪。怎么解读，取决于你自己。」&lt;/blockquote&gt;
@@ -5706,7 +4066,7 @@ _SHOW
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="126" name="God_Prophet_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="19" name="God_Prophet_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _results to Game.prophetResults()&gt;&gt;
 &lt;&lt;set _last to _results[_results.length - 1]&gt;&gt;
 &lt;&lt;set _targetName to GameState.PROFILES[_last.target].name&gt;&gt;
@@ -5732,7 +4092,7 @@ _HIST
 [[继续探查|God_Prophet]]
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="127" name="God_Witch" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="20" name="God_Witch" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;叶知秋 · 女巫&lt;/h2&gt;
 &lt;&lt;set _remaining to Game.witchRemaining()&gt;&gt;
 &lt;&lt;set _uses to Game.witchUses()&gt;&gt;
@@ -5854,7 +4214,7 @@ _HIST
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回神职面板|God_Panel]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="128" name="God_Witch_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="21" name="God_Witch_Result" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;if Game.witchBroken()&gt;&gt;
 &lt;h2&gt;精神崩溃&lt;/h2&gt;
 &lt;p class=&quot;danger&quot;&gt;叶知秋施完最后一次能力后，整个人像被抽空了。她的瞳孔涣散，嘴角不受控制地抽搐。&lt;/p&gt;
@@ -5869,28 +4229,28 @@ _HIST
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回女巫面板|God_Witch]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="129" name="Map_Courtyard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="22" name="Map_Courtyard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _zoneId to &#39;courtyard&#39;&gt;&gt;
 &lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="130" name="Map_EastWing" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="23" name="Map_EastWing" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _zoneId to &#39;east_wing&#39;&gt;&gt;
 &lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="131" name="Map_Main1F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="24" name="Map_Main1F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _zoneId to &#39;main_1f&#39;&gt;&gt;
 &lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="132" name="Map_Main2F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="25" name="Map_Main2F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _zoneId to &#39;main_2f&#39;&gt;&gt;
 &lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="133" name="Map_Main3F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="26" name="Map_Main3F" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _zoneId to &#39;main_3f&#39;&gt;&gt;
 &lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="134" name="Map_Underground" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="27" name="Map_Underground" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _zoneId to &#39;underground&#39;&gt;&gt;
 &lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="135" name="Map_WestWing" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="28" name="Map_WestWing" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _zoneId to &#39;west_wing&#39;&gt;&gt;
 &lt;&lt;include &quot;Common_ZoneMap&quot;&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="136" name="Pursuit_Engine" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="29" name="Pursuit_Engine" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _turn to $game.pursuit.turn&gt;&gt;
 &lt;&lt;set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name&gt;&gt;
 &lt;&lt;set _posName to GameState.MAP[$game.pursuit.playerPos].name&gt;&gt;
@@ -5964,7 +4324,7 @@ _HIST
 &lt;&lt;link &quot;前往古井&quot;&gt;&gt;&lt;&lt;run Game.pursuitMove(&#39;well&#39;)&gt;&gt;&lt;&lt;goto &quot;Pursuit_Resolve&quot;&gt;&gt;&lt;&lt;/link&gt;&gt;
 &lt;/div&gt;
 &lt;p class=&quot;muted&quot;&gt;部分地点可能无法到达，游戏会提示移动失败。&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="137" name="Pursuit_Resolve" tags="" position="100,100" size="100,100">&lt;&lt;set _result to Game.pursuitNextTurn()&gt;&gt;
+  <tw-passagedata pid="30" name="Pursuit_Resolve" tags="" position="100,100" size="100,100">&lt;&lt;set _result to Game.pursuitNextTurn()&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set _wolfName to GameState.PROFILES[Game.getPursuitWolf()].name&gt;&gt;
 
@@ -5974,7 +4334,7 @@ _HIST
 &lt;p&gt;你倒在地上，看着天花板上的水渍变成了无数只眼睛。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;理智归零。追击战失败。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
-[[继续|Chapter07_Bad]]
+[[继续|Day7_Ending]]
 &lt;/div&gt;
 &lt;&lt;elseif _result is &#39;dawn&#39;&gt;&gt;
 &lt;h2&gt;黎明&lt;/h2&gt;
@@ -5987,7 +4347,7 @@ _HIST
 &lt;p class=&quot;system-hint&quot;&gt;你毫发无伤地活了下来。这是胜利，但只是暂时的。&lt;/p&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
-[[继续新的一天|Chapter03_06_Framework]]
+[[继续新的一天|Common_DayTransition]]
 &lt;/div&gt;
 &lt;&lt;else&gt;&gt;
 &lt;h2&gt;追击战 · 结算&lt;/h2&gt;
@@ -6006,7 +4366,7 @@ _HIST
 [[下一回合|Pursuit_Engine]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="138" name="Pursuit_Start" tags="" position="100,100" size="100,100">&lt;&lt;run Game.startPursuit()&gt;&gt;
+  <tw-passagedata pid="31" name="Pursuit_Start" tags="" position="100,100" size="100,100">&lt;&lt;run Game.startPursuit()&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;夜间追击战&lt;/h2&gt;
 &lt;p&gt;存活的人越来越少了。走廊里只剩下你的脚步声。&lt;/p&gt;
@@ -6019,19 +4379,19 @@ _HIST
 &lt;div class=&quot;choice-list&quot;&gt;
 [[开始逃跑|Pursuit_Engine]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="139" name="Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
+  <tw-passagedata pid="32" name="Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
 &lt;h1&gt;无尽雪夜&lt;/h1&gt;
-&lt;p&gt;窗外是铅灰色的雪幕。风像钝刀，一下下刮着玻璃。&lt;/p&gt;
-&lt;p&gt;陈默睁开眼。天花板有水渍，形状像一张闭眼的人脸。他眨了眨眼，水渍没有变化。&lt;/p&gt;
+&lt;p&gt;窗外是铅灰色的雪幕。风像锑刀，一下下刮着玻璃。&lt;/p&gt;
+&lt;p&gt;陈默睑开眼。天花板有水渍，形状像一张哭泣的人脸。他眨了眨眼，水渍没有变化。&lt;/p&gt;
 &lt;p&gt;床头柜上有一行字，像是用指甲或者刀尖刻在木头上的：&lt;/p&gt;
-&lt;blockquote&gt;&lt;strong&gt;“23:00 前，必须回到房间。”&lt;/strong&gt;&lt;/blockquote&gt;
-&lt;p&gt;你被困在了落雁山庄。大雪封山，没有信号，食物只够两天。更可怕的是——你们之中有人会在夜里杀人。&lt;/p&gt;
+&lt;blockquote&gt;&lt;strong&gt;&quot;23:00 前，必须回到房间。&quot;&lt;/strong&gt;&lt;/blockquote&gt;
+&lt;p&gt;你被困在了暴雪山庄。大雪封山，没有信号，食物只够两天。更可怕的是——你们之中有人在夜里杀人。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;本作是文字冒险游戏，你的每个选择都会影响信任、线索与结局。点击选项推进剧情。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
-[[开始游戏|Chapter01_Start]]
+[[开始游戏-&gt;Day_Morning]]
 [[查看人物|Common_Characters]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="140" name="StoryCaption" tags="" position="100,100" size="100,100">&lt;&lt;set _status to Game.getStatus()&gt;&gt;
+  <tw-passagedata pid="33" name="StoryCaption" tags="" position="100,100" size="100,100">&lt;&lt;set _status to Game.getStatus()&gt;&gt;
 &lt;&lt;set _sanClass to _status.san &gt; 60 ? &#39;safe&#39; : (_status.san &gt; 30 ? &#39;&#39; : &#39;danger&#39;)&gt;&gt;
 &lt;&lt;set _breaking to Game.trueEndingProgress()&gt;&gt;
 &lt;&lt;set _met = $game.metCharacters || {}&gt;&gt;
@@ -6065,9 +4425,38 @@ _HIST
   &lt;&lt;/if&gt;&gt;
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="141" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;
+  <tw-passagedata pid="34" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;
 &lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
 &lt;&lt;set $returnTarget to &#39;Start&#39;&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="35" name="Day7_Ending" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;if Game.canReachTrueEnding()&gt;&gt;
+&lt;h2&gt;真结局 · 破局&lt;/h2&gt;
+&lt;p&gt;[待填剧情]&lt;/p&gt;
+&lt;&lt;elseif Game.isAlive(&#39;su_wan&#39;) and Game.san() &gt; 20&gt;&gt;
+&lt;h2&gt;好结局 · 逃离&lt;/h2&gt;
+&lt;p&gt;[待填剧情]&lt;/p&gt;
+&lt;&lt;else&gt;&gt;
+&lt;h2&gt;坏结局 · 无尽轮回&lt;/h2&gt;
+&lt;p&gt;[待填剧情]&lt;/p&gt;
+&lt;div class=&quot;choice-list&quot;&gt;
+[[再次轮回-&gt;Start]]
+&lt;/div&gt;
+&lt;&lt;/if&gt;&gt;</tw-passagedata>
+  <tw-passagedata pid="36" name="Day_Evening" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;if not $game.day&gt;&gt;&lt;&lt;set $game.day to 1&gt;&gt;&lt;&lt;/if&gt;&gt;
+&lt;h2&gt;DAY &lt;&lt;print $game.day&gt;&gt; 晚&lt;/h2&gt;
+&lt;p&gt;[待填剧情]&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;夜幕降临，所有人回到各自的房间。&lt;/p&gt;
+&lt;div class=&quot;choice-list&quot;&gt;
+[[入睡-&gt;Common_NightResolution]]
+&lt;/div&gt;</tw-passagedata>
+  <tw-passagedata pid="37" name="Day_Morning" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+&lt;&lt;if not $game.day&gt;&gt;&lt;&lt;set $game.day to 1&gt;&gt;&lt;&lt;/if&gt;&gt;
+&lt;h2&gt;DAY &lt;&lt;print $game.day&gt;&gt; 早&lt;/h2&gt;
+&lt;p&gt;[待填剧情]&lt;/p&gt;
+&lt;div class=&quot;choice-list&quot;&gt;
+[[DAY &lt;&lt;print $game.day&gt;&gt; 晚-&gt;Day_Evening]]
+&lt;/div&gt;</tw-passagedata>
 </tw-storydata>
 	<script id="script-sugarcube" type="text/javascript">
 	/*! SugarCube JS */

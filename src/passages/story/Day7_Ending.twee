@@ -1,0 +1,15 @@
+:: Day7_Ending
+<<run Game.visit()>>
+<<if Game.canReachTrueEnding()>>
+<h2>真结局 · 破局</h2>
+<p>[待填剧情]</p>
+<<elseif Game.isAlive('su_wan') and Game.san() > 20>>
+<h2>好结局 · 逃离</h2>
+<p>[待填剧情]</p>
+<<else>>
+<h2>坏结局 · 无尽轮回</h2>
+<p>[待填剧情]</p>
+<div class="choice-list">
+[[再次轮回->Start]]
+</div>
+<</if>>

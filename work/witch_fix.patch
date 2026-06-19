@@ -1,0 +1,26 @@
+﻿*** Begin Patch
+*** Update File: src/scripts/skills/witch.js
+@@
+     var role = Game.roleOf(targetId);
+     if (WOLF_ROLES.indexOf(role) !== -1) {
+-      score += 15 * w.threat;
++      // Wolves radiate killing intent the witch can sense; base score is high
++      // enough to clear the curse threshold on its own (see witchAIGetCurseTarget).
++      score += 20 * w.threat;
+     } else {
+       score += 3;
+     }
+@@
+-    // Only curse confirmed/strongly suspected wolves (score >= 25)
+-    return bestScore >= 25 ? best : null;
++    // Curse wolves the witch can sense killing intent from (score >= 15).
++    // A bare wolf scores 20*1.2 = 24 before variance (roughly 20-28 after),
++    // while a non-wolf only scores ~3, so innocents are never cursed on
++    // identity alone. Suspect/behaviour flags push borderline cases over.
++    return bestScore >= 15 ? best : null;
+@@
+-    var saveMargin = saveTarget ? (saveScore - 12) / 12 : -1;
+-    var curseMargin = curseTarget ? (curseScore - 25) / 25 : -1;
++    var saveMargin = saveTarget ? (saveScore - 12) / 12 : -1;
++    var curseMargin = curseTarget ? (curseScore - 15) / 15 : -1;
+*** End Patch
