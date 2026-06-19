@@ -1,16 +1,16 @@
 :: Common_NightResolution
 /% 夜间结算顺序:
- *   1. 魔术师致幻交换 (沈慎 AI 选两人)
- *   2. 预言家查验 + 信任分享 (方衡 AI)
- *   3. 骑士守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
- *   4. 狼人击杀 (狼队投票 AI)
- *   5. 女巫感知死亡 + 救人/诅咒 AI
- *   6. 机械狼窃取神力判定
+ *   1. 幻真致幻交换 (沈慎 AI 选两人)
+ *   2. 昭判查验 + 信任分享 (方衡 AI)
+ *   3. 镇煚守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
+ *   4. 堕仙击杀 (堕仙投票 AI)
+ *   5. 渡君感知死亡 + 救人/诅咒 AI
+ *   6. 机械堕仙窃取神力判定
  %/
 <<set _nightLog to []>>
 <<set _knightGuarded to null>>
 
-/ ============ 1. 魔术师致幻 ============ /
+/ ============ 1. 幻真致幻 ============ /
 <<if Game.isAlive('shen_shen') and Game.magicianSwapsRemaining() > 0>>
 <<set _swapA to null>>
 <<set _swapB to null>>
@@ -47,7 +47,7 @@
 <</if>>
 <</if>>
 
-/ ============ 2. 预言家查验 ============ /
+/ ============ 2. 昭判查验 ============ /
 <<if Game.isAlive('fang_heng')>>
 <<set _prophetTarget to Game.prophetAIGetCheckTarget()>>
 <<if _prophetTarget>>
@@ -62,7 +62,7 @@
 <</if>>
 <</if>>
 
-/ ============ 3. 骑士守卫 ============ /
+/ ============ 3. 镇煚守卫 ============ /
 <<if Game.isAlive('lin_xiaoman') and !Game.knightWeakened()>>
 <<set _guardTarget to Game.knightAIGetGuardTarget()>>
 <<if _guardTarget>>
@@ -74,13 +74,13 @@
 <</if>>
 <</if>>
 
-/ ============ 4. 狼人击杀 ============ /
+/ ============ 4. 堕仙击杀 ============ /
 <<set _kill to Game.executeWolfKill()>>
 <<run Game.setLastWolfKill(_kill)>>
 <<run Game.witchSenseDeath()>>
 <<run Game.visit()>>
 
-/ ============ 5. 女巫决策 ============ /
+/ ============ 5. 渡君决策 ============ /
 <<if Game.isAlive('ye_zhiqiu') and !Game.witchBroken() and Game.witchRemaining() > 0>>
 <<set _witchDecision to Game.witchAIDecide()>>
 <<else>>
@@ -108,17 +108,17 @@
 <<set _actualName to GameState.PROFILES[_kill.actualTarget].name>>
 
 <<if _kill.friendlyFire>>
-<h2>黎明 · 狼人自相残杀</h2>
+<h2>黎明 · 堕仙自相残杀</h2>
 <p>尖叫声把你惊醒。但当你冲出房间时，看到的场景让所有人困惑。</p>
 <<if _kill.mutualKill>>
-<p>走廊上有两具尸体：<strong><<print _actualName>></strong>（狼王）和 <strong><<print _kill.killerName>></strong>。他们倒在一起，像是互相撕咬致死。</p>
-<blockquote>「狼人怎么会杀自己人？除非——它们被什么东西搞糊涂了。」</blockquote>
-<p class="system-hint">狼王 <<print _actualName>> 被同伴误杀，同归于尽。执行者 <<print _kill.killerName>> 也死了。可能是魔术师的交换所致。</p>
+<p>走廊上有两具尸体：<strong><<print _actualName>></strong>（幽主）和 <strong><<print _kill.killerName>></strong>。他们倒在一起，像是互相撕咬致死。</p>
+<blockquote>「堕仙怎么会杀自己人？除非——它们被什么东西搞糊涂了。」</blockquote>
+<p class="system-hint">幽主 <<print _actualName>> 被同伴误杀，同归于尽。执行者 <<print _kill.killerName>> 也死了。可能是幻真的交换所致。</p>
 <<run Game.changeSan(-5)>>
-<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 和 ' + _kill.killerName + ' 同归于尽。狼人自相残杀！')>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 和 ' + _kill.killerName + ' 同归于尽。堕仙自相残杀！')>>
 <<else>>
 <p><strong><<print _actualName>></strong> 倒在血泊中。但伤痕不对——这是狼的爪牙。</p>
-<p class="system-hint">一只狼被同伴误杀。可能是魔术师的交换所致。</p>
+<p class="system-hint">一只堕仙被同伴误杀。可能是幻真的交换所致。</p>
 <<run Game.changeSan(-5)>>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被同伴误杀。')>>
 <</if>>
@@ -126,8 +126,8 @@
 <<elseif _kill.special is 'body_removed'>>
 <h2>黎明 · 消失的尸体</h2>
 <p><strong><<print _actualName>></strong> 的房间门大开着，但里面没有尸体。只有大量的血迹和拖拽的痕迹，延伸到走廊尽头就消失了。</p>
-<p class="danger">尸体被抹除了。没有尸体，就没有证据。女巫即使有还魂之力，也无处施展。</p>
-<p class="system-hint"><<print _actualName>> 被杀。清道夫狼抹除了尸体，女巫无法复活。</p>
+<p class="danger">尸体被抹除了。没有尸体，就没有证据。渡君即使有还魂之力，也无处施展。</p>
+<p class="system-hint"><<print _actualName>> 被杀。清道夫堕仙抹除了尸体，渡君无法复活。</p>
 <<run Game.changeSan(-10)>>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀，尸体被抹除。')>>
 
@@ -135,21 +135,21 @@
 <h2>黎明 · 从死亡边缘归来</h2>
 <p>你冲向 <strong><<print _actualName>></strong> 的房间，却看到他/她正坐在床边，脸色苍白。</p>
 <p>叶知秋站在一旁，放下手中的药瓶：「差一点。」</p>
-<p class="system-hint">女巫叶知秋在狼人袭击后救活了 <<print _actualName>>。</p>
+<p class="system-hint">渡君叶知秋在堕仙袭击后救活了 <<print _actualName>>。</p>
 <<if _witchSaved.reason is 'broken'>>
 <p class="danger">叶知秋靠在墙角，双手抱着头，浑身发抖。她用了最后一次力量——精神已经崩溃了。</p>
 <<run Game.revealInfo('ye_zhiqiu', 'witch_exposed')>>
 <</if>>
 <<run Game.changeSan(5)>>
-<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被狼人袭击，但叶知秋救活了他/她。')>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被堕仙袭击，但叶知秋救活了他/她。')>>
 
 <<elseif _kill.special is 'witch_knight_conflict'>>
 <h2>黎明 · 夜色中的混乱</h2>
 <p><strong><<print _actualName>></strong> 倒下了。</p>
-<p>叶知秋站在走廊另一端，神情复杂：「我去了……但有人先到了。她赶走了我，以为安全了——但狼还在。」</p>
-<p class="system-hint">骑士守卫和女巫救人冲突：守卫赶走了女巫，以为目标安全，狼趁机杀人。</p>
+<p>叶知秋站在走廊另一端，神情复杂：「我去了……但有人先到了。她赶走了我，以为安全了——但堕仙还在。」</p>
+<p class="system-hint">镇煚守卫和渡君救人冲突：守卫赶走了渡君，以为目标安全，堕仙趁机杀人。</p>
 <<run Game.changeSan(-15)>>
-<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀。女巫与守卫冲突。')>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀。渡君与守卫冲突。')>>
 
 <<elseif _kill.special is 'protected_by_knight'>>
 <<run Game.knightReset()>>
@@ -164,7 +164,7 @@
 <p>尖叫声把你从梦中惊醒。你冲出房间，看到走廊上已经围了一圈人。</p>
 <p><strong><<print _actualName>></strong> 倒在自己的房间里。门窗从内部锁死，没有搏斗痕迹。</p>
 <p>苏晚检查后摇头：「死亡时间大约在凌晨两点。没有外伤，像是……在睡梦中被某种力量夺走了呼吸。」</p>
-<p class="system-hint"><<print _actualName>> 被狼人杀害。</p>
+<p class="system-hint"><<print _actualName>> 被堕仙杀害。</p>
 
 <<if _kill.actualTarget is 'chen_mo'>>
 <<set _loopToDeath to true>>
@@ -187,23 +187,23 @@
 <<elseif _kill.special is 'saved_by_witch'>>
 <h2>黎明 · 从死亡边缘归来</h2>
 <p>你冲出房间，没有发现尸体。但叶知秋的房间灯还亮着。</p>
-<p class="system-hint">女巫预感到了死亡，救了某人。无人死亡。</p>
+<p class="system-hint">渡君预感到了死亡，救了某人。无人死亡。</p>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：有人被袭击，但叶知秋救了回来。')>>
 
 <<else>>
 <<run Game.knightReset()>>
 <h2>黎明 · 无人死亡</h2>
 <p>走廊很安静。你检查了每一扇门，所有人都还活着。</p>
-<p>但你知道，这只是暂时的。狼还在。</p>
+<p>但你知道，这只是暂时的。堕仙还在。</p>
 <p class="system-hint">昨夜无人死亡。但恐惧不会消失。</p>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：无人死亡。')>>
 <</if>>
 
-/ 女巫诅咒 /
+/ 渡君诅咒 /
 <<if _witchDecision.action is 'curse' and _witchCurseResult.ok>>
 <h3>叶知秋的诅咒</h3>
 <p>清晨，你发现 <strong><<print _witchCurseName>></strong> 倒在自己的房间里。没有外伤，没有血迹，只是嘴唇发黑——像是被某种看不见的力量夺走了呼吸。</p>
-<p class="system-hint">女巫叶知秋在夜间诅咒了 <<print _witchCurseName>>。诅咒是神力，狼王的反杀能力无法触发。</p>
+<p class="system-hint">渡君叶知秋在夜间诅咒了 <<print _witchCurseName>>。诅咒是神力，幽主的反杀能力无法触发。</p>
 <<if _witchCurseResult.reason is 'broken'>>
 <p class="danger">叶知秋靠在墙角，双手抱着头，浑身发抖。她用了最后一次力量——精神已经崩溃了。</p>
 <<run Game.revealInfo('ye_zhiqiu', 'witch_exposed')>>
@@ -211,7 +211,7 @@
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：叶知秋诅咒了 ' + _witchCurseName + '。')>>
 <</if>>
 
-/ 神职夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
+/ 伪神夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
 <<if _nightLog.length > 0>>
 <details class="night-log" open>
 <summary>夜间暗流（你的轮回记忆）</summary>

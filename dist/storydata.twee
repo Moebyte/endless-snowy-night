@@ -1911,6 +1911,20 @@ Game.magicianResetDaily = function () {
     MECHANICAL_WOLF: 'mechanical_wolf'
   };
 
+  // Display labels for roles (v8 terminology)
+  GameState.ROLE_LABELS = {
+    memory: '劫主',
+    prophet: '昭判',
+    witch: '渡君',
+    knight: '镇煚',
+    magician: '幻真',
+    villager: '凡人',
+    wolf_king: '幽主',
+    hidden_wolf: '匿魂',
+    wolf: '无常',
+    mechanical_wolf: '噬道'
+  };
+
   // Ending IDs
   GameState.ENDINGS = {
     GOOD: 'good',
@@ -2085,20 +2099,20 @@ Game.magicianResetDaily = function () {
   };
 
   
-  // PROFILES: public identity + first impression + unlockable personality/talent/secret
+  // PROFILES: v8 character bible - public identity + hidden secrets
   GameState.PROFILES = {
-    chen_mo: { name: "陈默", firstImpression: "你自己。白衬衫皱巴巴的，袖口还有血迹。", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，不善表达", talent: "逻辑分析、记笔记", secret: "你拥有跨轮回的记忆。某次见死不救的经历，让你在循环中反复自我惩罚。" },
-    su_wan: { name: "苏晚", firstImpression: "穿白大褂的女生，气质温和，一直随身带着急救箱。", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔倔强，医者仁心", talent: "急救、诊断伤势、安抚他人", secret: "她对陈默有过超出同学的好感，但从未说出口。" },
-    jiang_bai: { name: "江白", firstImpression: "戴耳机的男生，话不多，总坐在靠窗的位置。", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具", secret: "他右手腕的旧疤不是玻璃划的，来源他一直含糊带过。" },
-    fang_heng: { name: "方衡", firstImpression: "三十多岁的男人，穿着深色夹克，话不多，总在观察四周。", age: 35, job: "市公安局刑侦支队副队长", personality: "沉稳世故，表面温和", talent: "观察细节、推理、追踪", secret: "他是黑警，与赵明城在来山庄前就有私下来往。" },
-    shen_shen: { name: "沈慎", firstImpression: "沉默的中年男人，手指修长，动作很轻，几乎不发出声音。", age: 38, job: "自由职业魔术师/手艺人", personality: "沉默寡言，动作利落", talent: "手速快、魔术技巧、观察人心", secret: "他曾是地下赌场荷官兼老千，出千害得别人家破人亡。" },
-    ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，不爱说话。", age: 32, job: "殡仪馆入殓师，前医学院学生", personality: "沉静温柔，不爱多言", talent: "医疗护理、急救包扎、配制药剂", secret: "她曾因医疗事故致人死亡，从此离开临床。" },
-    zheng_shoushan: { name: "郑守山", firstImpression: "年纪最大的男人，自称老郑，说自己是这次旅行的导游。", age: 58, job: "退休旅行团导游", personality: "圆滑谨慎，阅历丰富", talent: "野外生存、认路、讲故事", secret: "他是上一轮轮回的幸存者，知道山庄的部分真相。" },
-    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "她有太妹背景，为了保护唐小棠可以不择手段。" },
-    zhou_yang: { name: "周阳", firstImpression: "高个子体育生，笑容阳光，喜欢和人打招呼。", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好", talent: "奔跑、体能好、带动气氛", secret: "他好胜心极强，享受在竞争中把对手压垮的感觉。" },
-    tang_xiaotang: { name: "唐小棠", firstImpression: "爱笑的女生，紧紧挽着林小满的手臂，看起来有点怕生。", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强", talent: "读文字、察言观色、写作", secret: "她幼年被养父虐待猥亵，精神状态长期不稳定，暗恋陈默。" },
-    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，自称做外贸生意。", age: 45, job: "外贸公司老板", personality: "圆滑世故，擅长斡旋", talent: "谈判、资源调配、心理分析", secret: "他实际是政治掮客、黑手套，与方衡一起来山庄各取所需。" },
-    gu_yan: { name: "顾言", firstImpression: "戴眼镜的年轻人，手里拿着笔记本，不时低头记录什么。", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强", talent: "物理推理、拆解机关、实验验证", secret: "他曾强夺同门师兄弟的学术成果，对权力极度渴望。" },
+    chen_mo: { name: "陈默", firstImpression: "你自己。白衫衫皱巴巴的，袖口还有血迹。", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，寡言，习惯用笔记与逻辑拆解问题", talent: "逻辑分析、记笔记、观察系统漏洞", secret: "你是劫主，唯一保留轮回记忆的人。" },
+    su_wan: { name: "苏晚", firstImpression: "穿白大褂的女生，气质温和，一直随身带着急救箱。", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔坚定，医者仁心", talent: "急救、诊断中毒/伤势、安抚他人", secret: "凡人·青囊。她没有超自然能力，但凡人的存在决定伪神力量的强弱。" },
+    jiang_bai: { name: "江白", firstImpression: "戴耳机的男生，话不多，总坐在靠窗的位置。", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具", secret: "凡人·雷工。他右手腕的旧瘤不是玻璃划的，来源他一直含糊带过。" },
+    fang_heng: { name: "方衡", firstImpression: "三十多岁的男人，穿着深色夹克，话不多，总在观察四周。", age: 35, job: "市刑警支队副队长", personality: "沉稳敏锐，表面温和", talent: "观察微表情、布局审讯、焦点孤立目标", secret: "昭判。他是黑警，收钱封口，与赵明城来山庄前就有私下来往。" },
+    shen_shen: { name: "沈慎", firstImpression: "沉默的中年男人，手指修长，动作很轻，几乎不发出声音。", age: 38, job: "网吧网管", personality: "沉默寡言，动作利落", talent: "手速快、操控感知、观察人心", secret: "伪神·幻真。他曾是地下赌场荷官兼老千，出千害得别人家破人亡。" },
+    ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，不爱说话。", age: 32, job: "止仪馆入殓师", personality: "沉静温柔，不爱多言", talent: "医疗护理、急救包扎、配制药剂", secret: "渡君。她能感知生命流逝，还魂夺命，但超过3次就会崩溃。" },
+    zheng_shoushan: { name: "郑守山", firstImpression: "年纪最大的男人，自称老郑，说自己是这次旅行的导游。", age: 58, job: "大巴司机", personality: "热情能说会道，熟悉山路", talent: "野外生存、认路、讲故事", secret: "引路人。他开了20年这条山路，有模糊的既视感，似乎知道山庄的某些真相。" },
+    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "伪神·镇煚。她有太妹背景，为了保护唐小棠可以不择手段。" },
+    zhou_yang: { name: "周阳", firstImpression: "高个子体育生，笑容阳光，喜欢和人打招呼。", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好", talent: "奔跑、体能好、带动气氛", secret: "堕仙·幽主。他好胜心极强，享受在竞争中把对手压垮。被杀时可以同归于尽。" },
+    tang_xiaotang: { name: "唐小棠", firstImpression: "爱笑的女生，紧紧挝着林小满的手臂，看起来有点怕生。", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强", talent: "读文字、察言观色、写作", secret: "堕仙·匿魂。她幼年被养父虐待猝㷴，精神状态长期不稳定，暗恋陈默。领言家查验为盟友。" },
+    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，自称做外贸生意。", age: 45, job: "外贸公司老板", personality: "圆滑世故，擅长旋旦", talent: "谈判、资源调配、心理施压", secret: "堕仙·无常。他是政治掌客、黑手套，与方衡一起来山庄各取所需。能抹除尸体。" },
+    gu_yan: { name: "顾言", firstImpression: "戴眼镜的年轻人，手里拿着笔记本，不时低头记录什么。", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强", talent: "物理推理、拆解机关、实验验证", secret: "堕仙·噬道。他曾强夺同门师兄弟的学术成果，引掌能力后只能用一次。" },
   };
 
 GameState.getProfile = function (charId) {
@@ -3210,17 +3224,17 @@ body {
 
 :: Common_NightResolution
 /% 夜间结算顺序:
- *   1. 魔术师致幻交换 (沈慎 AI 选两人)
- *   2. 预言家查验 + 信任分享 (方衡 AI)
- *   3. 骑士守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
- *   4. 狼人击杀 (狼队投票 AI)
- *   5. 女巫感知死亡 + 救人/诅咒 AI
- *   6. 机械狼窃取神力判定
+ *   1. 幻真致幻交换 (沈慎 AI 选两人)
+ *   2. 昭判查验 + 信任分享 (方衡 AI)
+ *   3. 镇煚守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
+ *   4. 堕仙击杀 (堕仙投票 AI)
+ *   5. 渡君感知死亡 + 救人/诅咒 AI
+ *   6. 机械堕仙窃取神力判定
  %/
 <<set _nightLog to []>>
 <<set _knightGuarded to null>>
 
-/ ============ 1. 魔术师致幻 ============ /
+/ ============ 1. 幻真致幻 ============ /
 <<if Game.isAlive('shen_shen') and Game.magicianSwapsRemaining() > 0>>
 <<set _swapA to null>>
 <<set _swapB to null>>
@@ -3257,7 +3271,7 @@ body {
 <</if>>
 <</if>>
 
-/ ============ 2. 预言家查验 ============ /
+/ ============ 2. 昭判查验 ============ /
 <<if Game.isAlive('fang_heng')>>
 <<set _prophetTarget to Game.prophetAIGetCheckTarget()>>
 <<if _prophetTarget>>
@@ -3272,7 +3286,7 @@ body {
 <</if>>
 <</if>>
 
-/ ============ 3. 骑士守卫 ============ /
+/ ============ 3. 镇煚守卫 ============ /
 <<if Game.isAlive('lin_xiaoman') and !Game.knightWeakened()>>
 <<set _guardTarget to Game.knightAIGetGuardTarget()>>
 <<if _guardTarget>>
@@ -3284,13 +3298,13 @@ body {
 <</if>>
 <</if>>
 
-/ ============ 4. 狼人击杀 ============ /
+/ ============ 4. 堕仙击杀 ============ /
 <<set _kill to Game.executeWolfKill()>>
 <<run Game.setLastWolfKill(_kill)>>
 <<run Game.witchSenseDeath()>>
 <<run Game.visit()>>
 
-/ ============ 5. 女巫决策 ============ /
+/ ============ 5. 渡君决策 ============ /
 <<if Game.isAlive('ye_zhiqiu') and !Game.witchBroken() and Game.witchRemaining() > 0>>
 <<set _witchDecision to Game.witchAIDecide()>>
 <<else>>
@@ -3318,17 +3332,17 @@ body {
 <<set _actualName to GameState.PROFILES[_kill.actualTarget].name>>
 
 <<if _kill.friendlyFire>>
-<h2>黎明 · 狼人自相残杀</h2>
+<h2>黎明 · 堕仙自相残杀</h2>
 <p>尖叫声把你惊醒。但当你冲出房间时，看到的场景让所有人困惑。</p>
 <<if _kill.mutualKill>>
-<p>走廊上有两具尸体：<strong><<print _actualName>></strong>（狼王）和 <strong><<print _kill.killerName>></strong>。他们倒在一起，像是互相撕咬致死。</p>
-<blockquote>「狼人怎么会杀自己人？除非——它们被什么东西搞糊涂了。」</blockquote>
-<p class="system-hint">狼王 <<print _actualName>> 被同伴误杀，同归于尽。执行者 <<print _kill.killerName>> 也死了。可能是魔术师的交换所致。</p>
+<p>走廊上有两具尸体：<strong><<print _actualName>></strong>（幽主）和 <strong><<print _kill.killerName>></strong>。他们倒在一起，像是互相撕咬致死。</p>
+<blockquote>「堕仙怎么会杀自己人？除非——它们被什么东西搞糊涂了。」</blockquote>
+<p class="system-hint">幽主 <<print _actualName>> 被同伴误杀，同归于尽。执行者 <<print _kill.killerName>> 也死了。可能是幻真的交换所致。</p>
 <<run Game.changeSan(-5)>>
-<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 和 ' + _kill.killerName + ' 同归于尽。狼人自相残杀！')>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 和 ' + _kill.killerName + ' 同归于尽。堕仙自相残杀！')>>
 <<else>>
 <p><strong><<print _actualName>></strong> 倒在血泊中。但伤痕不对——这是狼的爪牙。</p>
-<p class="system-hint">一只狼被同伴误杀。可能是魔术师的交换所致。</p>
+<p class="system-hint">一只堕仙被同伴误杀。可能是幻真的交换所致。</p>
 <<run Game.changeSan(-5)>>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被同伴误杀。')>>
 <</if>>
@@ -3336,8 +3350,8 @@ body {
 <<elseif _kill.special is 'body_removed'>>
 <h2>黎明 · 消失的尸体</h2>
 <p><strong><<print _actualName>></strong> 的房间门大开着，但里面没有尸体。只有大量的血迹和拖拽的痕迹，延伸到走廊尽头就消失了。</p>
-<p class="danger">尸体被抹除了。没有尸体，就没有证据。女巫即使有还魂之力，也无处施展。</p>
-<p class="system-hint"><<print _actualName>> 被杀。清道夫狼抹除了尸体，女巫无法复活。</p>
+<p class="danger">尸体被抹除了。没有尸体，就没有证据。渡君即使有还魂之力，也无处施展。</p>
+<p class="system-hint"><<print _actualName>> 被杀。清道夫堕仙抹除了尸体，渡君无法复活。</p>
 <<run Game.changeSan(-10)>>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀，尸体被抹除。')>>
 
@@ -3345,21 +3359,21 @@ body {
 <h2>黎明 · 从死亡边缘归来</h2>
 <p>你冲向 <strong><<print _actualName>></strong> 的房间，却看到他/她正坐在床边，脸色苍白。</p>
 <p>叶知秋站在一旁，放下手中的药瓶：「差一点。」</p>
-<p class="system-hint">女巫叶知秋在狼人袭击后救活了 <<print _actualName>>。</p>
+<p class="system-hint">渡君叶知秋在堕仙袭击后救活了 <<print _actualName>>。</p>
 <<if _witchSaved.reason is 'broken'>>
 <p class="danger">叶知秋靠在墙角，双手抱着头，浑身发抖。她用了最后一次力量——精神已经崩溃了。</p>
 <<run Game.revealInfo('ye_zhiqiu', 'witch_exposed')>>
 <</if>>
 <<run Game.changeSan(5)>>
-<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被狼人袭击，但叶知秋救活了他/她。')>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被堕仙袭击，但叶知秋救活了他/她。')>>
 
 <<elseif _kill.special is 'witch_knight_conflict'>>
 <h2>黎明 · 夜色中的混乱</h2>
 <p><strong><<print _actualName>></strong> 倒下了。</p>
-<p>叶知秋站在走廊另一端，神情复杂：「我去了……但有人先到了。她赶走了我，以为安全了——但狼还在。」</p>
-<p class="system-hint">骑士守卫和女巫救人冲突：守卫赶走了女巫，以为目标安全，狼趁机杀人。</p>
+<p>叶知秋站在走廊另一端，神情复杂：「我去了……但有人先到了。她赶走了我，以为安全了——但堕仙还在。」</p>
+<p class="system-hint">镇煚守卫和渡君救人冲突：守卫赶走了渡君，以为目标安全，堕仙趁机杀人。</p>
 <<run Game.changeSan(-15)>>
-<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀。女巫与守卫冲突。')>>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀。渡君与守卫冲突。')>>
 
 <<elseif _kill.special is 'protected_by_knight'>>
 <<run Game.knightReset()>>
@@ -3374,7 +3388,7 @@ body {
 <p>尖叫声把你从梦中惊醒。你冲出房间，看到走廊上已经围了一圈人。</p>
 <p><strong><<print _actualName>></strong> 倒在自己的房间里。门窗从内部锁死，没有搏斗痕迹。</p>
 <p>苏晚检查后摇头：「死亡时间大约在凌晨两点。没有外伤，像是……在睡梦中被某种力量夺走了呼吸。」</p>
-<p class="system-hint"><<print _actualName>> 被狼人杀害。</p>
+<p class="system-hint"><<print _actualName>> 被堕仙杀害。</p>
 
 <<if _kill.actualTarget is 'chen_mo'>>
 <<set _loopToDeath to true>>
@@ -3397,23 +3411,23 @@ body {
 <<elseif _kill.special is 'saved_by_witch'>>
 <h2>黎明 · 从死亡边缘归来</h2>
 <p>你冲出房间，没有发现尸体。但叶知秋的房间灯还亮着。</p>
-<p class="system-hint">女巫预感到了死亡，救了某人。无人死亡。</p>
+<p class="system-hint">渡君预感到了死亡，救了某人。无人死亡。</p>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：有人被袭击，但叶知秋救了回来。')>>
 
 <<else>>
 <<run Game.knightReset()>>
 <h2>黎明 · 无人死亡</h2>
 <p>走廊很安静。你检查了每一扇门，所有人都还活着。</p>
-<p>但你知道，这只是暂时的。狼还在。</p>
+<p>但你知道，这只是暂时的。堕仙还在。</p>
 <p class="system-hint">昨夜无人死亡。但恐惧不会消失。</p>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：无人死亡。')>>
 <</if>>
 
-/ 女巫诅咒 /
+/ 渡君诅咒 /
 <<if _witchDecision.action is 'curse' and _witchCurseResult.ok>>
 <h3>叶知秋的诅咒</h3>
 <p>清晨，你发现 <strong><<print _witchCurseName>></strong> 倒在自己的房间里。没有外伤，没有血迹，只是嘴唇发黑——像是被某种看不见的力量夺走了呼吸。</p>
-<p class="system-hint">女巫叶知秋在夜间诅咒了 <<print _witchCurseName>>。诅咒是神力，狼王的反杀能力无法触发。</p>
+<p class="system-hint">渡君叶知秋在夜间诅咒了 <<print _witchCurseName>>。诅咒是神力，幽主的反杀能力无法触发。</p>
 <<if _witchCurseResult.reason is 'broken'>>
 <p class="danger">叶知秋靠在墙角，双手抱着头，浑身发抖。她用了最后一次力量——精神已经崩溃了。</p>
 <<run Game.revealInfo('ye_zhiqiu', 'witch_exposed')>>
@@ -3421,7 +3435,7 @@ body {
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：叶知秋诅咒了 ' + _witchCurseName + '。')>>
 <</if>>
 
-/ 神职夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
+/ 伪神夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
 <<if _nightLog.length > 0>>
 <details class="night-log" open>
 <summary>夜间暗流（你的轮回记忆）</summary>
@@ -3460,7 +3474,7 @@ body {
 <p>陈默睑开眼。天花板有水渍，形状像一张哭泣的人脸。</p>
 <p>床头柜上刻着一行字：</p>
 <blockquote><strong>"23:00 前，必须回到房间。"</strong></blockquote>
-<p>你被困在了暴雪山庄。没有信号，没有出路，食物只够两天。更可怕的是——你们之中有人会在夜里杀人。</p>
+<p>你被困在了落雁山庄。大雪封山，没有信号，没有出路。更可怕的是——你们之中有人会在夜里消失。</p>
 <div class="choice-list">
 [[开始游戏->Day_Morning]]
 </div>
@@ -3502,7 +3516,7 @@ body {
 <<set $game.time to '20:00'>>
 <h2>DAY <<print $game.day>> 夜晚</h2>
 <p>[待填剧情]</p>
-<p class="system-hint">夜幕降临，所有人回到各自的房间。</p>
+<p class="system-hint">夜幕降临。所有人回到各自的房间，锁上门。</p>
 <div class="choice-list">
 [[入睡->Common_NightResolution]]
 </div>

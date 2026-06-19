@@ -93,9 +93,9 @@ all.forEach(r => r.log.forEach(l => {
 
 console.log('===== 50轮汇总 =====');
 console.log('平均每轮死亡: ' + (stats.deaths/50).toFixed(1));
-console.log('女巫救人: ' + stats.witchSave + ' | 女巫诅咒: ' + stats.witchCurse + ' (其中狼人: ' + stats.witchCurseWolvesOnly + '/' + stats.witchCurseTotal + ')');
-console.log('魔术师交换: ' + stats.swaps + ' | 骑士守卫: ' + stats.guards + ' | 预言家分享: ' + stats.shares);
-console.log('狼王同归: ' + stats.wk + ' | 狼人误杀同伴: ' + stats.ff + ' | 骑士挡刀: ' + stats.guarded);
+console.log('渡君救人: ' + stats.witchSave + ' | 渡君诅咒: ' + stats.witchCurse + ' (其中堕仙: ' + stats.witchCurseWolvesOnly + '/' + stats.witchCurseTotal + ')');
+console.log('幻真交换: ' + stats.swaps + ' | 镇煚守卫: ' + stats.guards + ' | 昭判分享: ' + stats.shares);
+console.log('幽主同归: ' + stats.wk + ' | 堕仙误杀同伴: ' + stats.ff + ' | 镇煚挡刀: ' + stats.guarded);
 
 // 给每轮打标签，挑特殊的
 function tag(r) {
@@ -106,12 +106,12 @@ function tag(r) {
   const ff = r.log.filter(l=>l.kill.friendlyFire).length;
   const wk = r.log.filter(l=>l.kill.special==='wolf_king_mutual').length;
   const guarded = r.log.filter(l=>l.kill.special==='protected_by_knight').length;
-  if (r.wolvesDead >= 3) tags.push('狼队覆灭('+r.wolvesDead+'狼死)');
-  if (curses >= 3) tags.push('女巫三杀');
-  if (saves >= 3) tags.push('女巫三救');
-  if (ff >= 2) tags.push('魔术师多次致幻('+ff+')');
-  if (wk >= 1) tags.push('狼王同归');
-  if (guarded >= 3) tags.push('骑士神守('+guarded+')');
+  if (r.wolvesDead >= 3) tags.push('堕仙队覆灭('+r.wolvesDead+'狼死)');
+  if (curses >= 3) tags.push('渡君三杀');
+  if (saves >= 3) tags.push('渡君三救');
+  if (ff >= 2) tags.push('幻真多次致幻('+ff+')');
+  if (wk >= 1) tags.push('幽主同归');
+  if (guarded >= 3) tags.push('镇煚神守('+guarded+')');
   if (deaths <= 2) tags.push('极低死亡('+deaths+')');
   if (r.finalAlive.filter(c=>WOLVES.indexOf(c)===-1).length <= 2) tags.push('好人濒灭');
   // 连续诅咒同一阵营
@@ -126,17 +126,17 @@ special.forEach(r => {
   r.log.forEach(l => {
     const wt = nm(l.kill.actualTarget);
     const killer = l.kill.killer ? nm(l.kill.killer) : '';
-    let line = '  D' + l.day + ': 狼杀' + wt + (killer?'('+killer+')':'');
+    let line = '  D' + l.day + ': 堕仙杀' + wt + (killer?'('+killer+')':'');
     if (l.kill.killed) line += ' ✓死';
     if (l.kill.special === 'body_removed') line += ' {抹尸}';
-    else if (l.kill.special === 'wolf_king_mutual') line += ' {狼王同归}';
+    else if (l.kill.special === 'wolf_king_mutual') line += ' {幽主同归}';
     else if (l.kill.special === 'friendly_fire') line += ' {致幻误杀同伴}';
-    else if (l.kill.special === 'protected_by_knight') line += ' {骑士挡下}';
+    else if (l.kill.special === 'protected_by_knight') line += ' {镇煚挡下}';
     if (l.prophetCheck) line += ' | 验' + nm(l.prophetCheck.target) + '=' + (l.prophetCheck.alignment==='enemy'?'敌人':'盟友');
     if (l.prophetShared && l.prophetShared.ok) line += '(分享)';
     if (l.swap) line += ' | 换' + nm(l.swap.a) + '↔' + nm(l.swap.b);
     if (l.guardTarget) line += ' | 守' + nm(l.guardTarget);
-    if (l.witch) line += ' | 女巫' + l.witch.action + nm(l.witch.target) + (l.witch.ok?'✓':'✗');
+    if (l.witch) line += ' | 渡君' + l.witch.action + nm(l.witch.target) + (l.witch.ok?'✓':'✗');
     console.log(line);
   });
 });

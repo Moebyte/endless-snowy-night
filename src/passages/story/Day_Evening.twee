@@ -3,7 +3,7 @@
 <<set $game.time to '20:00'>>
 <h2>DAY <<print $game.day>> 夜晚</h2>
 <p>[待填剧情]</p>
-<p class="system-hint">夜幕降临，所有人回到各自的房间。</p>
+<p class="system-hint">夜幕降临。所有人回到各自的房间，锁上门。</p>
 <div class="choice-list">
 [[入睡->Common_NightResolution]]
 </div>
