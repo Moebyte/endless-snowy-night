@@ -71,6 +71,11 @@ Game.addClue = function (id) {
 
     g.clues[id] = true;
 
+    // key clues that point to the true ending unlock the progress panel
+    if (GameState.CLUES[id] && GameState.CLUES[id].breaking) {
+      Game.setFlag('breaking_progress_unlocked', true);
+    }
+
   }
 
 Game.hasClue = function (id) {
@@ -576,16 +581,35 @@ Game.getStatus = function () {
 
   }
 
-  // ---------- ?? ----------
-  Game.getStatus = function () {
+  // ---------- character info management ----------
+
+  Game.meetCharacter = function (charId) {
     var g = ensureState();
-    return {
-      loop: g.loop,
-      day: g.day,
-      time: g.time,
-      san: g.stats.san,
-      hunger: g.stats.hunger,
-      aliveCount: Object.keys(g.alive).filter(function (k) { return g.alive[k]; }).length
-    };
+    g.metCharacters[charId] = true;
+    if (!g.characterReveals[charId]) g.characterReveals[charId] = {};
+  };
+
+  Game.hasMetCharacter = function (charId) {
+    var g = ensureState();
+    return !!g.metCharacters[charId];
+  };
+
+  Game.revealCharacterAspect = function (charId, aspect) {
+    var g = ensureState();
+    if (!g.characterReveals[charId]) g.characterReveals[charId] = {};
+    g.characterReveals[charId][aspect] = true;
+  };
+
+  Game.hasRevealedCharacterAspect = function (charId, aspect) {
+    var g = ensureState();
+    return !!(g.characterReveals[charId] && g.characterReveals[charId][aspect]);
+  };
+
+  Game.witchBroken = function () {
+    return !!ensureState().godSkills.witch.broken;
+  };
+
+  Game.knightWeakened = function () {
+    return (ensureState().godSkills.knight.weakenedDays || 0) > 0;
   };
 })();

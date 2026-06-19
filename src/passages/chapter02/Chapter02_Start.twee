@@ -20,6 +20,7 @@
 <p class="system-hint">你觉醒了无限记忆能力。当前为第 <<print $game.loop>> 轮轮回，第 <<print $game.day>> 天。你可以利用上一周目的情报改变事件。</p>
 <p>[[回到房间记录情报|Chapter02_Notebook]]</p>
 <<if $game.loop > 1>>
+<<run Game.setFlag('god_panel_unlocked', true)>>
 <p class="system-hint">一个噩梦的碎片在记忆里闪回……</p>
 <p>[[狼人的第一夜|Chapter01_WolfMeeting]]</p>
 <</if>>

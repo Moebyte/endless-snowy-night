@@ -204,18 +204,18 @@
   
   // PROFILES: name + age + job + personality + talent
   GameState.PROFILES = {
-    chen_mo: { name: "陈默", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，不善表达，有负罪感", talent: "逻辑分析、记笔记、观察系统漏洞" },
-    su_wan: { name: "苏晚", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔倔强，医者仁心", talent: "急救、诊断中毒/伤势、安抚他人" },
-    jiang_bai: { name: "江白", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具" },
-    fang_heng: { name: "方衡", age: 35, job: "市刑警支队副队长", personality: "沉稳世故，表面温和，内心算计", talent: "读微表情、审讯、栽赃、追踪" },
-    shen_shen: { name: "沈慎", age: 38, job: "地下赌场荷官兼老千", personality: "沉默寡言，动作利落，赌徒心态", talent: "出千、致幻布置、冷读术" },
-    ye_zhiqiu: { name: "叶知秋", age: 32, job: "前医学院学生，现为殡仪馆入殓师", personality: "沉静温柔，对生死淡漠", talent: "验尸、保存尸体证据、配药/下毒" },
-    zheng_shoushan: { name: "郑守山", age: 58, job: "退休旅行团导游", personality: "圆滑谨慎，知道太多又不敢说", talent: "熟悉山庄结构、野外生存、隐藏通道" },
-    lin_xiaoman: { name: "林小满", age: 20, job: "艺术学院绘画专业学生，唐小棠同校闺蜜", personality: "冲动仗义，护短，外刚内软", talent: "打架、保护他人、观察色彩/细节" },
-    zhou_yang: { name: "周阳", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好，实则好胜", talent: "奔跑/追逐、体能压制、煽动气氛" },
-    tang_xiaotang: { name: "唐小棠", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强，精神脆弱", talent: "读文字/暗号、察言观色、情感操控" },
-    zhao_mingcheng: { name: "赵明城", age: 45, job: "外贸公司老板、政治掮客", personality: "圆滑世故，擅长斡旋，冷酷", talent: "谈判、找把柄、资源调配、心理施压" },
-    gu_yan: { name: "顾言", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强，容易崩溃", talent: "物理推理、拆解机关、实验验证" },
+    chen_mo: { name: "陈默", firstImpression: "你自己。白衬衫皱巴巴的，袖口还有血迹。", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，不善表达，有负罪感", talent: "逻辑分析、记笔记、观察系统漏洞" },
+    su_wan: { name: "苏晚", firstImpression: "穿白大褂的女生，气质温和，一直随身带着急救箱。", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔倔强，医者仁心", talent: "急救、诊断中毒/伤势、安抚他人" },
+    jiang_bai: { name: "江白", firstImpression: "戴耳机的男生，话不多，手腕上有一道整齐的旧疤。", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具" },
+    fang_heng: { name: "方衡", firstImpression: "三十多岁的男人，眼神像警察，总在不动声色地观察每个人。", age: 35, job: "市刑警支队副队长", personality: "沉稳世故，表面温和，内心算计", talent: "读微表情、审讯、栽赃、追踪" },
+    shen_shen: { name: "沈慎", firstImpression: "沉默的中年男人，手指修长，动作轻得像在发牌。", age: 38, job: "地下赌场荷官兼老千", personality: "沉默寡言，动作利落，赌徒心态", talent: "出千、致幻布置、冷读术" },
+    ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，身上有淡淡的药水味。", age: 32, job: "前医学院学生，现为殡仪馆入殓师", personality: "沉静温柔，对生死淡漠", talent: "验尸、保存尸体证据、配药/下毒" },
+    zheng_shoushan: { name: "郑守山", firstImpression: "年纪最大的男人，自称老郑，对山庄的结构异常熟悉。", age: 58, job: "退休旅行团导游", personality: "圆滑谨慎，知道太多又不敢说", talent: "熟悉山庄结构、野外生存、隐藏通道" },
+    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生，唐小棠同校闺蜜", personality: "冲动仗义，护短，外刚内软", talent: "打架、保护他人、观察色彩/细节" },
+    zhou_yang: { name: "周阳", firstImpression: "高个子体育生，笑容阳光，右手始终插在口袋里。", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好，实则好胜", talent: "奔跑/追逐、体能压制、煽动气氛" },
+    tang_xiaotang: { name: "唐小棠", firstImpression: "爱笑的女生，紧紧挽着林小满的手臂，精神状态不太稳定。", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强，精神脆弱", talent: "读文字/暗号、察言观色、情感操控" },
+    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，像在谈判桌上。", age: 45, job: "外贸公司老板、政治掮客", personality: "圆滑世故，擅长斡旋，冷酷", talent: "谈判、找把柄、资源调配、心理施压" },
+    gu_yan: { name: "顾言", firstImpression: "戴眼镜的年轻人，手里拿着笔记本，不时低头记录什么。", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强，容易崩溃", talent: "物理推理、拆解机关、实验验证" },
   };
 
 GameState.getProfile = function (charId) {
@@ -294,6 +294,12 @@ GameState.getProfile = function (charId) {
 
       // revealed character hidden info
       revealed: {},
+
+      // characters the protagonist has met
+      metCharacters: {},
+
+      // per-character unlocked info aspects (basic/personality/talent/backstory/identity)
+      characterReveals: {},
 
       // safehouse status (intruded each night)
       safehouse: {

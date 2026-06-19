@@ -1,6 +1,7 @@
 :: Chapter01_WolfMeeting
 <<set $game.time to '00:00'>>
 <<run Game.setFlag('wolf_meeting_seen')>>
+<<run Game.setFlag('god_panel_unlocked', true)>>
 
 <h2>Day 1 · 子夜 · 共享噩梦</h2>
 

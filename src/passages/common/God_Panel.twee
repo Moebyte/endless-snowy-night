@@ -1,5 +1,6 @@
 :: God_Panel
 <<run Game.visit()>>
+<<if Game.hasFlag('god_panel_unlocked')>>
 <h2>神职联络</h2>
 <p class="system-hint">你可以联络已确认的神职，请他们使用能力。神职能力来源于村民，<strong>白天和夜晚均可发动</strong>。</p>
 <p class="muted">但白天当众使用能力会暴露身份。狼人能力仅夜晚可用，除非机械狼已弑神偷取神力。</p>
@@ -40,3 +41,10 @@
 <div class="choice-list">
 [[返回|Start]]
 </div>
+<<else>>
+<h2>神职联络</h2>
+<p>你尚未发现神职系统的存在。</p>
+<div class="choice-list">
+[[返回|Start]]
+</div>
+<</if>>

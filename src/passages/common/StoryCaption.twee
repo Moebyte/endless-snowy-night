@@ -2,6 +2,7 @@
 <<set _status to Game.getStatus()>>
 <<set _sanClass to _status.san > 60 ? 'safe' : (_status.san > 30 ? '' : 'danger')>>
 <<set _breaking to Game.trueEndingProgress()>>
+<<set _metCount to Object.keys($game.metCharacters).filter(function (k) { return $game.metCharacters[k]; }).length>>
 <div class="status-panel">
   <div class="row"><span class="status-label">轮回</span><span class="status-value">第 <<print _status.loop>> 轮</span></div>
   <div class="row"><span class="status-label">天数</span><span class="status-value">第 <<print _status.day>> 天</span></div>
@@ -13,11 +14,14 @@
 <div class="status-panel">
   <div class="row"><span class="status-label">[[道具|Common_Inventory]]</span><span class="status-value"><<print Object.keys($game.inventory).length>></span></div>
   <div class="row"><span class="status-label">[[线索|Common_ClueList]]</span><span class="status-value"><<print Object.keys($game.clues).length>></span></div>
-  <div class="row"><span class="status-label">[[人物|Common_Characters]]</span><span class="status-value">12</span></div>
+  <div class="row"><span class="status-label">[[人物|Common_Characters]]</span><span class="status-value"><<print _metCount>>/12</span></div>
   <div class="row"><span class="status-label">[[地图|Common_Map]]</span><span class="status-value">查看</span></div>
   <div class="row"><span class="status-label">[[记忆|Common_Memory]]</span><span class="status-value"><<print $game.memories.length>></span></div>
+  <<if Game.hasFlag('god_panel_unlocked')>>
   <div class="row"><span class="status-label">[[神职|God_Panel]]</span><span class="status-value">技能</span></div>
+  <</if>>
 </div>
+<<if Game.hasFlag('breaking_progress_unlocked')>>
 <div class="status-panel">
   <div class="row"><span class="status-label">破局进度</span><span class="status-value"><<print _breaking.collected>>/<<print _breaking.total>></span></div>
   <div class="bar"><div class="bar-fill" style="width: <<print Math.round(_breaking.collected / _breaking.total * 100)>>%"></div></div>
@@ -25,3 +29,4 @@
   <p class="system-hint" style="margin-top:0.4rem;">你已收集足够的破局线索，轮回可以被终结。</p>
   <</if>>
 </div>
+<</if>>
