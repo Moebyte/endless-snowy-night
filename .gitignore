@@ -10,3 +10,7 @@ tools/sim_v*.js
 # Local deploy key & temporary clone directories
 .ssh/
 *-push/
+
+# External git metadata directories
+*-git/
+*-old/
