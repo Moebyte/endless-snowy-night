@@ -45,19 +45,15 @@
     });
     if (availableKillers.length === 0) availableKillers = aliveWolves;
 
+    // Mech wolf prioritises known gods to steal their power.
     if (isKnownGod && availableKillers.indexOf('gu_yan') !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
       killer = 'gu_yan';
-    } else if (availableKillers.indexOf('zhao_mingcheng') !== -1 && Math.random() < 0.4) {
-      killer = 'zhao_mingcheng';
     } else {
-      var regulars = availableKillers.filter(function (w) {
-        return w !== 'gu_yan' && w !== 'zhao_mingcheng';
-      });
-      if (regulars.length > 0) {
-        killer = regulars[Math.floor(Math.random() * regulars.length)];
-      } else {
-        killer = availableKillers[Math.floor(Math.random() * availableKillers.length)];
-      }
+      // Cleaner wolf acts as a normal wolf here; body removal is decided
+      // AFTER the kill based on the victim's actual role.
+      var regulars = availableKillers.filter(function (w) { return w !== 'gu_yan'; });
+      if (regulars.length > 0) { killer = regulars[Math.floor(Math.random() * regulars.length)]; }
+      else { killer = availableKillers[Math.floor(Math.random() * availableKillers.length)]; }
     }
 
     var result = {
@@ -119,8 +115,9 @@
       Game.mechWolfStealPower(actualVictim);
     }
 
-    // Cleaner removes the body so the witch cannot sense/revive it
-    if (killer === 'zhao_mingcheng') {
+    // Cleaner removes the body ONLY if the victim is a god, so the witch
+    // cannot sense/revive a dead god. Villager corpses are left normally.
+    if (killer === 'zhao_mingcheng' && godRoles.indexOf(Game.roleOf(actualVictim)) !== -1) {
       result.special = 'body_removed';
     }
 
