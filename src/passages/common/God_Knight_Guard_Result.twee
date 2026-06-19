@@ -7,7 +7,7 @@
 <blockquote>林小满：「我去盯着 <<print _guardName>> 的房间。今晚不会有东西靠近他/她。」</blockquote>
 <p>她的背影消失在走廊拐角。你希望这个决定是对的。</p>
 <p class="system-hint">林小满正在守卫 <<print _guardName>>。今夜如果狼人袭击 <<print _guardName>>，林小满会挡下。</p>
-<p class="warning">林小满进入虚弱状态，明天无法行动。</p>
+<p class="warning">林小满次夜无法再次守卫，但白天决斗不受影响。</p>
 <div class="choice-list">
 [[返回|Start]]
 </div>

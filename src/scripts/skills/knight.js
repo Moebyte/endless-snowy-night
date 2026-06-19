@@ -19,13 +19,16 @@
   Game.knightDuel = function (targetId) {
     var g = ensureState();
     var k = g.godSkills.knight;
-    if ((k.weakenedDays || 0) > 0) return { ok: false, reason: 'weakened' };
+    if ((k.duelCooldown || 0) > 0) return { ok: false, reason: 'duel_cooldown' };
     if (!g.alive['lin_xiaoman']) return { ok: false, reason: 'knight_dead' };
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
     if (targetId === 'lin_xiaoman') return { ok: false, reason: 'cannot_duel_self' };
 
     var targetRole = Game.roleOf(targetId);
     var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
+
+    // Duel is a day action with its own cooldown, independent of guarding.
+    k.duelCooldown = 1;
 
     if (isWolf) {
       Game.kill(targetId);
@@ -42,13 +45,27 @@
 
   Game.knightWeakened = function () {
     var k = ensureState().godSkills.knight;
-    return (k.weakenedDays || 0) > 0;
+    return (k.duelCooldown || 0) > 0 || (k.guardCooldown || 0) > 0;
+  };
+
+  // Precise per-skill cooldown checks (day duel vs night guard are independent).
+  Game.knightDuelOnCooldown = function () {
+    var k = ensureState().godSkills.knight;
+    return (k.duelCooldown || 0) > 0;
+  };
+  Game.knightGuardOnCooldown = function () {
+    var k = ensureState().godSkills.knight;
+    return (k.guardCooldown || 0) > 0;
   };
 
   Game.knightReset = function () {
     var g = ensureState();
     var k = g.godSkills.knight;
-    if (k.weakenedDays > 0) k.weakenedDays -= 1;
+    // Each night both independent cooldowns tick down by one.
+    if ((k.duelCooldown || 0) > 0) k.duelCooldown -= 1;
+    if ((k.guardCooldown || 0) > 0) k.guardCooldown -= 1;
+    // Legacy field kept at 0 for old-save compatibility.
+    k.weakenedDays = 0;
     k.currentGuard = null;
     k.guarding = null;
   };
@@ -96,7 +113,7 @@
   Game.knightGuard = function (targetId) {
     var g = ensureState();
     var k = g.godSkills.knight;
-    if ((k.weakenedDays || 0) > 0) return { ok: false, reason: 'weakened' };
+    if ((k.guardCooldown || 0) > 0) return { ok: false, reason: 'guard_cooldown' };
     if (!g.alive['lin_xiaoman']) return { ok: false, reason: 'knight_dead' };
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
     if (targetId === 'lin_xiaoman') return { ok: false, reason: 'cannot_guard_self' };
@@ -106,7 +123,8 @@
 
     k.guarding = targetId;
     k.lastGuardTarget = targetId;
-    k.weakenedDays = 2;
+    // Guard has its own cooldown, independent of dueling.
+    k.guardCooldown = 1;
     return { ok: true, reason: 'guarding', target: targetId };
   };
 

@@ -34,8 +34,12 @@
 <<if Game.witchBroken()>>
 <p class="danger">叶知秋已精神崩溃，无法再使用女巫能力。</p>
 <</if>>
-<<if Game.knightWeakened()>>
-<p class="warning">林小满处于虚弱状态，今天无法行动。</p>
+<<if Game.knightDuelOnCooldown()>>
+<p class="warning">林小满明日白天无法决斗（但夜晚守卫不受影响）。</p>
+<</if>>
+<<if Game.knightGuardOnCooldown()>>
+<p class="warning">林小满今夜无法守卫（但白天决斗不受影响）。</p>
+<</if>>
 <</if>>
 
 <div class="choice-list">

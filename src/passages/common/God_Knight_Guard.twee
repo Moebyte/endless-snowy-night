@@ -1,15 +1,15 @@
 :: God_Knight_Guard
 <<run Game.visit()>>
 <h2>林小满 · 守卫</h2>
-<<if Game.knightWeakened()>>
-<p class="danger">林小满虚弱地靠在墙上，上次行动的消耗还没恢复。她今天无法行动。</p>
+<<if Game.knightGuardOnCooldown()>>
+<p class="danger">林小满虚弱地靠在墙上，上次行动的消耗还没恢复。守卫的消耗还没恢复，今夜无法再守卫（但白天决斗不受影响）。</p>
 <div class="choice-list">
 [[返回|Start]]
 </div>
 <<else>>
 <p>林小满收起折叠小刀，压低声音：</p>
-<blockquote>林小满：「你想让我守着谁？我只能护一个人，而且之后两天我都动不了了——你确定？」</blockquote>
-<p class="system-hint">守卫：今晚狼人袭击该目标时，林小满会挡下。守卫后林小满进入虚弱状态，次日无法行动。</p>
+<blockquote>林小满：「你想让我守着谁？我只能护一个人，而且下一晚不能再守卫——但白天砍人不受影响。你确定？」</blockquote>
+<p class="system-hint">守卫：今晚狼人袭击该目标时，林小满会挡下。守卫后次夜无法再次守卫，但白天决斗不受影响。</p>
 <p class="warning">守卫与女巫救人冲突时，两者互相抵消，目标仍会死亡。</p>
 
 <div class="choice-list">

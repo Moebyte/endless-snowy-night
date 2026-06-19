@@ -332,6 +332,9 @@ GameState.getProfile = function (charId) {
         knight: {
           duelsUsed: 0,
           weakenedDays: 0,
+          // Independent cooldowns: duel (day) and guard (night) no longer share.
+          duelCooldown: 0,
+          guardCooldown: 0,
           lastTarget: null,
           guarding: null
         },

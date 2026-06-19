@@ -843,7 +843,8 @@ Game.getStatus = function () {
   };
 
   Game.knightWeakened = function () {
-    return (ensureState().godSkills.knight.weakenedDays || 0) > 0;
+    var k = ensureState().godSkills.knight;
+    return (k.duelCooldown || 0) > 0 || (k.guardCooldown || 0) > 0;
   };
 
   // migrate old saves that lack newer state fields
@@ -1101,13 +1102,16 @@ Game.getStatus = function () {
   Game.knightDuel = function (targetId) {
     var g = ensureState();
     var k = g.godSkills.knight;
-    if ((k.weakenedDays || 0) > 0) return { ok: false, reason: 'weakened' };
+    if ((k.duelCooldown || 0) > 0) return { ok: false, reason: 'duel_cooldown' };
     if (!g.alive['lin_xiaoman']) return { ok: false, reason: 'knight_dead' };
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
     if (targetId === 'lin_xiaoman') return { ok: false, reason: 'cannot_duel_self' };
 
     var targetRole = Game.roleOf(targetId);
     var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
+
+    // Duel is a day action with its own cooldown, independent of guarding.
+    k.duelCooldown = 1;
 
     if (isWolf) {
       Game.kill(targetId);
@@ -1124,13 +1128,27 @@ Game.getStatus = function () {
 
   Game.knightWeakened = function () {
     var k = ensureState().godSkills.knight;
-    return (k.weakenedDays || 0) > 0;
+    return (k.duelCooldown || 0) > 0 || (k.guardCooldown || 0) > 0;
+  };
+
+  // Precise per-skill cooldown checks (day duel vs night guard are independent).
+  Game.knightDuelOnCooldown = function () {
+    var k = ensureState().godSkills.knight;
+    return (k.duelCooldown || 0) > 0;
+  };
+  Game.knightGuardOnCooldown = function () {
+    var k = ensureState().godSkills.knight;
+    return (k.guardCooldown || 0) > 0;
   };
 
   Game.knightReset = function () {
     var g = ensureState();
     var k = g.godSkills.knight;
-    if (k.weakenedDays > 0) k.weakenedDays -= 1;
+    // Each night both independent cooldowns tick down by one.
+    if ((k.duelCooldown || 0) > 0) k.duelCooldown -= 1;
+    if ((k.guardCooldown || 0) > 0) k.guardCooldown -= 1;
+    // Legacy field kept at 0 for old-save compatibility.
+    k.weakenedDays = 0;
     k.currentGuard = null;
     k.guarding = null;
   };
@@ -1178,7 +1196,7 @@ Game.getStatus = function () {
   Game.knightGuard = function (targetId) {
     var g = ensureState();
     var k = g.godSkills.knight;
-    if ((k.weakenedDays || 0) > 0) return { ok: false, reason: 'weakened' };
+    if ((k.guardCooldown || 0) > 0) return { ok: false, reason: 'guard_cooldown' };
     if (!g.alive['lin_xiaoman']) return { ok: false, reason: 'knight_dead' };
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
     if (targetId === 'lin_xiaoman') return { ok: false, reason: 'cannot_guard_self' };
@@ -1188,7 +1206,8 @@ Game.getStatus = function () {
 
     k.guarding = targetId;
     k.lastGuardTarget = targetId;
-    k.weakenedDays = 2;
+    // Guard has its own cooldown, independent of dueling.
+    k.guardCooldown = 1;
     return { ok: true, reason: 'guarding', target: targetId };
   };
 
@@ -2366,6 +2385,9 @@ GameState.getProfile = function (charId) {
         knight: {
           duelsUsed: 0,
           weakenedDays: 0,
+          // Independent cooldowns: duel (day) and guard (night) no longer share.
+          duelCooldown: 0,
+          guardCooldown: 0,
           lastTarget: null,
           guarding: null
         },
@@ -5254,23 +5276,31 @@ Game.mechWolfAIActivatePower = function () {
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="117" name="God_Knight" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;林小满 · 骑士&lt;/h2&gt;
-&lt;&lt;if Game.knightWeakened()&gt;&gt;
-&lt;p class=&quot;danger&quot;&gt;林小满虚弱地靠在墙上，上次行动的消耗还没恢复。她今天无法再做任何事。&lt;/p&gt;
+&lt;&lt;if Game.knightDuelOnCooldown() and Game.knightGuardOnCooldown()&gt;&gt;
+&lt;p class=&quot;danger&quot;&gt;林小满虚弱地靠在墙上，决斗和守卫的消耗都还没恢复。她今天和今晚都无法行动。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;
 &lt;&lt;else&gt;&gt;
 &lt;p&gt;林小满正在擦拭她的折叠小刀。看到你走近，她挑了挑眉：&lt;/p&gt;
-&lt;blockquote&gt;林小满：「说吧，今晚想怎么做？是让我去盯着谁，还是直接上去砍人？」&lt;/blockquote&gt;
-&lt;p class=&quot;system-hint&quot;&gt;骑士有两种能力，&lt;strong&gt;每次只能选一种&lt;/strong&gt;，使用后进入虚弱状态（明日无法行动）：&lt;/p&gt;
+&lt;blockquote&gt;林小满：「说吧，是让我去盯着谁，还是直接上去砍人？」&lt;/blockquote&gt;
+&lt;p class=&quot;system-hint&quot;&gt;骑士有白天与夜晚两种能力，&lt;strong&gt;各自独立冷却&lt;/strong&gt;，互不影响：&lt;/p&gt;
 &lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;决斗&lt;/strong&gt;：指认一人为狼。若真是狼则斩杀；若不是则林小满自己死。狼王同归于尽。&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;守卫&lt;/strong&gt;：保护一人，今晚狼人袭击该人时被挡下。不可连续两晚守同一人。与女巫救人冲突时互相抵消。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;决斗（白天）&lt;/strong&gt;：指认一人为狼。若真是狼则斩杀；若不是则林小满自己死。狼王同归于尽。决斗后次日白天无法再次决斗，但不影响守卫。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;守卫（夜晚）&lt;/strong&gt;：保护一人，今晚狼人袭击该人时被挡下。不可连续两晚守同一人。守卫后次夜无法再次守卫，但不影响决斗。与女巫救人冲突时互相抵消。&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;div class=&quot;choice-list&quot;&gt;
+&lt;&lt;if Game.knightDuelOnCooldown()&gt;&gt;
+&lt;span class=&quot;muted&quot;&gt;决斗冷却中（明日可用）&lt;/span&gt;
+&lt;&lt;else&gt;&gt;
 &lt;&lt;link &quot;决斗——指认某人&quot;&gt;&gt;&lt;&lt;goto &#39;God_Knight_Duel&#39;&gt;&gt;&lt;&lt;/link&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;if Game.knightGuardOnCooldown()&gt;&gt;
+&lt;span class=&quot;muted&quot;&gt;守卫冷却中（明夜可用）&lt;/span&gt;
+&lt;&lt;else&gt;&gt;
 &lt;&lt;link &quot;守卫——保护某人&quot;&gt;&gt;&lt;&lt;goto &#39;God_Knight_Guard&#39;&gt;&gt;&lt;&lt;/link&gt;&gt;
+&lt;&lt;/if&gt;&gt;
 &lt;/div&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
 [[算了，不打搅她|Start]]
@@ -5281,7 +5311,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;p&gt;林小满握紧小刀：&lt;/p&gt;
 &lt;blockquote&gt;林小满：「你如果有目标，就告诉我。但我要提醒你——如果我砍错了人，死的会是我。」&lt;/blockquote&gt;
 &lt;p class=&quot;system-hint&quot;&gt;骑士决斗：若目标是狼人，斩杀之；若不是，林小满自己死。若目标是狼王，同归于尽。&lt;/p&gt;
-&lt;p class=&quot;warning&quot;&gt;决斗后林小满进入虚弱状态，次日无法行动。&lt;/p&gt;
+&lt;p class=&quot;warning&quot;&gt;决斗后林小满次日白天无法再次决斗，但夜晚仍可守卫。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
 &lt;&lt;if Game.isAlive(&#39;zhou_yang&#39;)&gt;&gt;
 &lt;&lt;link &quot;指认周阳是狼&quot;&gt;&gt;&lt;&lt;run Game.knightDuel(&#39;zhou_yang&#39;)&gt;&gt;&lt;&lt;goto &#39;God_Knight_Result&#39;&gt;&gt;&lt;&lt;/link&gt;&gt;
@@ -5301,15 +5331,15 @@ Game.mechWolfAIActivatePower = function () {
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="119" name="God_Knight_Guard" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;林小满 · 守卫&lt;/h2&gt;
-&lt;&lt;if Game.knightWeakened()&gt;&gt;
-&lt;p class=&quot;danger&quot;&gt;林小满虚弱地靠在墙上，上次行动的消耗还没恢复。她今天无法行动。&lt;/p&gt;
+&lt;&lt;if Game.knightGuardOnCooldown()&gt;&gt;
+&lt;p class=&quot;danger&quot;&gt;林小满虚弱地靠在墙上，上次行动的消耗还没恢复。守卫的消耗还没恢复，今夜无法再守卫（但白天决斗不受影响）。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;
 &lt;&lt;else&gt;&gt;
 &lt;p&gt;林小满收起折叠小刀，压低声音：&lt;/p&gt;
-&lt;blockquote&gt;林小满：「你想让我守着谁？我只能护一个人，而且之后两天我都动不了了——你确定？」&lt;/blockquote&gt;
-&lt;p class=&quot;system-hint&quot;&gt;守卫：今晚狼人袭击该目标时，林小满会挡下。守卫后林小满进入虚弱状态，次日无法行动。&lt;/p&gt;
+&lt;blockquote&gt;林小满：「你想让我守着谁？我只能护一个人，而且下一晚不能再守卫——但白天砍人不受影响。你确定？」&lt;/blockquote&gt;
+&lt;p class=&quot;system-hint&quot;&gt;守卫：今晚狼人袭击该目标时，林小满会挡下。守卫后次夜无法再次守卫，但白天决斗不受影响。&lt;/p&gt;
 &lt;p class=&quot;warning&quot;&gt;守卫与女巫救人冲突时，两者互相抵消，目标仍会死亡。&lt;/p&gt;
 
 &lt;div class=&quot;choice-list&quot;&gt;
@@ -5347,7 +5377,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;blockquote&gt;林小满：「我去盯着 &lt;&lt;print _guardName&gt;&gt; 的房间。今晚不会有东西靠近他/她。」&lt;/blockquote&gt;
 &lt;p&gt;她的背影消失在走廊拐角。你希望这个决定是对的。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;林小满正在守卫 &lt;&lt;print _guardName&gt;&gt;。今夜如果狼人袭击 &lt;&lt;print _guardName&gt;&gt;，林小满会挡下。&lt;/p&gt;
-&lt;p class=&quot;warning&quot;&gt;林小满进入虚弱状态，明天无法行动。&lt;/p&gt;
+&lt;p class=&quot;warning&quot;&gt;林小满次夜无法再次守卫，但白天决斗不受影响。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回|Start]]
 &lt;/div&gt;</tw-passagedata>
@@ -5361,7 +5391,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;else&gt;&gt;
 &lt;p&gt;林小满擦掉刀上的血，面无表情地看着倒下的尸体。&lt;/p&gt;
 &lt;blockquote&gt;林小满：「它果然是狼。干得漂亮，陈默。」&lt;/blockquote&gt;
-&lt;p class=&quot;system-hint&quot;&gt;一只狼被斩杀。但林小满现在很虚弱，明天无法行动。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;一只狼被斩杀。林小满次日白天无法再次决斗，但夜晚守卫不受影响。&lt;/p&gt;
 &lt;p class=&quot;danger&quot;&gt;如果是狼王，林小满会与之同归于尽。&lt;/p&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
@@ -5603,8 +5633,12 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;if Game.witchBroken()&gt;&gt;
 &lt;p class=&quot;danger&quot;&gt;叶知秋已精神崩溃，无法再使用女巫能力。&lt;/p&gt;
 &lt;&lt;/if&gt;&gt;
-&lt;&lt;if Game.knightWeakened()&gt;&gt;
-&lt;p class=&quot;warning&quot;&gt;林小满处于虚弱状态，今天无法行动。&lt;/p&gt;
+&lt;&lt;if Game.knightDuelOnCooldown()&gt;&gt;
+&lt;p class=&quot;warning&quot;&gt;林小满明日白天无法决斗（但夜晚守卫不受影响）。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;if Game.knightGuardOnCooldown()&gt;&gt;
+&lt;p class=&quot;warning&quot;&gt;林小满今夜无法守卫（但白天决斗不受影响）。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
 &lt;div class=&quot;choice-list&quot;&gt;

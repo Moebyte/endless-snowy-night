@@ -4,7 +4,7 @@
 <p>林小满握紧小刀：</p>
 <blockquote>林小满：「你如果有目标，就告诉我。但我要提醒你——如果我砍错了人，死的会是我。」</blockquote>
 <p class="system-hint">骑士决斗：若目标是狼人，斩杀之；若不是，林小满自己死。若目标是狼王，同归于尽。</p>
-<p class="warning">决斗后林小满进入虚弱状态，次日无法行动。</p>
+<p class="warning">决斗后林小满次日白天无法再次决斗，但夜晚仍可守卫。</p>
 <div class="choice-list">
 <<if Game.isAlive('zhou_yang')>>
 <<link "指认周阳是狼">><<run Game.knightDuel('zhou_yang')>><<goto 'God_Knight_Result'>><</link>>

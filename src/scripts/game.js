@@ -661,7 +661,8 @@ Game.getStatus = function () {
   };
 
   Game.knightWeakened = function () {
-    return (ensureState().godSkills.knight.weakenedDays || 0) > 0;
+    var k = ensureState().godSkills.knight;
+    return (k.duelCooldown || 0) > 0 || (k.guardCooldown || 0) > 0;
   };
 
   // migrate old saves that lack newer state fields

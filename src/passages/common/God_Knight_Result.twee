@@ -9,7 +9,7 @@
 <<else>>
 <p>林小满擦掉刀上的血，面无表情地看着倒下的尸体。</p>
 <blockquote>林小满：「它果然是狼。干得漂亮，陈默。」</blockquote>
-<p class="system-hint">一只狼被斩杀。但林小满现在很虚弱，明天无法行动。</p>
+<p class="system-hint">一只狼被斩杀。林小满次日白天无法再次决斗，但夜晚守卫不受影响。</p>
 <p class="danger">如果是狼王，林小满会与之同归于尽。</p>
 <</if>>
 <div class="choice-list">
