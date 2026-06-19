@@ -1,18 +1,18 @@
 :: Chapter06_Observe
 <<run Game.visit()>>
-<h2>Day 6 · 搜查</h2>
-<p>你主张全体一起搜查。</p>
-<p>方衡同意了。他迅速分组：他自己和林小满搜东翼，赵明城和周阳搜西翼，你、苏晚和沈慎搜地下层。</p>
-<p>唐小棠被留在厨房——她不安全，但如果跟着搜查队，也可能成为目标。</p>
-<p>地下层很暗。沈慎走在最前面，手里举着一根蜡烛。烛光在石壁上投下扭曲的影子。</p>
-<p>苏晚跟在你身后，呼吸急促。</p>
-<p>你找到了地下酒窖的铁门。这一次，你没有回头。</p>
-<p>铁门后面的空间比你想的大得多——是一个完整的祭坛。墙上刻满了古老的符文，地上有干涸的黑色痕迹。</p>
-<p>祭坛中央放着一本打开的书。书页上写着：</p>
-<blockquote><em>"第七日，祭品满，门开。存者出，亡者留。"</em></blockquote>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote><em>[待填剧情]</em></blockquote>
 <<run Game.addClue("altar_inscription")>>
 <<run Game.setFlag("found_altar")>>
-<p class="system-hint">你发现了祭坛。真相正在浮出水面。</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[回大厅集结|Chapter06_NightReturn]]
 </div>

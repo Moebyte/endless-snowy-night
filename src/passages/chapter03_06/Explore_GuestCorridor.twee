@@ -1,10 +1,10 @@
 :: Explore_GuestCorridor [location]
 <<run Game.visitLocation('guest_corridor')>>
 <<run Game.visit()>>
-<h2>客房走廊</h2>
-<p>十二扇门沿着走廊排开，每扇门上都有一个铜制号码牌。门锁是老式的，从里面用插销锁住。</p>
-<p>走廊尽头有一面落地镜。镜面发暗，你走近时，镜子里的你似乎比真实的你慢了半拍。</p>
-<p class="thought">陈默（内心）：镜子……和祭祀空间的那面镜子，会不会有关系？</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
 <div class="choice-list">
 [[检查落地镜|Search_Mirror2F]]
 [[返回|Map_Main2F]]

@@ -3,10 +3,10 @@
 <<run Game.changeTrust('laozhou', -10)>>
 <<run Game.setFlag('food_supported_zhou')>>
 <<run Game.visit()>>
-<p>你站到周阳身边：“老郑，你确实该解释一下。这山庄是你的，规则也是你说的，我们凭什么信你？”</p>
-<p>老郑沉默地看了你很久，最后把罐头放下：“你们自己分。我不管了。”</p>
-<p>周阳拍了拍你的肩膀，力道很大：“聪明。”</p>
-<p class="system-hint">周阳信任度 +10，老郑信任度 -10。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[继续|Chapter01_Cellar]]</p>
 
 

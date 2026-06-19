@@ -1,11 +1,11 @@
 :: Explore_DrawingRoom [location]
 <<run Game.visitLocation('drawing_room')>>
 <<run Game.visit()>>
-<h2>会客厅</h2>
-<p>壁炉旁的休息区。深色天鹅绒沙发，茶几上摆着一套精致的瓷茶具。角落里有一架旧钢琴，琴盖半开。</p>
-<p>沙发缝隙里塞着一张纸条，上面写着潦草的字：</p>
-<blockquote>"第三个晚上，别相信镜子里的自己。"</blockquote>
-<p class="thought">陈默（内心）：谁写的？也是之前的住客吗？</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p class="thought">[待填剧情]</p>
 <div class="choice-list">
 [[弹一下钢琴|Search_Piano]]
 [[返回|Map_Main1F]]

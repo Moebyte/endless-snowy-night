@@ -4,13 +4,13 @@
 <<run Game.addClue('laozheng_survivor')>>
 <<run Game.addItem('bible')>>
 <<run Game.visit()>>
-<h2>阁楼</h2>
-<p>陡峭的楼梯通向布满灰尘的阁楼。木箱里堆着旧物：褪色的衣服、生锈的玩具、一本破旧圣经。</p>
-<p>圣经的扉页写着一行字，墨迹已经发黄：</p>
-<blockquote>"愿主宽恕我幸存者的罪。我只看了，没有救。——郑守山"</blockquote>
-<p>夹在圣经里的是一张泛黄照片，背景是这座庄园，日期是二十年前。照片上最后一排左边第三个人，长得很像年轻时的老郑。</p>
-<p class="thought">陈默（内心）：老郑……他真的是上一轮的幸存者。他知道一切，却一直不说。</p>
-<p class="system-hint">你获得了破局线索：老郑的幸存者身份。道具：破旧圣经、泛黄照片。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_Main3F]]
 </div>

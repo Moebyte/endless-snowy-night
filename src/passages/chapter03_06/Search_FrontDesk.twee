@@ -2,12 +2,12 @@
 <<run Game.addItem('guest_register')>>
 <<run Game.addClue('old_guests')>>
 <<run Game.visit()>>
-<h2>前台抽屉</h2>
-<p>抽屉没有上锁。里面是一本厚厚的住客登记簿，纸页发黄。</p>
-<p>你翻开最近几页。上面写着不同年份的住客名字，有些名字被划掉了，旁边标注着简短的备注：</p>
-<blockquote>"2019.1 — 6人入住，1人离开。"<br>"2020.7 — 4人入住，0人离开。"<br>"2021.3 — 8人入住，2人离开。"</blockquote>
-<p>最新一页是空的，等待新的住客登记。</p>
-<p class="system-hint">你获得了道具：住客登记簿。线索：之前的客人。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote><br><br>[待填剧情]</blockquote>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回大厅|Explore_GrandHall]]
 </div>

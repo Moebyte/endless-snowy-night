@@ -2,11 +2,11 @@
 <<run Game.changeTrust('suwan', 15)>>
 <<run Game.setFlag('comforted_suwan')>>
 <<run Game.visit()>>
-<p>你走到苏晚身边。她脸色苍白，但还在努力保持镇定。</p>
-<p>“你还好吗？”你问。</p>
-<p>她点点头，又摇摇头：“我没事……只是这些人里，我只信任你。”</p>
-<p>你握住她的手。她没有挣脱。</p>
-<p class="system-hint">苏晚信任度 +15。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[一起回到大厅|Chapter01_Hall]]</p>
 
 

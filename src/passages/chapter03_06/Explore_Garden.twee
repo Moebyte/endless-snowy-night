@@ -1,11 +1,11 @@
 :: Explore_Garden [location]
 <<run Game.visitLocation('garden')>>
 <<run Game.visit()>>
-<h2>花园</h2>
-<p>枯死的玫瑰丛被雪覆盖，只露出黑色的荆棘。干涸的喷泉池里结着厚厚的冰。</p>
-<p>你扒开喷泉边的积雪，发现下面是一块墓碑。碑上没有名字，只有一个日期和一行字：</p>
-<blockquote>"1903—2023。继承人永不停歇。"</blockquote>
-<p class="thought">陈默（内心）：从 1903 到现在，120 年。这个庄园已经"运转"了 120 年。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p class="thought">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_Courtyard]]
 </div>

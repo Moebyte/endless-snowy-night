@@ -1,11 +1,11 @@
 :: Search_Painting
 <<run Game.addClue('fang_temperature')>>
 <<run Game.visit()>>
-<h2>油画</h2>
-<p>你凑近细看那幅油画。画中庄园的窗户里隐约有人影，其中一个窗台边站着一个人，穿着深色大衣——和方衡的穿着一模一样。</p>
-<p>你揉了揉眼睛再看，人影已经不见了。</p>
-<p class="thought">陈默（内心）：是错觉吗？还是这幅画在告诉我什么？</p>
-<p class="system-hint">你注意到油画中的异常人影，与方衡的装束相似。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回大厅|Explore_GrandHall]]
 </div>

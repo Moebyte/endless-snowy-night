@@ -2,11 +2,11 @@
 <<run Game.visitLocation('wine_cellar')>>
 <<run Game.addClue('cellar_blood')>>
 <<run Game.visit()>>
-<h2>酒窖</h2>
-<p>酒架沿着墙壁排成弧形，大部分格子都空了，只剩几瓶落灰的红酒。空气阴冷潮湿。</p>
-<p>酒窖最深处有一扇铁门，门上用红漆写着四个字："天黑请闭眼"。门缝里渗出淡淡的血腥味。</p>
-<p class="thought">陈默（内心）：这就是老郑说过的祭祀空间入口。</p>
-<p class="system-hint">你获得了线索：酒窖血腥味。铁门后是祭祀空间。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <<if Game.hasItem('old_key')>>
 <div class="choice-list">
 [[用旧钥匙打开铁门|Explore_Cellar]]

@@ -4,12 +4,12 @@
 <<run Game.addClue('system_origin')>>
 <<run Game.changeSan(-5)>>
 <<run Game.visit()>>
-<h2>广播室</h2>
-<p>布满灰尘的广播设备。你按下播放键，一段断断续续的独白传出：</p>
-<blockquote>"……系统衰竭了。我们需要新的神。七日一轮，弑神迭代……我就是这么来的。如果你听到这段话，说明我也失败了。别相信任何人，包括你自己……"</blockquote>
-<p>声音沙哑，带着绝望。磁带的最后是一声尖叫，然后是静默。</p>
-<p class="thought">陈默（内心）：说话的人是上一任"神"。他失败了，被取代了。沈慎取代了他，现在轮到我了吗？</p>
-<p class="system-hint">你获得了破局线索：系统的起源。道具：磁带。理智 -5。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_EastWing]]
 </div>

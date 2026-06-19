@@ -3,10 +3,10 @@
 <<run Game.setFlag('food_supported_chen')>>
 <<run Game.addItem('bread', 1)>>
 <<run Game.visit()>>
-<p>你站到江白身边：“江白说得对。现在互相猜疑，只会让所有人死得更快。”</p>
-<p>周阳盯着你看了几秒，最终松开老郑的手，但眼神里的敌意没有消失。</p>
-<p>江白低声对你说：“谢了。”</p>
-<p class="system-hint">江白信任度 +10。你获得了一份干粮。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[继续|Chapter01_Cellar]]</p>
 
 

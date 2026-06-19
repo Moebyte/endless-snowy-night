@@ -2,23 +2,23 @@
 <<set $game.time to '10:15'>>
 <<run Game.setFlag('visited_cellar')>>
 <<run Game.visit()>>
-<h2>Day 3 · 地下酒窖</h2>
-<p>你趁大家不注意，溜进了地下酒窖。</p>
-<p>楼梯很陡，光线越来越暗。空气又冷又潮，带着霉味和一种说不清的金属味——像血。</p>
-<p>酒窖不大。几个空木架，几瓶落满灰的红酒。但最里面有一扇铁门，门上没有把手，只有一个凹槽——像是需要某种特定形状的钥匙才能打开。</p>
-<p>你蹲下来检查铁门的底部。门缝里塞着一张纸，已经发黄发脆：</p>
-<blockquote><em>"他们不会让人出去的。不要相信导游。第三天开始，他们就会换人。"</em></blockquote>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote><em>[待填剧情]</em></blockquote>
 <<run Game.addClue("cellar_door")>>
 <<run Game.addItem("old_note")>>
-<p class="system-hint">发现线索：铁门暗号。凹槽形状很特殊，你记下了轮廓。</p>
-<p class="system-hint">获得道具：发黄的纸条。</p>
-<p>突然，楼梯口传来脚步声。</p>
-<p>你来不及多想，闪身躲在酒架后面。</p>
-<p>来人是老郑。他手里提着一盏煤油灯，站在铁门前，沉默了很久。</p>
-<p>然后他低声说了一句话，声音很轻，但你听得很清楚——</p>
-<p>"对不起，上回我也没能活着出去。"</p>
-<p>他转身离开。脚步声消失后，你才从酒架后走出来。</p>
-<p class="thought">陈默（内心）：老郑记得？还是他只是在自言自语？不对……他说"上回"。</p>
+<p class="system-hint">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
 <div class="choice-list">
 [[追上去质问老郑|Chapter03_Cellar_Question]]
 [[继续探索酒窖|Explore_Cellar]]

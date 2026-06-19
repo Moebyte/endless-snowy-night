@@ -3,12 +3,12 @@
 <<run Game.addItem('bible')>>
 <<run Game.addClue('laozheng_survivor')>>
 <<run Game.visit()>>
-<h2>小教堂</h2>
-<p>废弃的家庭礼拜堂。木制长椅歪斜地摆放着，圣坛上的十字架倒了下来。地上散落着撕碎的圣经书页。</p>
-<p>圣坛后方有一本完整的圣经，比散落的页脚更厚。你翻开扉页，上面写着：</p>
-<blockquote>"愿主宽恕我幸存者的罪。我只看了，没有救。——郑守山"</blockquote>
-<p>圣经的夹层里有一张手绘的庄园地图，标注了所有镜子碎片的位置，用红线连成一个完整的镜面轮廓。</p>
-<p class="system-hint">你获得了破局线索：老郑的幸存者身份。道具：破旧圣经（含手绘镜子地图）。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_Courtyard]]
 </div>

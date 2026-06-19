@@ -3,13 +3,13 @@
 <<run Game.addClue('tangxiaotang_trauma')>>
 <<run Game.changeSan(-5)>>
 <<run Game.visit()>>
-<h2>儿童房</h2>
-<p>积灰的童床，角落里有一只掉了一只眼睛的木马。墙上满是蜡笔涂鸦，大多是歪歪扭扭的房子和人。</p>
-<p>有一面墙的涂鸦与众不同：画的是一个小人缩在角落，旁边站着一个巨大的黑色人影。小人的头上画满了眼泪，黑色人影的手伸得很长很长。</p>
-<p>你在涂鸦下面发现一行字，是用指甲刻在墙上的：</p>
-<blockquote>"他不让我说。但这里没有人会听。"</blockquote>
-<p class="thought">陈默（内心）：这让我想起唐小棠……她幼年被养父虐待的事。这些涂鸦是谁画的？</p>
-<p class="system-hint">你获得了线索：唐小棠的创伤。理智 -5。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p class="thought">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_Main2F]]
 </div>

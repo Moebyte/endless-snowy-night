@@ -2,15 +2,15 @@
 <<run Game.visitLocation('conservatory')>>
 <<run Game.addClue('mirror_exit')>>
 <<run Game.visit()>>
-<h2>温室</h2>
-<p>玻璃穹顶已经碎裂，雪花飘进来，覆盖了枯死的植物。玫瑰丛变成了黑色的荆棘，干涸的喷泉池里结了一层冰。</p>
-<p>喷泉中央有一面镜子的碎片，镶嵌在石雕的眼睛位置。你拿起碎片，发现它的裂纹形状与祭祀空间的镜子一致。</p>
-<p class="thought">陈默（内心）：庄园里所有的镜子碎片，裂纹都一样。它们是从同一面镜子上碎下来的。</p>
-<p class="system-hint">你确认了破局线索：镜子出口。庄园所有的镜子碎片都是同一面镜子的组成部分。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 
 <<if not Game.witchHasMaterial('herb_bundle')>>
 <<run Game.witchAddMaterial('herb_bundle')>>
-<p class="system-hint">你发现了女巫材料：草药束。温室的角落里挂着几束干燥的草药。叶知秋也许能用来制作药剂。</p>
+<p class="system-hint">[待填剧情]</p>
 <</if>>
 <div class="choice-list">
 [[返回|Map_EastWing]]

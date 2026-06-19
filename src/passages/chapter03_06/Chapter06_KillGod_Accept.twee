@@ -1,14 +1,14 @@
 :: Chapter06_KillGod_Accept
 <<run Game.visit()>>
-<p>"你有什么计划？"你问。</p>
-<p>沈慎收起刀："明天是第七天。祭坛会在 23:00 完全激活。在那之前，我们需要三样东西——"</p>
-<p>"铁门的钥匙。祭坛的记录。还有一个自愿的祭品。"他顿了顿，"第三样东西，我可以当。"</p>
-<p>你愣住了："你在说什么？"</p>
-<p>"这座祭坛需要'等价交换'。一个生命换一个出口。如果你要终结轮回，就需要有人留在祭坛里，代替旧的神。"</p>
-<p>他的语气像是在陈述天气。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
 <<run Game.setFlag("shenshen_sacrifice")>>
 <<run Game.addClue("ritual_tablet")>>
-<p class="system-hint">沈慎愿意成为祭品。如果明天之前收集齐钥匙和记录，就有可能终结轮回。</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[回到大厅|Chapter06_NightReturn]]
 </div>

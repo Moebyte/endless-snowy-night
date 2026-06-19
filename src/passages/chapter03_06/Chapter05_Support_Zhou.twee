@@ -1,11 +1,11 @@
 :: Chapter05_Support_Zhou
 <<run Game.visit()>>
-<p>你站出来说："我同意周阳去。但我们不能让他一个人去。至少两个人一组。"</p>
-<p>方衡看着你，眼神里有些意外。赵明城皱了皱眉。</p>
-<p>周阳拍了拍你的肩膀："够意思。"</p>
-<p>最后决定：周阳和江白一组，尝试下山寻找信号。你们约定——如果天黑前他们没有回来，就说明失败了。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
 <<run Game.setFlag('zhou_jiang_downhill')>>
-<p class="system-hint">周阳和江白下山求援。他们会在天黑前回来——或者不会。</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[等待|Chapter05_NightReturn]]
 </div>

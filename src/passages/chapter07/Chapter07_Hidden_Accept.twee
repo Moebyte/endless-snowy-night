@@ -2,15 +2,15 @@
 <<run Game.unlockEnding('god_of_gods_accept')>>
 <<run Game.visit()>>
 <div class="ending-page">
-<h1 class="ending-hidden">万神之神 · 接受</h1>
-<p>陈默：“……我愿意。”</p>
-<p>他的身体开始消散，变成无数条规则，渗入墙壁、地板、风雪。</p>
-<p>他成为了山庄本身。</p>
-<p>很久以后，又一批旅客推开山庄的门。他们年轻、惊恐、互相搀扶。</p>
-<p>陈默在他们每个人耳边低语：</p>
-<blockquote>“欢迎来到落雁山庄。23:00 前，必须回到房间。”</blockquote>
-<p>他等来了下一个无限记忆者。</p>
-<p class="system-hint">结局已解锁：万神之神 · 接受。</p>
+<h1 class="ending-hidden">[待填剧情]</h1>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[重新开始|Start]]</p>
 </div>
 

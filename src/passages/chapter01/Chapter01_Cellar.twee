@@ -2,13 +2,13 @@
 <<run Game.addClue('cellar_door')>>
 <<run Game.addClue('cellar_blood')>>
 <<run Game.visit()>>
-<h2>Day 1 · 地下酒窖</h2>
-<p>午后，你借口去找水，独自来到地下酒窖。</p>
-<p>那扇铁门还在。门上的红漆像血一样刺眼。</p>
-<p class="thought">陈默（内心）：“天黑请闭眼”……这不只是山庄的规矩，这是某种仪式。</p>
-<p>你转身时，看见周阳站在楼梯口。</p>
-<blockquote>周阳：“你一个人跑下来，不怕出事？”<br>陈默：“你呢？”<br>周阳：（笑了一下，露出虎牙）“我闻到了。”</blockquote>
-<p>他没有解释闻到了什么，转身离开。</p>
-<p class="system-hint">你获得了线索：地下酒窖铁门、酒窖血腥味。你注意到周阳行迹可疑。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote><br><br>[待填剧情]</blockquote>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[回到大厅|Chapter01_Evening]]</p>
 

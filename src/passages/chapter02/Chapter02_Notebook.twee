@@ -1,11 +1,11 @@
 :: Chapter02_Notebook
 <<run Game.addItem('notebook')>>
 <<run Game.visit()>>
-<p>你回到房间，在笔记本上写下上一周目的所有细节：人物关系、老郑的死、周阳的可疑、江白的旧疤、地下酒窖的铁门。</p>
-<p>然后你在笔记本最后一页写下一句话——</p>
-<blockquote><strong>“如果明天的我读到这句话，说明循环是真的。不要相信任何人。包括我。”</strong></blockquote>
-<p>你把笔记本塞进床垫下。</p>
-<p class="system-hint">你获得了道具：笔记本。这是跨轮回保存情报的关键。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote><strong>[待填剧情]</strong></blockquote>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[去大厅利用信息差|Chapter02_Hall]]</p>
 
 

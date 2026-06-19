@@ -2,10 +2,10 @@
 <<run Game.setFlag('questioned_laozhou')>>
 <<run Game.changeTrust('zheng_shoushan', -10)>>
 <<run Game.visit()>>
-<p>你径直走向老郑：“你知道这里发生了什么。为什么要我们 23:00 回房？这山庄以前是不是死过人？”</p>
-<p>老郑那只独眼盯着你，很久才说：“年轻人，知道得太多，死得也快。”</p>
-<p>周阳在旁边冷笑：“看来看守大爷确实藏着东西。”</p>
-<p class="system-hint">老郑信任度 -10。你获得了标记：追问老郑。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[回到大厅|Chapter01_Hall]]</p>
 
 

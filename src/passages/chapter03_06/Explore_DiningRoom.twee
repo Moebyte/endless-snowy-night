@@ -1,14 +1,14 @@
 :: Explore_DiningRoom [location]
 <<run Game.visitLocation('dining_room')>>
 <<run Game.visit()>>
-<h2>餐厅</h2>
-<p>长条橡木餐桌足有六米长，能轻松坐下二十人。桌上铺着落满灰尘的白布，银质餐具已经发黑。</p>
-<p>墙上挂着十二幅肖像画，画中人穿着不同年代的衣服，表情却惊人地相似——都是那种空洞的、被什么东西注视着的表情。</p>
-<p>餐柜里还剩几瓶没开封的红酒。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
 
 <<if not Game.witchHasMaterial('medicine_bottle')>>
 <<run Game.witchAddMaterial('medicine_bottle')>>
-<p class="system-hint">你发现了女巫材料：药瓶。你注意到餐柜角落有一个标签被撕掉的药瓶，含有化学药剂。叶知秋也许能用上。</p>
+<p class="system-hint">[待填剧情]</p>
 <</if>>
 <div class="choice-list">
 [[检查餐柜|Search_Sideboard]]

@@ -2,10 +2,10 @@
 <<run Game.visitLocation('sewing_room')>>
 <<run Game.addItem('wire')>>
 <<run Game.visit()>>
-<h2>缝纫室</h2>
-<p>旧式缝纫机靠窗放着，踏板已经生锈。布料卷堆在角落，大多是褪色的丝绸和棉布。</p>
-<p>抽屉里有针线盒、剪刀，还有一卷细金属丝——用来固定布料的，但也能用作简易工具。</p>
-<p class="system-hint">你获得了道具：金属丝。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_Main2F]]
 </div>

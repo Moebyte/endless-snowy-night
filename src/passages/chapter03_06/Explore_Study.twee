@@ -3,13 +3,13 @@
 <<run Game.addItem('lighter')>>
 <<run Game.addClue('laozheng_knowledge')>>
 <<run Game.visit()>>
-<h2>书房</h2>
-<p>满墙的书架，书脊上的字大多褪色了。书桌上有一盏老式台灯、一个放大镜、几封拆开的信件。</p>
-<p>信件是庄园管家写给主人的，内容平淡，但最后一封的末尾写着：</p>
-<blockquote>"……客人们又来了。和上次一样，十二个人。先生，您说过，只要仪式完成，一切都会结束。我信您。"</blockquote>
-<p>书桌抽屉里有一只打火机，刻着"S.S."两个字母。</p>
-<p class="thought">陈默（内心）：S.S.……沈慎？沈慎的打火机怎么会在这里？</p>
-<p class="system-hint">你获得了破局线索：老郑的秘密。道具：打火机（刻有 S.S.）。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_Main1F]]
 </div>

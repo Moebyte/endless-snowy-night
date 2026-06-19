@@ -1,12 +1,12 @@
 :: Chapter04_GuYan_Academia
 <<run Game.visit()>>
-<p>"你说你是物理学的博士？"</p>
-<p>顾言点头："理学院，理论物理。研究弦理论的。"他自嘲地笑了笑，"用不上。在学术界，弦理论博士找不到教职。我的师兄抢了我的课题，我退出了。"</p>
-<p>他说这句话的时候语气很平静，但你注意到他握笔的手指发白了。</p>
-<p>"所以你来山庄旅游？"</p>
-<p>"散心。结果散到这里来了。"</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
 <<run Game.setFlag('gu_yan_academic')>>
-<p class="system-hint">顾言的背景：学术竞争失败者，来山庄散心。</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[回大厅|Chapter04_NightReturn]]
 </div>

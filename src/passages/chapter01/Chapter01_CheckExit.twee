@@ -2,13 +2,13 @@
 <<run Game.addClue('locked_doors')>>
 <<run Game.setFlag('map_unlocked', true)>>
 <<run Game.visit()>>
-<p>你决定先确认自己能不能离开这里。</p>
-<p>一层的大门被积雪封死，门缝已经结冰。你用力推了推，纹丝不动。窗户也是——不是玻璃的问题，是窗外堆了三米厚的雪，连光线都变得惨白。</p>
-<p>你绕到厨房后门，发现同样的情况。山庄像被埋进了一个白色的棺材。</p>
-<p>地下酒窖的门虚掩着。你走下去，在深处看见一扇铁门，门上用红漆写着：</p>
-<blockquote><strong>“天黑请闭眼。”</strong></blockquote>
-<p>门没有锁，但推不开。门缝里渗出凉意，还有……很淡的血腥味。</p>
-<p class="system-hint">你获得了线索：门窗被封死、地下酒窖铁门、酒窖血腥味。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote><strong>[待填剧情]</strong></blockquote>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[回到大厅|Chapter01_Hall]]</p>
 
 

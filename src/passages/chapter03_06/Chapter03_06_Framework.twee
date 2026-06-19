@@ -2,20 +2,20 @@
 <<set $game.day to 7>>
 <<set $game.time to '06:00'>>
 <<run Game.visit()>>
-<h2>Day 7 · 终局</h2>
+<h2>[待填剧情]</h2>
 <<if Game.hasClue("cellar_door") and Game.hasClue("altar_inscription") and Game.hasClue("god_kill_method")>>
-<p>最后一个早晨。阳光终于穿破了雪幕——深金色的光从窗缝里漏进来，像是某种征兆。</p>
-<p>你知道该做什么了。你已经收集到了足够的线索：铁门后的祭坛、祭坛上的铭文、弑神的方法。</p>
-<p>轮回的终点就在今天。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
 <<run Game.checkBreakingReady()>>
 <<if $game.flags.breaking_ready>>
-<p class="system-hint">你已经准备好打破轮回。真结局路线已解锁。</p>
+<p class="system-hint">[待填剧情]</p>
 <</if>>
 <<else>>
-<p>第七天。阳光从窗外照进来——但你心里清楚，这不是希望。</p>
-<p>你还缺少关键的线索。轮回不会被打破。你只能在这有限的选择中，找到最好的结局。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
 <</if>>
-<p>幸存者们在楼下等着你。你站在房门口，深吸一口气，然后推开了门。</p>
+<p>[待填剧情]</p>
 <div class="choice-list">
 <<if Game.canReachTrueEnding()>>
 [[收集所有破局线索——走向真结局|Chapter07_True]]

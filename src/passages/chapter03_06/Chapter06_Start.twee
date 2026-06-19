@@ -3,29 +3,29 @@
 <<set $game.time to '06:00'>>
 <<run Game.changeSan(-5)>>
 <<run Game.visit()>>
-<h2>Day 6 · 终结将至</h2>
-<p>第六天。最后一个完整的白天。</p>
-<p>你醒来时感觉到嘴里有血腥味——不是受伤，是牙龈因为饥饿开始出血。</p>
-<p>走廊比以往更安静。太安静了。</p>
-<p>你一个房间一个房间地敲门。林小满在。唐小棠在。苏晚在。方衡在。沈慎在。赵明城也在。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
 <<if Game.isAlive("zheng_shoushan")>>
-<p>老郑还在。但他看起来比昨天老了十岁。</p>
+<p>[待填剧情]</p>
 <</if>>
 <<if Game.isAlive("gu_yan")>>
-<p>顾言还在。但他的笔记本不见了。</p>
+<p>[待填剧情]</p>
 <</if>>
 <<if Game.isAlive("jiang_bai")>>
-<p>江白还在——如果你选择了搜查而不是下山，他就在这里。</p>
+<p>[待填剧情]</p>
 <</if>>
 <<if not Game.isAlive("jiang_bai")>>
-<p>江白不在。他下山再也没有回来。</p>
+<p>[待填剧情]</p>
 <</if>>
 <<if not Game.isAlive("gu_yan")>>
-<p>顾言不在。他的房间门开着，床铺冰冷。</p>
+<p>[待填剧情]</p>
 <</if>>
-<p>你数了数——还剩九个人。或者八个。或者更少。</p>
-<p>今天是最后的机会。</p>
-<p class="system-hint">第 6 天：最后一个完整的白天。明天就是第 7 天——结局日。</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[去大厅做最后的部署|Chapter06_Hall]]
 </div>

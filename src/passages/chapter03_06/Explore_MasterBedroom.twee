@@ -2,15 +2,15 @@
 <<run Game.visitLocation('master_bedroom')>>
 <<run Game.addItem('syringe')>>
 <<run Game.visit()>>
-<h2>主卧</h2>
-<p>庄园主人曾住的房间。四柱床上铺着厚重的帷幔，床头柜上放着一面蒙灰的小镜子。</p>
-<p>梳妆台的抽屉里有一支注射器，针筒里残留着干涸的液体。抽屉底部还压着一张处方笺，上面的字迹很潦草。</p>
-<p class="thought">陈默（内心）：注射器……叶知秋的？还是庄园主人留下的？</p>
-<p class="system-hint">你获得了道具：注射器（残留干涸液体）。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 
 <<if not Game.witchHasMaterial('syringe')>>
 <<run Game.witchAddMaterial('syringe')>>
-<p class="system-hint">你发现了女巫材料：注射器。梳妆台的抽屉里有一支干净的注射器。叶知秋制作毒药时可能需要。</p>
+<p class="system-hint">[待填剧情]</p>
 <</if>>
 <div class="choice-list">
 [[返回|Map_Main2F]]

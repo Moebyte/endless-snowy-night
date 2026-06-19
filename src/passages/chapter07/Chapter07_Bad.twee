@@ -2,14 +2,14 @@
 <<run Game.unlockEnding('starvation')>>
 <<run Game.visit()>>
 <div class="ending-page">
-<h1 class="ending-bad">坏结局：七日终焉</h1>
-<p>第七天的太阳没有升起。你感到极度饥饿和口渴，皮肤开始龟裂。</p>
-<p>苏晚虚弱地笑了：“原来……我们真的只能活七天啊。”</p>
-<p>她死在你怀里。其他人在绝望中相继倒下。</p>
-<p>你最后一个闭上眼睛。你以为自己会再次醒来。</p>
-<blockquote>系统音：“轮回结束。新神未产生。世界继续衰竭。”</blockquote>
-<p>黑屏。没有下一次 06:00。</p>
-<p class="system-hint">结局已解锁：七日终焉。</p>
+<h1 class="ending-bad">[待填剧情]</h1>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<blockquote>[待填剧情]</blockquote>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <p>[[重新开始|Start]]</p>
 </div>
 

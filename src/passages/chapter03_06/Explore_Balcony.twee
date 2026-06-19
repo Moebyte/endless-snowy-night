@@ -2,11 +2,11 @@
 <<run Game.visitLocation('balcony')>>
 <<run Game.addClue('locked_doors')>>
 <<run Game.visit()>>
-<h2>阳台</h2>
-<p>刺骨的风雪扑面而来。你只能短暂停留。</p>
-<p>从阳台俯瞰，庄园被三米厚的积雪完全包围。盘山公路已经看不见了，只剩下白色的荒原。没有救援队，没有车灯，没有任何人类活动的痕迹。</p>
-<p>你注意到中庭花园的尽头有一座小教堂，尖顶上的十字架歪斜着，像是在鞠躬。</p>
-<p class="system-hint">你确认了线索：门窗被封死。庄园与外界完全隔绝。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_Main2F]]
 </div>

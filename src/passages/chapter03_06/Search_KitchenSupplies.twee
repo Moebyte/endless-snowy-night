@@ -1,9 +1,9 @@
 :: Search_KitchenSupplies
 <<run Game.addItem('bread')>>
 <<run Game.visit()>>
-<h2>厨房储物</h2>
-<p>你把剩下的干粮和水装好。干粮的味道像压缩饼干，但能填饱肚子。</p>
-<p class="system-hint">你获得了道具：干粮。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p class="system-hint">[待填剧情]</p>
 <div class="choice-list">
 [[返回厨房|Explore_Kitchen]]
 </div>

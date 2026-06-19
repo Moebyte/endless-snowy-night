@@ -1,11 +1,11 @@
 :: Explore_MusicRoom [location]
 <<run Game.visitLocation('music_room')>>
 <<run Game.visit()>>
-<h2>音乐室</h2>
-<p>三角钢琴占据了大半个房间。琴键落满灰尘，但你按下时，第一个音依然清亮。</p>
-<p>大提琴靠在角落，琴弦断了两根。琴谱架上有一本翻开的乐谱，上面的音符排列成一个图案：一只睁开的眼睛。</p>
-<p>和会客厅钢琴上看到的图案一样。</p>
-<p class="thought">陈默（内心）：眼睛的图案到处都是。这个庄园一直在"看着"我们。</p>
+<h2>[待填剧情]</h2>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p>[待填剧情]</p>
+<p class="thought">[待填剧情]</p>
 <div class="choice-list">
 [[返回|Map_EastWing]]
 </div>
