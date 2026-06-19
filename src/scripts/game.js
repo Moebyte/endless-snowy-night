@@ -179,7 +179,12 @@ Game.isAlive = function (charId) {
 
 
   // Returns array of alive character IDs
-  Game.aliveList = function () {
+  Game.aliveCount = function () {
+    var g = ensureState();
+    return Object.keys(g.alive).filter(function(k) { return g.alive[k]; }).length;
+  }
+
+Game.aliveList = function () {
     var g = ensureState();
     return Object.keys(g.alive).filter(function (id) { return g.alive[id]; });
   };
