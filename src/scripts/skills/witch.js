@@ -102,7 +102,9 @@
 
     var role = Game.roleOf(targetId);
     if (WOLF_ROLES.indexOf(role) !== -1) {
-      score += 15 * w.threat;
+      // Wolves radiate killing intent the witch can sense; base score clears
+      // the curse threshold on its own (see witchAIGetCurseTarget).
+      score += 20 * w.threat;
     } else {
       score += 3;
     }
@@ -153,8 +155,11 @@
       if (s > bestScore) { bestScore = s; best = c; }
     });
 
-    // Only curse confirmed/strongly suspected wolves (score >= 25)
-    return bestScore >= 25 ? best : null;
+    // The witch is gentle: she only curses someone the prophet confirmed as
+    // an enemy (suspect flag), not merely anyone radiating killing intent.
+    // Threshold 30: a bare wolf scores ~24 (not enough), but a suspect-flagged
+    // wolf scores ~34 (clears it). Keeps curses rare and evidence-driven.
+    return bestScore >= 30 ? best : null;
   };
 
   // Main witch AI: decide between save, curse, or pass for the night
@@ -181,7 +186,7 @@
     }
 
     var saveMargin = saveTarget ? (saveScore - 12) / 12 : -1;
-    var curseMargin = curseTarget ? (curseScore - 25) / 25 : -1;
+    var curseMargin = curseTarget ? (curseScore - 30) / 30 : -1;
 
     if (saveMargin < 0 && curseMargin < 0) {
       return { action: 'pass' };

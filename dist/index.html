@@ -1781,7 +1781,9 @@ Game.magicianResetDaily = function () {
 
     var role = Game.roleOf(targetId);
     if (WOLF_ROLES.indexOf(role) !== -1) {
-      score += 15 * w.threat;
+      // Wolves radiate killing intent the witch can sense; base score clears
+      // the curse threshold on its own (see witchAIGetCurseTarget).
+      score += 20 * w.threat;
     } else {
       score += 3;
     }
@@ -1832,8 +1834,11 @@ Game.magicianResetDaily = function () {
       if (s > bestScore) { bestScore = s; best = c; }
     });
 
-    // Only curse confirmed/strongly suspected wolves (score >= 25)
-    return bestScore >= 25 ? best : null;
+    // The witch is gentle: she only curses someone the prophet confirmed as
+    // an enemy (suspect flag), not merely anyone radiating killing intent.
+    // Threshold 30: a bare wolf scores ~24 (not enough), but a suspect-flagged
+    // wolf scores ~34 (clears it). Keeps curses rare and evidence-driven.
+    return bestScore >= 30 ? best : null;
   };
 
   // Main witch AI: decide between save, curse, or pass for the night
@@ -1860,7 +1865,7 @@ Game.magicianResetDaily = function () {
     }
 
     var saveMargin = saveTarget ? (saveScore - 12) / 12 : -1;
-    var curseMargin = curseTarget ? (curseScore - 25) / 25 : -1;
+    var curseMargin = curseTarget ? (curseScore - 30) / 30 : -1;
 
     if (saveMargin < 0 && curseMargin < 0) {
       return { action: 'pass' };
@@ -5058,6 +5063,12 @@ Game.mechWolfAIActivatePower = function () {
 
 &lt;&lt;if _witchDecision.action is &#39;save&#39;&gt;&gt;
 &lt;&lt;set _witchSaved to Game.witchRevive(Game.witchGetSensedDeath())&gt;&gt;
+&lt;&lt;if _witchSaved.ok&gt;&gt;
+/ The witch revived the victim: rewrite the kill result so the narrative
+/ takes the &quot;saved_by_witch&quot; branch instead of &quot;new corpse&quot;. /
+&lt;&lt;set _kill.killed to false&gt;&gt;
+&lt;&lt;set _kill.special to &#39;saved_by_witch&#39;&gt;&gt;
+&lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;if _witchDecision.action is &#39;curse&#39;&gt;&gt;
 &lt;&lt;set _witchCurseTarget to _witchDecision.target&gt;&gt;
@@ -5176,7 +5187,7 @@ Game.mechWolfAIActivatePower = function () {
 
 / 神职夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
 &lt;&lt;if _nightLog.length &gt; 0&gt;&gt;
-&lt;details class=&quot;night-log&quot;&gt;
+&lt;details class=&quot;night-log&quot; open&gt;
 &lt;summary&gt;夜间暗流（你的轮回记忆）&lt;/summary&gt;
 &lt;&lt;for _n to 0; _n lt _nightLog.length; _n++&gt;&gt;
 &lt;p class=&quot;muted&quot;&gt;&lt;&lt;print _nightLog[_n]&gt;&gt;&lt;/p&gt;

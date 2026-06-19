@@ -89,6 +89,12 @@
 
 <<if _witchDecision.action is 'save'>>
 <<set _witchSaved to Game.witchRevive(Game.witchGetSensedDeath())>>
+<<if _witchSaved.ok>>
+/ The witch revived the victim: rewrite the kill result so the narrative
+/ takes the "saved_by_witch" branch instead of "new corpse". /
+<<set _kill.killed to false>>
+<<set _kill.special to 'saved_by_witch'>>
+<</if>>
 <</if>>
 <<if _witchDecision.action is 'curse'>>
 <<set _witchCurseTarget to _witchDecision.target>>
@@ -207,7 +213,7 @@
 
 / 神职夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
 <<if _nightLog.length > 0>>
-<details class="night-log">
+<details class="night-log" open>
 <summary>夜间暗流（你的轮回记忆）</summary>
 <<for _n to 0; _n lt _nightLog.length; _n++>>
 <p class="muted"><<print _nightLog[_n]>></p>
