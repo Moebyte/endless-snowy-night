@@ -1,6 +1,6 @@
 :: Common_Characters
 <h2>人物档案</h2>
-<p class="system-hint">你目前掌握的人物信息。随着剧情推进，更多隐藏情报会被解锁。</p>
+<p class="system-hint">你目前掌握的人物信息。对外身份默认可见，深层性格、特长与不可告人的秘密需要剧情解锁。</p>
 
 <<set _chars = Object.keys($game.metCharacters).filter(function (k) { return $game.metCharacters[k]; })>>
 <<if _chars.length == 0>>
@@ -10,17 +10,17 @@
 <<set _cid = _chars[_i]>>
 <<set _p = GameState.PROFILES[_cid]>>
 <div class="character-card">
-<p><strong><<print _p.name>></strong></p>
-<p class="character-desc"><<print _p.firstImpression>></p>
+<p><strong><<print _p.name>></strong>，<<print _p.age>> 岁，<<print _p.job>></p>
+<p class="character-desc">第一印象：<<print _p.firstImpression>></p>
 
-<<if Game.hasRevealedCharacterAspect(_cid, "basic")>>
-<p class="character-desc"><<print _p.age>> 岁，<<print _p.job>></p>
-<</if>>
 <<if Game.hasRevealedCharacterAspect(_cid, "personality")>>
 <p class="character-desc">性格：<<print _p.personality>></p>
 <</if>>
 <<if Game.hasRevealedCharacterAspect(_cid, "talent")>>
 <p class="character-desc">特长：<<print _p.talent>></p>
+<</if>>
+<<if Game.hasRevealedCharacterAspect(_cid, "secret")>>
+<p class="danger">不能说的秘密：<<print _p.secret>></p>
 <</if>>
 
 <<if Game.hasRevealed(_cid, "backstory")>>
