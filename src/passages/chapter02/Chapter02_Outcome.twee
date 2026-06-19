@@ -7,14 +7,14 @@
 <p>江白站在不远处，脸色苍白。他看了你一眼，什么也没说。</p>
 <p>周阳死了——一头狼被提前清除。但江白也暴露了自己与众不同。</p>
 <p class="system-hint">周阳死亡。江白身份暴露，村民信仰链开始松动。</p>
-<<run Game.kill('zhou_yang')>>
+<<run /* kill now handled by Common_NightResolution */ >>
 <<run Game.setFlag('chen_exposed')>>
 <<elseif Game.hasFlag('refused_zhou')>>
 <p>尖叫声来自二楼。</p>
 <p>顾言死在房间里。眼睛睁得很大，像是看见了什么不可置信的东西。</p>
 <p>苏晚检查后说：窒息，没有外伤。但门是从内部锁死的。</p>
 <p class="system-hint">顾言死亡。你的拒绝独处没有阻止杀戮，只是让周阳换了目标。</p>
-<<run Game.kill('gu_yan')>>
+<<run /* kill now handled by Common_NightResolution */ >>
 <<else>>
 <p>走廊里没有异常。</p>
 <p>你推开每一扇门检查，所有人都还活着——包括老郑。</p>

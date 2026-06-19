@@ -1,4 +1,4 @@
-:: Chapter06_Start
+:: Chapter06_Start [intro]
 <<set $game.day to 6>>
 <<set $game.time to '06:00'>>
 <<run Game.changeSan(-5)>>

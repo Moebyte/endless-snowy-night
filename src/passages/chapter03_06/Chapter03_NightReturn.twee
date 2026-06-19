@@ -16,5 +16,5 @@
 <p>你躺在床上，听着自己的心跳。</p>
 <p class="system-hint">第 3 天结束。你获得了新的线索和情报。明天的调查方向取决于你今天的选择。</p>
 <div class="choice-list">
-[[等待夜晚过去|Chapter04_Start]]
+[[入睡|Common_NightResolution]]
 </div>

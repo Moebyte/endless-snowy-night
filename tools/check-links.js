@@ -127,7 +127,7 @@ function main() {
     if (special.includes(n)) return false;
     if (n.startsWith('Common_Night') || n.startsWith('Pursuit_')) return false;
     var t = passages.get(n).tags || [];
-    if (t.includes('widget') || t.includes('utility') || t.includes('location')) return false;
+    if (t.includes('widget') || t.includes('utility') || t.includes('location') || t.includes('intro')) return false;
     return true;
   });
 

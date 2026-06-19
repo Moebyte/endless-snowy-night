@@ -97,6 +97,9 @@
     var score = 0;
     var w = Game.WITCH_AI_WEIGHTS;
 
+    // Never curse someone the prophet verified as good (silver water)
+    if (Game.hasFlag('silver_water_' + targetId)) return -100;
+
     var role = Game.roleOf(targetId);
     if (WOLF_ROLES.indexOf(role) !== -1) {
       score += 15 * w.threat;
@@ -121,12 +124,14 @@
     return Math.round(score);
   };
 
+  // For saving, the target is the sensed death and may already be "dead" in the
+  // alive table (just killed this night). We score them by who they are, not by
+  // current alive status. Validity (revivable) is checked in witchRevive.
   Game.witchAIShouldSave = function (targetId) {
-    var g = ensureState();
-    if (!g.alive[targetId]) return false;
-    // Always consider saving a sensed death if the target is valuable
+    if (!targetId) return false;
     var score = Game.witchScoreSave(targetId);
-    return score >= 200;
+    // Score range is roughly 2-28; save gods and close allies (>=12)
+    return score >= 12;
   };
 
   Game.witchAIGetCurseTarget = function () {
@@ -148,7 +153,8 @@
       if (s > bestScore) { bestScore = s; best = c; }
     });
 
-    return bestScore >= 220 ? best : null;
+    // Only curse confirmed/strongly suspected wolves (score >= 25)
+    return bestScore >= 25 ? best : null;
   };
 
   // Main witch AI: decide between save, curse, or pass for the night
@@ -174,8 +180,8 @@
       curseScore = Game.witchScoreCurse(curseTarget);
     }
 
-    var saveMargin = saveTarget ? (saveScore - 200) / 200 : -1;
-    var curseMargin = curseTarget ? (curseScore - 220) / 220 : -1;
+    var saveMargin = saveTarget ? (saveScore - 12) / 12 : -1;
+    var curseMargin = curseTarget ? (curseScore - 25) / 25 : -1;
 
     if (saveMargin < 0 && curseMargin < 0) {
       return { action: 'pass' };

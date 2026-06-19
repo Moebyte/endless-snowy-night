@@ -23,5 +23,5 @@
 <p>你回到房间。躺在床上，你感到一种奇怪的平静——像是在暴风雪的中心，一切嘈杂都被隔离在外。</p>
 <p class="system-hint">第 5 天结束。你已经接近真相的边缘。</p>
 <div class="choice-list">
-[[等待夜晚过去|Chapter06_Start]]
+[[入睡|Common_NightResolution]]
 </div>

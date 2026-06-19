@@ -13,6 +13,23 @@
   }
 
   var Game = window.Game;
+
+  // Prophet perception text pools by alignment/role
+  Game.PROPHET_TEXTS = {
+    memory_user: ["你感知到一股不属于这个时空的气息，像是时间本身的回响。"],
+    broken_witch: ["你感到一阵虚弱的、几近枯竭的温柔气息，那是某种力量的残余。"],
+    villager_guilty: ["你感到对方身上有一层薄薄的阴霾，像是愧疚或隐秘的罪。"],
+    villager_calm: ["你感到一股平静的气息，像是普通的、无所隐瞒的人。"],
+    prophet: ["你感到一股澄澈的、探寻的气息，和你的能力同源。"],
+    witch: ["你感到一股温柔的、治愈的气息，像是草药与月光。"],
+    knight: ["你感到一股刚烈的、守护的气息，像是刀锋背后的温度。"],
+    magician: ["你感到一股迷离的、虚实难辨的气息，像是雾中的影子。"],
+    wolf_king: ["你感到一股浓烈的杀意，那是被诅咒的、嗜血的气息。"],
+    hidden_wolf: ["你感到一股平静的气息，像是普通的、无所隐瞒的人。"],
+    wolf: ["你感到一股阴冷的、掠食者的气息。"],
+    mechanical_wolf: ["你感到一股冰冷的、机械的恶意，像是某种人造的杀意。"]
+  };
+
   var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
   var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
 
@@ -308,6 +325,19 @@
     var targetRole = Game.roleOf(targetId);
     if (WOLF_ROLES.indexOf(targetRole) !== -1) {
       return { ok: true, reason: 'leaked', leaked: true };
+    }
+
+    // When the prophet shares an "enemy" result with a good-aligned recipient,
+    // that recipient now treats the info target as a suspect. This lets the
+    // witch (who trusts the prophet) act on the intelligence via her curse AI.
+    if (record.alignment === 'enemy') {
+      if (WOLF_ROLES.indexOf(targetRole) === -1) {
+        Game.setFlag('suspect_' + infoTargetId);
+      }
+    }
+    // Ally results become "silver water" (verified good) for trust logic
+    if (record.alignment === 'ally') {
+      Game.setFlag('silver_water_' + infoTargetId);
     }
 
     return { ok: true, reason: 'shared', leaked: false };

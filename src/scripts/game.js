@@ -177,6 +177,12 @@ Game.isAlive = function (charId) {
 
   }
 
+
+  // Returns array of alive character IDs
+  Game.aliveList = function () {
+    var g = ensureState();
+    return Object.keys(g.alive).filter(function (id) { return g.alive[id]; });
+  };
 Game.kill = function (charId) {
 
     var g = ensureState();

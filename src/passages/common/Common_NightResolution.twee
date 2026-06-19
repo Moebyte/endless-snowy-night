@@ -1,11 +1,88 @@
 :: Common_NightResolution
+/% 夜间结算顺序:
+ *   1. 魔术师致幻交换 (沈慎 AI 选两人)
+ *   2. 预言家查验 + 信任分享 (方衡 AI)
+ *   3. 骑士守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
+ *   4. 狼人击杀 (狼队投票 AI)
+ *   5. 女巫感知死亡 + 救人/诅咒 AI
+ *   6. 机械狼窃取神力判定
+ %/
+<<set _nightLog to []>>
+<<set _knightGuarded to null>>
+
+/ ============ 1. 魔术师致幻 ============ /
+<<if Game.isAlive('shen_shen') and Game.magicianSwapsRemaining() > 0>>
+<<set _swapA to null>>
+<<set _swapB to null>>
+<<set _aliveChars to []>>
+<<run Game.aliveList()>>
+<<for _i to 0; _i lt Game.aliveList().length; _i++>>
+<<set _cid to Game.aliveList()[_i]>>
+<<if _cid != 'shen_shen' and _cid != 'chen_mo'>>
+<<run _aliveChars.push(_cid)>>
+<</if>>
+<</for>>
+<<if _aliveChars.length >= 2>>
+<<set _swapA to _aliveChars[Math.floor(Math.random() * _aliveChars.length)]>>
+<<set _swapB to null>>
+<<for _j to 0; _j lt 10; _j++>>
+<<set _cand to _aliveChars[Math.floor(Math.random() * _aliveChars.length)]>>
+<<if _cand != _swapA and !Game.wasInLastSwap(_swapA) and !Game.wasInLastSwap(_cand)>>
+<<set _swapB to _cand>>
+<<break>>
+<</if>>
+<</for>>
+<<if _swapB == null>>
+<<for _k to 0; _k lt _aliveChars.length; _k++>>
+<<if _aliveChars[_k] != _swapA and !Game.wasInLastSwap(_aliveA)>>
+<<set _swapB to _aliveChars[_k]>>
+<<break>>
+<</if>>
+<</for>>
+<</if>>
+<<if _swapA and _swapB>>
+<<run Game.magicianSwap(_swapA, _swapB)>>
+<<run _nightLog.push('沈慎发动致幻：' + GameState.PROFILES[_swapA].name + ' 与 ' + GameState.PROFILES[_swapB].name + ' 身份交换')>>
+<</if>>
+<</if>>
+<</if>>
+
+/ ============ 2. 预言家查验 ============ /
+<<if Game.isAlive('fang_heng')>>
+<<set _prophetTarget to Game.prophetAIGetCheckTarget()>>
+<<if _prophetTarget>>
+<<set _checkResult to Game.prophetCheck(_prophetTarget)>>
+<<run _nightLog.push('方衡查验了 ' + GameState.PROFILES[_prophetTarget].name + '：' + (_checkResult.alignment == 'enemy' ? '敌人' : '盟友'))>>
+<<if Game.prophetShouldShare()>>
+<<set _shareTarget to Game.prophetAICheckNight()>>
+<<if _shareTarget>>
+<<set _shareResult to Game.prophetShareInfo(_shareTarget, _prophetTarget)>>
+<</if>>
+<</if>>
+<</if>>
+<</if>>
+
+/ ============ 3. 骑士守卫 ============ /
+<<if Game.isAlive('lin_xiaoman') and !Game.knightWeakened()>>
+<<set _guardTarget to Game.knightAIGetGuardTarget()>>
+<<if _guardTarget>>
+<<set _guardResult to Game.knightGuard(_guardTarget)>>
+<<if _guardResult.ok>>
+<<set _knightGuarded to _guardTarget>>
+<<run _nightLog.push('林小满守卫了 ' + GameState.PROFILES[_guardTarget].name)>>
+<</if>>
+<</if>>
+<</if>>
+
+/ ============ 4. 狼人击杀 ============ /
 <<set _kill to Game.executeWolfKill()>>
 <<run Game.setLastWolfKill(_kill)>>
 <<run Game.witchSenseDeath()>>
 <<run Game.visit()>>
 
+/ ============ 5. 女巫决策 ============ /
 <<if Game.isAlive('ye_zhiqiu') and !Game.witchBroken() and Game.witchRemaining() > 0>>
-<<set _witchDecision to Game.witchAIDecideNight()>>
+<<set _witchDecision to Game.witchAIDecide()>>
 <<else>>
 <<set _witchDecision to { action: 'pass' }>>
 <</if>>
@@ -116,6 +193,7 @@
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：无人死亡。')>>
 <</if>>
 
+/ 女巫诅咒 /
 <<if _witchDecision.action is 'curse' and _witchCurseResult.ok>>
 <h3>叶知秋的诅咒</h3>
 <p>清晨，你发现 <strong><<print _witchCurseName>></strong> 倒在自己的房间里。没有外伤，没有血迹，只是嘴唇发黑——像是被某种看不见的力量夺走了呼吸。</p>
@@ -127,7 +205,20 @@
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：叶知秋诅咒了 ' + _witchCurseName + '。')>>
 <</if>>
 
+/ 神职夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
+<<if _nightLog.length > 0>>
+<details class="night-log">
+<summary>夜间暗流（你的轮回记忆）</summary>
+<<for _n to 0; _n lt _nightLog.length; _n++>>
+<p class="muted"><<print _nightLog[_n]>></p>
+<</for>>
+</details>
+<<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间暗流：' + _nightLog.join('；'))>>
+<</if>>
+
 <<run Game.witchClearSensedDeath()>>
+<<run Game.magicianResetDaily()>>
+<<if _knightGuarded == null>><<run Game.knightReset()>><</if>>
 
 <<if _loopToDeath>>
 <h2>你的死亡</h2>

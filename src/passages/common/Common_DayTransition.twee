@@ -4,6 +4,6 @@
 <<if _advanced>>
 <<set _chapter to 'Chapter03_06_Framework'>>
 <<else>>
-<<set _chapter to 'Chapter0' + $game.day + '_Hall'>>
+<<set _chapter to 'Chapter0' + $game.day + '_Start'>>
 <</if>>
 <<goto _chapter>>

@@ -359,6 +359,12 @@ Game.isAlive = function (charId) {
 
   }
 
+
+  // Returns array of alive character IDs
+  Game.aliveList = function () {
+    var g = ensureState();
+    return Object.keys(g.alive).filter(function (id) { return g.alive[id]; });
+  };
 Game.kill = function (charId) {
 
     var g = ensureState();
@@ -1327,6 +1333,23 @@ Game.magicianResetDaily = function () {
   }
 
   var Game = window.Game;
+
+  // Prophet perception text pools by alignment/role
+  Game.PROPHET_TEXTS = {
+    memory_user: ["你感知到一股不属于这个时空的气息，像是时间本身的回响。"],
+    broken_witch: ["你感到一阵虚弱的、几近枯竭的温柔气息，那是某种力量的残余。"],
+    villager_guilty: ["你感到对方身上有一层薄薄的阴霾，像是愧疚或隐秘的罪。"],
+    villager_calm: ["你感到一股平静的气息，像是普通的、无所隐瞒的人。"],
+    prophet: ["你感到一股澄澈的、探寻的气息，和你的能力同源。"],
+    witch: ["你感到一股温柔的、治愈的气息，像是草药与月光。"],
+    knight: ["你感到一股刚烈的、守护的气息，像是刀锋背后的温度。"],
+    magician: ["你感到一股迷离的、虚实难辨的气息，像是雾中的影子。"],
+    wolf_king: ["你感到一股浓烈的杀意，那是被诅咒的、嗜血的气息。"],
+    hidden_wolf: ["你感到一股平静的气息，像是普通的、无所隐瞒的人。"],
+    wolf: ["你感到一股阴冷的、掠食者的气息。"],
+    mechanical_wolf: ["你感到一股冰冷的、机械的恶意，像是某种人造的杀意。"]
+  };
+
   var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
   var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
 
@@ -1624,6 +1647,19 @@ Game.magicianResetDaily = function () {
       return { ok: true, reason: 'leaked', leaked: true };
     }
 
+    // When the prophet shares an "enemy" result with a good-aligned recipient,
+    // that recipient now treats the info target as a suspect. This lets the
+    // witch (who trusts the prophet) act on the intelligence via her curse AI.
+    if (record.alignment === 'enemy') {
+      if (WOLF_ROLES.indexOf(targetRole) === -1) {
+        Game.setFlag('suspect_' + infoTargetId);
+      }
+    }
+    // Ally results become "silver water" (verified good) for trust logic
+    if (record.alignment === 'ally') {
+      Game.setFlag('silver_water_' + infoTargetId);
+    }
+
     return { ok: true, reason: 'shared', leaked: false };
   };
 
@@ -1740,6 +1776,9 @@ Game.magicianResetDaily = function () {
     var score = 0;
     var w = Game.WITCH_AI_WEIGHTS;
 
+    // Never curse someone the prophet verified as good (silver water)
+    if (Game.hasFlag('silver_water_' + targetId)) return -100;
+
     var role = Game.roleOf(targetId);
     if (WOLF_ROLES.indexOf(role) !== -1) {
       score += 15 * w.threat;
@@ -1764,12 +1803,14 @@ Game.magicianResetDaily = function () {
     return Math.round(score);
   };
 
+  // For saving, the target is the sensed death and may already be "dead" in the
+  // alive table (just killed this night). We score them by who they are, not by
+  // current alive status. Validity (revivable) is checked in witchRevive.
   Game.witchAIShouldSave = function (targetId) {
-    var g = ensureState();
-    if (!g.alive[targetId]) return false;
-    // Always consider saving a sensed death if the target is valuable
+    if (!targetId) return false;
     var score = Game.witchScoreSave(targetId);
-    return score >= 200;
+    // Score range is roughly 2-28; save gods and close allies (>=12)
+    return score >= 12;
   };
 
   Game.witchAIGetCurseTarget = function () {
@@ -1791,7 +1832,8 @@ Game.magicianResetDaily = function () {
       if (s > bestScore) { bestScore = s; best = c; }
     });
 
-    return bestScore >= 220 ? best : null;
+    // Only curse confirmed/strongly suspected wolves (score >= 25)
+    return bestScore >= 25 ? best : null;
   };
 
   // Main witch AI: decide between save, curse, or pass for the night
@@ -1817,8 +1859,8 @@ Game.magicianResetDaily = function () {
       curseScore = Game.witchScoreCurse(curseTarget);
     }
 
-    var saveMargin = saveTarget ? (saveScore - 200) / 200 : -1;
-    var curseMargin = curseTarget ? (curseScore - 220) / 220 : -1;
+    var saveMargin = saveTarget ? (saveScore - 12) / 12 : -1;
+    var curseMargin = curseTarget ? (curseScore - 25) / 25 : -1;
 
     if (saveMargin < 0 && curseMargin < 0) {
       return { action: 'pass' };
@@ -2812,7 +2854,7 @@ Game.mechWolfAIActivatePower = function () {
 })();
 
 
- /*
+/*
  * night-kill.js
  * Night kill resolution + god/wolf action checks
  */
@@ -2829,246 +2871,162 @@ Game.mechWolfAIActivatePower = function () {
 
   var Game = window.Game;
 
-Game.executeWolfKill = function () {
-
+  // Resolve the wolf pack's night kill. Handles knight guard, magician swap
+  // (including friendly fire / wolf king mutual kill), and mech-wolf power steal.
+  Game.executeWolfKill = function () {
     var g = ensureState();
 
     var wolves = ['zhou_yang', 'tang_xiaotang', 'zhao_mingcheng', 'gu_yan'];
+    var godRoles = ['prophet', 'witch', 'knight', 'magician'];
 
     var wolfTarget = Game.getWolfTarget();
-
-    if (!wolfTarget) return { target: null, killed: false };
+    if (!wolfTarget) return { target: null, killed: false, special: 'no_target' };
 
     var aliveWolves = wolves.filter(function (w) { return g.alive[w]; });
 
-    var availableKillers = aliveWolves.filter(function (w) {
-
-      var swap = Game.getMagicianSwap();
-
-      if (swap) {
-
-        var resolved = Game.resolveSwapTarget(w);
-
-        if (resolved === wolfTarget) return false;
-
-      }
-
-      return true;
-
-    });
-
-    if (availableKillers.length === 0) availableKillers = aliveWolves; // fallback
-
+    // Determine the actual killer. Mech wolf (gu_yan) prioritises known gods to
+    // steal their power; otherwise prefer a regular wolf; zhao_mingcheng (cleaner)
+    // sometimes takes the kill so the body can be removed.
     var killer = null;
+    var targetRole = Game.roleOf(wolfTarget);
+    var isKnownGod = godRoles.indexOf(targetRole) !== -1;
 
-    if (availableKillers.length > 0) {
-
-      if (isKnownGod && availableKillers.indexOf('gu_yan') !== -1 && !Game.hasMechWolfPower()) {
-
-        killer = 'gu_yan';
-
-      } else if (availableKillers.indexOf('zhao_mingcheng') !== -1 && Math.random() < 0.4) {
-
-        killer = 'zhao_mingcheng';
-
-      } else {
-
-        var regulars = availableKillers.filter(function(w) {
-
-          return w !== 'gu_yan' && w !== 'zhao_mingcheng';
-
-        });
-
-        if (regulars.length > 0) {
-
-          killer = regulars[Math.floor(Math.random() * regulars.length)];
-
-        } else {
-
-          killer = availableKillers[Math.floor(Math.random() * availableKillers.length)];
-
-        }
-
+    var availableKillers = aliveWolves.filter(function (w) {
+      var swap = Game.getMagicianSwap();
+      if (swap) {
+        var resolved = Game.resolveSwapTarget(w);
+        if (resolved === wolfTarget) return false;
       }
+      return true;
+    });
+    if (availableKillers.length === 0) availableKillers = aliveWolves;
 
+    if (isKnownGod && availableKillers.indexOf('gu_yan') !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
+      killer = 'gu_yan';
+    } else if (availableKillers.indexOf('zhao_mingcheng') !== -1 && Math.random() < 0.4) {
+      killer = 'zhao_mingcheng';
+    } else {
+      var regulars = availableKillers.filter(function (w) {
+        return w !== 'gu_yan' && w !== 'zhao_mingcheng';
+      });
+      if (regulars.length > 0) {
+        killer = regulars[Math.floor(Math.random() * regulars.length)];
+      } else {
+        killer = availableKillers[Math.floor(Math.random() * availableKillers.length)];
+      }
     }
 
     var result = {
-
       target: wolfTarget,
-
       targetName: GameState.PROFILES[wolfTarget] ? GameState.PROFILES[wolfTarget].name : wolfTarget,
-
       actualTarget: wolfTarget,
-
       actualTargetName: GameState.PROFILES[wolfTarget] ? GameState.PROFILES[wolfTarget].name : wolfTarget,
-
       killed: true,
-
       killer: killer,
-
       killerName: killer ? (GameState.PROFILES[killer] ? GameState.PROFILES[killer].name : killer) : null,
-
       special: null,
-
       swapped: false,
-
       friendlyFire: false,
-
       mutualKill: false
-
     };
 
-    if (Game.knightIsGuarding(wolfTarget)) {
-
+    // Knight guard cancels the kill
+    if (typeof Game.knightIsGuarding === 'function' && Game.knightIsGuarding(wolfTarget)) {
       result.killed = false;
-
       result.special = 'protected_by_knight';
-
       Game.magicianResetDaily();
-
       return result;
-
     }
 
+    // Magician swap: the wolves think they killed A, but actually killed B
     var actualVictim = wolfTarget;
-
     var swap = Game.getMagicianSwap();
-
     if (swap && Game.isAlive('shen_shen')) {
-
       var resolved = Game.resolveSwapTarget(wolfTarget);
-
       if (resolved !== wolfTarget) {
-
         actualVictim = resolved;
-
         result.swapped = true;
-
         result.actualTarget = resolved;
-
         result.actualTargetName = GameState.PROFILES[resolved] ? GameState.PROFILES[resolved].name : resolved;
 
+        // Hitting another wolf = friendly fire
         if (aliveWolves.indexOf(resolved) !== -1) {
-
           result.friendlyFire = true;
-
           result.special = 'friendly_fire';
-
           if (resolved === 'zhou_yang') {
-
+            // Wolf king mutual kill: dies and takes the killer with them
             result.mutualKill = true;
-
             result.special = 'wolf_king_mutual';
-
             Game.kill('zhou_yang');
-
             if (killer) Game.kill(killer);
-
           } else {
-
             Game.kill(resolved);
-
           }
-
           Game.magicianResetDaily();
-
           return result;
-
         }
-
       }
-
     }
 
     Game.kill(actualVictim);
 
-    var godRoles4 = ['prophet', 'witch', 'knight', 'magician'];
-
-    if (killer === 'gu_yan' && godRoles4.indexOf(Game.roleOf(actualVictim)) !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
-
+    // Mech wolf steals the god's power on a god kill
+    if (killer === 'gu_yan' && godRoles.indexOf(Game.roleOf(actualVictim)) !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
       Game.mechWolfStealPower(actualVictim);
-
     }
 
+    // Cleaner removes the body so the witch cannot sense/revive it
     if (killer === 'zhao_mingcheng') {
-
       result.special = 'body_removed';
-
     }
 
     Game.magicianResetDaily();
-
     return result;
+  };
 
-  }
-
-Game.getLastWolfKill = function () {
-
+  Game.getLastWolfKill = function () {
     var g = ensureState();
-
     return g.lastWolfKill || null;
+  };
 
-  }
-
-Game.setLastWolfKill = function (result) {
-
+  Game.setLastWolfKill = function (result) {
     var g = ensureState();
-
     g.lastWolfKill = result;
+  };
 
-  }
+  // Gods draw power from the villagers' belief, so they may act at any time.
+  Game.canGodAct = function () {
+    return true;
+  };
 
-Game.canGodAct = function () {
-
-    return true; // 缂備椒鑳堕崑鐘崇閹绢喗鍤勯柦妯侯槸閿熻棄绻樺鍫曞Ψ閿斿墽鍩嶆繛瀛樼矊鐎涒晛顭囧▎蹇ユ嫹濡鐓€缂佽鲸绻冪粙澶婎吋閸涱厾绉梺鍝勫暙閻栫厧螞閸ф鈷旈柟甯嫹闁糕敒?
-  }
-
-Game.canWolfAct = function (charId) {
-
+  Game.canWolfAct = function (charId) {
     if (Game.isNight()) return true;
-
     var role = Game.roleOf(charId);
-
+    // Mech wolf may use a stolen god power during the day
     if (role === 'mechanical_wolf') {
-
       return !!Game.hasFlag('gu_yan_stole_god_power');
-
     }
-
     return false;
+  };
 
-  }
-
-Game.canWolfKingRetaliate = function (causeOfDeath) {
-
+  // Wolf king retaliation: triggered when killed by a villager/god, but NOT by curse.
+  Game.canWolfKingRetaliate = function (causeOfDeath) {
     if (causeOfDeath === 'curse') return false;
+    return true;
+  };
 
-    return true; // 闂佺绻戝﹢鍦垝閿熻姤鎱ㄥ┑濠忔嫹閸欏顦梺鎸庣☉閻楀棝宕伴崨鏉戞婵＄偟銆嬮幏閿嬫媴閸濄儲鎮欑紓浣疯兌閸嬬喖鎮洪幋锔芥櫖濠㈣泛锕ョ紞鍡涙煕濞嗘瑦瀚归梺鍛婄懕锟??
-
-  }
-
-Game.resetGodSkillsDaily = function () {
-
+  Game.resetGodSkillsDaily = function () {
     var g = ensureState();
-
     g.godSkills.knight.weakened = false;
+  };
 
-  }
-
-Game.resetGodSkillsLoop = function () {
-
+  Game.resetGodSkillsLoop = function () {
     var g = ensureState();
-
     g.godSkills.witch = { uses: 0, maxUses: 3, broken: false, hasReviveTarget: null, curses: [], actedTonight: false };
-
     g.godSkills.knight = { duelsUsed: 0, weakened: false, lastTarget: null };
-
     g.godSkills.prophet = { checks: [], exposed: false, sharedWith: {} };
-
-  }
+  };
 })();
-
 
 /*
  * vote.js - Wolf team voting system: score targets + decide night kill
@@ -3163,15 +3121,21 @@ Game.resetGodSkillsLoop = function () {
     return Math.round(score);
   };
 
-  // Main wolf voting: each wolf independently votes, majority wins
+  // Team-level wolf target selection.
+  // Wolves cannot communicate at night (per design), so instead of requiring
+  // independent votes to reach consensus, the pack acts as one: each alive wolf
+  // contributes its personal preference weights, we aggregate them into a single
+  // weighted distribution, and pick one target. This keeps per-wolf personality
+  // (protecting friends, targeting rivals) while guaranteeing a kill happens.
   Game.getWolfTarget = function () {
     var g = ensureState();
+
     var candidates = [];
 
     Object.keys(g.alive).forEach(function (charId) {
       if (!g.alive[charId]) return;
       if (WOLF_IDS.indexOf(charId) !== -1) return;
-      if (charId === 'chen_mo') return;
+      if (charId === 'chen_mo') return; // protagonist protected
       candidates.push(charId);
     });
 
@@ -3182,90 +3146,58 @@ Game.resetGodSkillsLoop = function () {
       return candidates[Math.floor(Math.random() * candidates.length)];
     }
 
-    var votes = {};
-    candidates.forEach(function (c) { votes[c] = 0; });
-
     var aliveWolves = WOLF_IDS.filter(function (w) { return g.alive[w]; });
 
+    // Aggregate each wolf's preference weights across all candidates
+    var teamWeights = {};
+    candidates.forEach(function (c) { teamWeights[c] = 1; }); // baseline
+
     aliveWolves.forEach(function (wolfId) {
-      var eligible = candidates.slice();
-
-      // Some wolves protect certain characters
-      var protectedSet = [];
-      if (wolfId === 'tang_xiaotang') {
-        protectedSet = ['lin_xiaoman', 'chen_mo'];
-      }
-      if (wolfId === 'gu_yan' && !Game.hasMechWolfPower()) {
-        protectedSet = ['fang_heng', 'ye_zhiqiu'];
-      }
-
-      eligible = eligible.filter(function (c) { return protectedSet.indexOf(c) === -1; });
-      if (eligible.length === 0) eligible = candidates;
-
-      // Wolf-specific preferences
       var preferences = {};
       if (wolfId === 'tang_xiaotang') {
-        preferences['su_wan'] = 3;
-        preferences['ye_zhiqiu'] = 1;
+        preferences['su_wan'] = 4;       // jealous of the female lead
+        preferences['ye_zhiqiu'] = 2;
       } else if (wolfId === 'gu_yan') {
-        preferences['zheng_shoushan'] = 2;
-        preferences['jiang_bai'] = 1;
+        preferences['zheng_shoushan'] = 3; // old zheng knows too much
+        preferences['jiang_bai'] = 2;
         preferences['su_wan'] = 1;
       } else if (wolfId === 'zhao_mingcheng') {
-        preferences['zheng_shoushan'] = 3;
-        preferences['fang_heng'] = 2;
+        preferences['zheng_shoushan'] = 4; // old zheng knows too much
+        preferences['fang_heng'] = 3;
       } else if (wolfId === 'zhou_yang') {
-        preferences['lin_xiaoman'] = 3;
-        preferences['fang_heng'] = 2;
+        preferences['lin_xiaoman'] = 3;   // knight is dangerous
+        preferences['fang_heng'] = 2;     // prophet is dangerous
         preferences['shen_shen'] = 1;
       }
 
-      // Boost preference for exposed roles
+      // Boost preference for exposed roles (pack-wide signal)
       candidates.forEach(function (cid) {
         if (Game.hasRevealed(cid, 'witch_exposed') || Game.hasRevealed(cid, 'identity_exposed')) {
-          preferences[cid] = (preferences[cid] || 0) + 3;
+          preferences[cid] = (preferences[cid] || 0) + 4;
         }
       });
 
-      // Weighted random vote
-      var weighted = [];
-      eligible.forEach(function (cid) {
-        var base = preferences[cid] || 0;
-        var weight = 1 + base * 2 + Math.random() * 3;
-        weighted.push({ id: cid, weight: weight });
+      // Some wolves refuse to target certain characters (personal bonds)
+      var veto = [];
+      if (wolfId === 'tang_xiaotang') veto = ['lin_xiaoman', 'chen_mo'];
+
+      candidates.forEach(function (cid) {
+        if (veto.indexOf(cid) !== -1) return;
+        teamWeights[cid] += (preferences[cid] || 0);
       });
-
-      var totalWeight = weighted.reduce(function (sum, w) { return sum + w.weight; }, 0);
-      var r = Math.random() * totalWeight;
-      var accum = 0;
-      var vote = weighted[0].id;
-      for (var v = 0; v < weighted.length; v++) {
-        accum += weighted[v].weight;
-        if (r <= accum) { vote = weighted[v].id; break; }
-      }
-
-      votes[vote] = (votes[vote] || 0) + 1;
     });
 
-    // Find majority vote (ties broken randomly)
-    var maxVotes = 0;
-    var topTargets = [];
-    candidates.forEach(function (cid) {
-      var v = votes[cid] || 0;
-      if (v > maxVotes) {
-        maxVotes = v;
-        topTargets = [cid];
-      } else if (v === maxVotes) {
-        topTargets.push(cid);
-      }
-    });
-
-    // If max votes is 1 (no consensus), it's a safe night
-    if (maxVotes < 2 && aliveWolves.length > 1) return null;
-
-    return topTargets[Math.floor(Math.random() * topTargets.length)];
+    // Weighted random selection from the aggregated distribution
+    var total = 0;
+    candidates.forEach(function (c) { total += teamWeights[c]; });
+    var r = Math.random() * total;
+    var accum = 0;
+    for (var i = 0; i < candidates.length; i++) {
+      accum += teamWeights[candidates[i]];
+      if (r <= accum) return candidates[i];
+    }
+    return candidates[candidates.length - 1];
   };
-
 })();</script>
   <tw-passagedata pid="1" name="Chapter01_Cellar" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addClue(&#39;cellar_door&#39;)&gt;&gt;
 &lt;&lt;run Game.addClue(&#39;cellar_blood&#39;)&gt;&gt;
@@ -3541,7 +3473,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;p&gt;十二个人各自回房。你锁好门，把椅子抵在门后。&lt;/p&gt;
 &lt;p&gt;今晚和上周目不一样。你知道的更多了，但也更害怕了。&lt;/p&gt;
 &lt;p&gt;你盯着天花板，等待黎明的到来。&lt;/p&gt;
-&lt;p&gt;[[06:00|Chapter02_SanCost]]&lt;/p&gt;</tw-passagedata>
+&lt;p&gt;[[06:00|Common_NightResolution]]&lt;/p&gt;</tw-passagedata>
   <tw-passagedata pid="21" name="Chapter02_Notebook" tags="" position="100,100" size="100,100">&lt;&lt;run Game.addItem(&#39;notebook&#39;)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;p&gt;你回到房间，在笔记本上写下上一周目的所有细节：人物关系、老郑的死、周阳的可疑、江白的旧疤、地下酒窖的铁门。&lt;/p&gt;
@@ -3569,14 +3501,14 @@ Game.resetGodSkillsLoop = function () {
 &lt;p&gt;江白站在不远处，脸色苍白。他看了你一眼，什么也没说。&lt;/p&gt;
 &lt;p&gt;周阳死了——一头狼被提前清除。但江白也暴露了自己与众不同。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;周阳死亡。江白身份暴露，村民信仰链开始松动。&lt;/p&gt;
-&lt;&lt;run Game.kill(&#39;zhou_yang&#39;)&gt;&gt;
+&lt;&lt;run /* kill now handled by Common_NightResolution */ &gt;&gt;
 &lt;&lt;run Game.setFlag(&#39;chen_exposed&#39;)&gt;&gt;
 &lt;&lt;elseif Game.hasFlag(&#39;refused_zhou&#39;)&gt;&gt;
 &lt;p&gt;尖叫声来自二楼。&lt;/p&gt;
 &lt;p&gt;顾言死在房间里。眼睛睁得很大，像是看见了什么不可置信的东西。&lt;/p&gt;
 &lt;p&gt;苏晚检查后说：窒息，没有外伤。但门是从内部锁死的。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;顾言死亡。你的拒绝独处没有阻止杀戮，只是让周阳换了目标。&lt;/p&gt;
-&lt;&lt;run Game.kill(&#39;gu_yan&#39;)&gt;&gt;
+&lt;&lt;run /* kill now handled by Common_NightResolution */ &gt;&gt;
 &lt;&lt;else&gt;&gt;
 &lt;p&gt;走廊里没有异常。&lt;/p&gt;
 &lt;p&gt;你推开每一扇门检查，所有人都还活着——包括老郑。&lt;/p&gt;
@@ -3584,7 +3516,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;p class=&quot;system-hint&quot;&gt;无人死亡。但你已经让周阳察觉到你的怀疑。&lt;/p&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;p&gt;[[继续|Chapter03_Start]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="24" name="Chapter02_SanCost" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
+  <tw-passagedata pid="24" name="Chapter02_SanCost" tags="intro" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
 &lt;&lt;run Game.changeSan(-5)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;Day 3 · 06:00 · 记忆的代价&lt;/h2&gt;
@@ -3772,7 +3704,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;p&gt;你躺在床上，听着自己的心跳。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;第 3 天结束。你获得了新的线索和情报。明天的调查方向取决于你今天的选择。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
-[[等待夜晚过去|Chapter04_Start]]
+[[入睡|Common_NightResolution]]
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="34" name="Chapter03_ShenShen" tags="" position="100,100" size="100,100">&lt;&lt;set $game.time to &#39;11:00&#39;&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -3910,9 +3842,9 @@ Game.resetGodSkillsLoop = function () {
 &lt;p&gt;你没有锁门。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;第 4 天结束。你已经积累了不少线索，但关键连接还没出现。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
-[[等待夜晚过去|Chapter05_Start]]
+[[入睡|Common_NightResolution]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="42" name="Chapter04_Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.day to 4&gt;&gt;
+  <tw-passagedata pid="42" name="Chapter04_Start" tags="intro" position="100,100" size="100,100">&lt;&lt;set $game.day to 4&gt;&gt;
 &lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;Day 4 · 尸体与裂痕&lt;/h2&gt;
@@ -4083,9 +4015,9 @@ Game.resetGodSkillsLoop = function () {
 &lt;p&gt;你回到房间。躺在床上，你感到一种奇怪的平静——像是在暴风雪的中心，一切嘈杂都被隔离在外。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;第 5 天结束。你已经接近真相的边缘。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
-[[等待夜晚过去|Chapter06_Start]]
+[[入睡|Common_NightResolution]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="52" name="Chapter05_Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.day to 5&gt;&gt;
+  <tw-passagedata pid="52" name="Chapter05_Start" tags="intro" position="100,100" size="100,100">&lt;&lt;set $game.day to 5&gt;&gt;
 &lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;Day 5 · 饥饿与恐惧&lt;/h2&gt;
@@ -4250,7 +4182,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;run Game.setFlag(&quot;suwan_farewell&quot;)&gt;&gt;
 &lt;p class=&quot;system-hint&quot;&gt;第 6 天结束。明天是第 7 天——一切都将尘埃落定。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
-[[面对第七日|Chapter03_06_Framework]]
+[[入睡|Common_NightResolution]]
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="62" name="Chapter06_Observe" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;h2&gt;Day 6 · 搜查&lt;/h2&gt;
@@ -4294,7 +4226,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[回房间整理思路|Chapter06_NightReturn]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="64" name="Chapter06_Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.day to 6&gt;&gt;
+  <tw-passagedata pid="64" name="Chapter06_Start" tags="intro" position="100,100" size="100,100">&lt;&lt;set $game.day to 6&gt;&gt;
 &lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
 &lt;&lt;run Game.changeSan(-5)&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
@@ -4962,7 +4894,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;if _advanced&gt;&gt;
 &lt;&lt;set _chapter to &#39;Chapter03_06_Framework&#39;&gt;&gt;
 &lt;&lt;else&gt;&gt;
-&lt;&lt;set _chapter to &#39;Chapter0&#39; + $game.day + &#39;_Hall&#39;&gt;&gt;
+&lt;&lt;set _chapter to &#39;Chapter0&#39; + $game.day + &#39;_Start&#39;&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;goto _chapter&gt;&gt;</tw-passagedata>
   <tw-passagedata pid="111" name="Common_Inventory" tags="utility" position="100,100" size="100,100">&lt;&lt;setReturnTarget&gt;&gt;
@@ -5036,13 +4968,90 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;/for&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;p&gt;[[返回|$returnTarget]]&lt;/p&gt;</tw-passagedata>
-  <tw-passagedata pid="114" name="Common_NightResolution" tags="" position="100,100" size="100,100">&lt;&lt;set _kill to Game.executeWolfKill()&gt;&gt;
+  <tw-passagedata pid="114" name="Common_NightResolution" tags="" position="100,100" size="100,100">/% 夜间结算顺序:
+ *   1. 魔术师致幻交换 (沈慎 AI 选两人)
+ *   2. 预言家查验 + 信任分享 (方衡 AI)
+ *   3. 骑士守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
+ *   4. 狼人击杀 (狼队投票 AI)
+ *   5. 女巫感知死亡 + 救人/诅咒 AI
+ *   6. 机械狼窃取神力判定
+ %/
+&lt;&lt;set _nightLog to []&gt;&gt;
+&lt;&lt;set _knightGuarded to null&gt;&gt;
+
+/ ============ 1. 魔术师致幻 ============ /
+&lt;&lt;if Game.isAlive(&#39;shen_shen&#39;) and Game.magicianSwapsRemaining() &gt; 0&gt;&gt;
+&lt;&lt;set _swapA to null&gt;&gt;
+&lt;&lt;set _swapB to null&gt;&gt;
+&lt;&lt;set _aliveChars to []&gt;&gt;
+&lt;&lt;run Game.aliveList()&gt;&gt;
+&lt;&lt;for _i to 0; _i lt Game.aliveList().length; _i++&gt;&gt;
+&lt;&lt;set _cid to Game.aliveList()[_i]&gt;&gt;
+&lt;&lt;if _cid != &#39;shen_shen&#39; and _cid != &#39;chen_mo&#39;&gt;&gt;
+&lt;&lt;run _aliveChars.push(_cid)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;&lt;if _aliveChars.length &gt;= 2&gt;&gt;
+&lt;&lt;set _swapA to _aliveChars[Math.floor(Math.random() * _aliveChars.length)]&gt;&gt;
+&lt;&lt;set _swapB to null&gt;&gt;
+&lt;&lt;for _j to 0; _j lt 10; _j++&gt;&gt;
+&lt;&lt;set _cand to _aliveChars[Math.floor(Math.random() * _aliveChars.length)]&gt;&gt;
+&lt;&lt;if _cand != _swapA and !Game.wasInLastSwap(_swapA) and !Game.wasInLastSwap(_cand)&gt;&gt;
+&lt;&lt;set _swapB to _cand&gt;&gt;
+&lt;&lt;break&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;&lt;if _swapB == null&gt;&gt;
+&lt;&lt;for _k to 0; _k lt _aliveChars.length; _k++&gt;&gt;
+&lt;&lt;if _aliveChars[_k] != _swapA and !Game.wasInLastSwap(_aliveA)&gt;&gt;
+&lt;&lt;set _swapB to _aliveChars[_k]&gt;&gt;
+&lt;&lt;break&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;if _swapA and _swapB&gt;&gt;
+&lt;&lt;run Game.magicianSwap(_swapA, _swapB)&gt;&gt;
+&lt;&lt;run _nightLog.push(&#39;沈慎发动致幻：&#39; + GameState.PROFILES[_swapA].name + &#39; 与 &#39; + GameState.PROFILES[_swapB].name + &#39; 身份交换&#39;)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/ ============ 2. 预言家查验 ============ /
+&lt;&lt;if Game.isAlive(&#39;fang_heng&#39;)&gt;&gt;
+&lt;&lt;set _prophetTarget to Game.prophetAIGetCheckTarget()&gt;&gt;
+&lt;&lt;if _prophetTarget&gt;&gt;
+&lt;&lt;set _checkResult to Game.prophetCheck(_prophetTarget)&gt;&gt;
+&lt;&lt;run _nightLog.push(&#39;方衡查验了 &#39; + GameState.PROFILES[_prophetTarget].name + &#39;：&#39; + (_checkResult.alignment == &#39;enemy&#39; ? &#39;敌人&#39; : &#39;盟友&#39;))&gt;&gt;
+&lt;&lt;if Game.prophetShouldShare()&gt;&gt;
+&lt;&lt;set _shareTarget to Game.prophetAICheckNight()&gt;&gt;
+&lt;&lt;if _shareTarget&gt;&gt;
+&lt;&lt;set _shareResult to Game.prophetShareInfo(_shareTarget, _prophetTarget)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/ ============ 3. 骑士守卫 ============ /
+&lt;&lt;if Game.isAlive(&#39;lin_xiaoman&#39;) and !Game.knightWeakened()&gt;&gt;
+&lt;&lt;set _guardTarget to Game.knightAIGetGuardTarget()&gt;&gt;
+&lt;&lt;if _guardTarget&gt;&gt;
+&lt;&lt;set _guardResult to Game.knightGuard(_guardTarget)&gt;&gt;
+&lt;&lt;if _guardResult.ok&gt;&gt;
+&lt;&lt;set _knightGuarded to _guardTarget&gt;&gt;
+&lt;&lt;run _nightLog.push(&#39;林小满守卫了 &#39; + GameState.PROFILES[_guardTarget].name)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/ ============ 4. 狼人击杀 ============ /
+&lt;&lt;set _kill to Game.executeWolfKill()&gt;&gt;
 &lt;&lt;run Game.setLastWolfKill(_kill)&gt;&gt;
 &lt;&lt;run Game.witchSenseDeath()&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 
+/ ============ 5. 女巫决策 ============ /
 &lt;&lt;if Game.isAlive(&#39;ye_zhiqiu&#39;) and !Game.witchBroken() and Game.witchRemaining() &gt; 0&gt;&gt;
-&lt;&lt;set _witchDecision to Game.witchAIDecideNight()&gt;&gt;
+&lt;&lt;set _witchDecision to Game.witchAIDecide()&gt;&gt;
 &lt;&lt;else&gt;&gt;
 &lt;&lt;set _witchDecision to { action: &#39;pass&#39; }&gt;&gt;
 &lt;&lt;/if&gt;&gt;
@@ -5153,6 +5162,7 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：无人死亡。&#39;)&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
+/ 女巫诅咒 /
 &lt;&lt;if _witchDecision.action is &#39;curse&#39; and _witchCurseResult.ok&gt;&gt;
 &lt;h3&gt;叶知秋的诅咒&lt;/h3&gt;
 &lt;p&gt;清晨，你发现 &lt;strong&gt;&lt;&lt;print _witchCurseName&gt;&gt;&lt;/strong&gt; 倒在自己的房间里。没有外伤，没有血迹，只是嘴唇发黑——像是被某种看不见的力量夺走了呼吸。&lt;/p&gt;
@@ -5164,7 +5174,20 @@ Game.resetGodSkillsLoop = function () {
 &lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：叶知秋诅咒了 &#39; + _witchCurseName + &#39;。&#39;)&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
+/ 神职夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
+&lt;&lt;if _nightLog.length &gt; 0&gt;&gt;
+&lt;details class=&quot;night-log&quot;&gt;
+&lt;summary&gt;夜间暗流（你的轮回记忆）&lt;/summary&gt;
+&lt;&lt;for _n to 0; _n lt _nightLog.length; _n++&gt;&gt;
+&lt;p class=&quot;muted&quot;&gt;&lt;&lt;print _nightLog[_n]&gt;&gt;&lt;/p&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;/details&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间暗流：&#39; + _nightLog.join(&#39;；&#39;))&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
 &lt;&lt;run Game.witchClearSensedDeath()&gt;&gt;
+&lt;&lt;run Game.magicianResetDaily()&gt;&gt;
+&lt;&lt;if _knightGuarded == null&gt;&gt;&lt;&lt;run Game.knightReset()&gt;&gt;&lt;&lt;/if&gt;&gt;
 
 &lt;&lt;if _loopToDeath&gt;&gt;
 &lt;h2&gt;你的死亡&lt;/h2&gt;

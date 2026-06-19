@@ -15,5 +15,5 @@
 <<run Game.setFlag("suwan_farewell")>>
 <p class="system-hint">第 6 天结束。明天是第 7 天——一切都将尘埃落定。</p>
 <div class="choice-list">
-[[面对第七日|Chapter03_06_Framework]]
+[[入睡|Common_NightResolution]]
 </div>

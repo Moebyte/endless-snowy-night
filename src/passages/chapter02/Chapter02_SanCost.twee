@@ -1,4 +1,4 @@
-:: Chapter02_SanCost
+:: Chapter02_SanCost [intro]
 <<set $game.time to '06:00'>>
 <<run Game.changeSan(-5)>>
 <<run Game.visit()>>

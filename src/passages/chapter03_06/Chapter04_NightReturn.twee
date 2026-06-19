@@ -13,5 +13,5 @@
 <p>你没有锁门。</p>
 <p class="system-hint">第 4 天结束。你已经积累了不少线索，但关键连接还没出现。</p>
 <div class="choice-list">
-[[等待夜晚过去|Chapter05_Start]]
+[[入睡|Common_NightResolution]]
 </div>

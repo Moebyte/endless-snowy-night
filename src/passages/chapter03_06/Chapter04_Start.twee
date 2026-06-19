@@ -1,4 +1,4 @@
-:: Chapter04_Start
+:: Chapter04_Start [intro]
 <<set $game.day to 4>>
 <<set $game.time to '06:00'>>
 <<run Game.visit()>>
