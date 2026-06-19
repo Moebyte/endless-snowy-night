@@ -6,3 +6,7 @@ tools/_*.json
 tools/_*.js
 tools/sim_v*.js
 
+
+# Local deploy key & temporary clone directories
+.ssh/
+*-push/
