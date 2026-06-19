@@ -29,6 +29,11 @@ function parsePassageName(line) {
   return m ? m[1].trim() : null;
 }
 
+function parseTags(line) {
+  const m = line.match(/^::\s+[^[{\n]+\s*\[([^\]]*)\]/);
+  return m ? m[1].split(/\s+/).filter(Boolean) : [];
+}
+
 function isDynamicTarget(target) {
   if (!target) return true;
   if (target.startsWith('$') || target.startsWith('_')) return true;
@@ -63,6 +68,7 @@ function main() {
   const files = findTweeFiles();
   const passages = new Map();
   const invalidNames = [];
+  let currentTags = [];
 
   files.forEach(file => {
     const content = stripBOM(fs.readFileSync(file, 'utf8'));
@@ -74,7 +80,11 @@ function main() {
         if (currentPassage) {
           passages.set(currentPassage, { file, content: currentContent });
         }
+        if (currentPassage) {
+          passages.set(currentPassage, { file, content: currentContent, tags: currentTags });
+        }
         currentPassage = parsePassageName(line);
+        currentTags = parseTags(line);
         if (currentPassage && !/^[A-Z][a-zA-Z0-9_]*$/.test(currentPassage)) {
           invalidNames.push({ file, line: idx + 1, name: currentPassage });
         }
@@ -84,7 +94,7 @@ function main() {
       }
     });
     if (currentPassage) {
-      passages.set(currentPassage, { file, content: currentContent });
+      passages.set(currentPassage, { file, content: currentContent, tags: currentTags });
     }
   });
 
@@ -109,7 +119,13 @@ function main() {
   });
 
   const special = ['Start', 'StoryInit', 'StoryCaption', 'StoryMenu', 'StoryJavaScript', 'StoryStylesheet'];
-  const orphans = passageNames.filter(n => incoming[n].length === 0 && !special.includes(n) && !n.startsWith('Common_Night') && !n.startsWith('Pursuit_'));
+  const orphans = passageNames.filter(n => {
+    if (incoming[n].length > 0) return false;
+    if (special.includes(n)) return false;
+    if (n.startsWith('Common_Night') || n.startsWith('Pursuit_')) return false;
+    if (passages.get(n).tags.includes('widget')) return false;
+    return true;
+  });
 
   console.log('=== Twine Passage Check Report ===\n');
   console.log(`Files scanned: ${files.length}`);

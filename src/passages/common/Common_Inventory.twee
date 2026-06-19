@@ -1,4 +1,5 @@
-:: Common_Inventory
+:: Common_Inventory [utility]
+<<setReturnTarget>>
 <<set _inv to Object.keys($game.inventory)>>
 <h2>道具栏</h2>
 <<if _inv.length is 0>>
@@ -9,5 +10,5 @@
   <p class="muted"><<print GameState.ITEMS[_id].desc>></p>
 <</for>>
 <</if>>
-<p><<back "返回">></p>
+<p>[[返回|$returnTarget]]</p>
 

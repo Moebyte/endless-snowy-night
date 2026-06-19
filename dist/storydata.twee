@@ -5032,7 +5032,8 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <p>[[重新开始|Start]]</p>
 </div>
 
-:: Common_Characters
+:: Common_Characters [utility]
+<<setReturnTarget>>
 <h2>人物档案</h2>
 <p class="system-hint">你目前掌握的人物信息。对外身份默认可见，深层性格、特长与不可告人的秘密需要剧情解锁。</p>
 
@@ -5069,10 +5070,11 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <</if>>
 
 <div class="choice-list">
-<<back "返回">>
+[[返回|$returnTarget]]
 </div>
 
-:: Common_ClueList
+:: Common_ClueList [utility]
+<<setReturnTarget>>
 <<set _clues to Object.keys($game.clues)>>
 <h2>线索簿</h2>
 <<if _clues.length is 0>>
@@ -5083,7 +5085,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
   <p class="muted"><<print Game.clueDesc(_id)>></p>
 <</for>>
 <</if>>
-<p><<back "返回">></p>
+<p>[[返回|$returnTarget]]</p>
 
 
 
@@ -5098,7 +5100,8 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <<goto _chapter>>
 
 
-:: Common_Inventory
+:: Common_Inventory [utility]
+<<setReturnTarget>>
 <<set _inv to Object.keys($game.inventory)>>
 <h2>道具栏</h2>
 <<if _inv.length is 0>>
@@ -5109,11 +5112,12 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
   <p class="muted"><<print GameState.ITEMS[_id].desc>></p>
 <</for>>
 <</if>>
-<p><<back "返回">></p>
+<p>[[返回|$returnTarget]]</p>
 
 
 
-:: Common_Map
+:: Common_Map [utility]
+<<setReturnTarget>>
 <<run Game.visit()>>
 <h2>庄园地图</h2>
 <p class="system-hint">这是一座建造在雪山深处的老式庄园。主楼三层，东西两翼各有厢房，中庭被风雪包围，地下还有未知的空间。点击区域进入探索。</p>
@@ -5145,11 +5149,12 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 <<if Game.hasItem('old_key')>>
 [[地下空间|Map_Underground]]
 <</if>>
-<<back "返回">>
+[[返回|$returnTarget]]
 </div>
 
 
-:: Common_Memory
+:: Common_Memory [utility]
+<<setReturnTarget>>
 <<set _memories to $game.memories>>
 <h2>记忆碎片</h2>
 <<if _memories.length is 0>>
@@ -5161,7 +5166,7 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
   <hr>
 <</for>>
 <</if>>
-<p><<back "返回">></p>
+<p>[[返回|$returnTarget]]</p>
 
 
 
@@ -5311,6 +5316,15 @@ hr { border: none; border-top: 1px solid var(--border-color); margin: 2rem 0; }
 [[继续新的一天|Common_DayTransition]]
 </div>
 <</if>>
+
+:: Common_SetReturnTarget [widget]
+<<widget "setReturnTarget">>
+<<set _prev to previous()>>
+<<if _prev && !tags(_prev).includes('utility')>>
+<<set $returnTarget to _prev>>
+<</if>>
+<</widget>>
+
 
 :: God_Knight
 <<run Game.visit()>>
@@ -6213,4 +6227,5 @@ _HIST
 :: StoryInit
 <<set $game to GameState.create()>>
 <<set $game.visited[passage()] to 1>>
+<<set $returnTarget to 'Start'>>
 

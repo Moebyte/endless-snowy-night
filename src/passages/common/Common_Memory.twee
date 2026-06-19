@@ -1,4 +1,5 @@
-:: Common_Memory
+:: Common_Memory [utility]
+<<setReturnTarget>>
 <<set _memories to $game.memories>>
 <h2>记忆碎片</h2>
 <<if _memories.length is 0>>
@@ -10,5 +11,5 @@
   <hr>
 <</for>>
 <</if>>
-<p><<back "返回">></p>
+<p>[[返回|$returnTarget]]</p>
 

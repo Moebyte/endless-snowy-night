@@ -1,4 +1,5 @@
-:: Common_Characters
+:: Common_Characters [utility]
+<<setReturnTarget>>
 <h2>人物档案</h2>
 <p class="system-hint">你目前掌握的人物信息。对外身份默认可见，深层性格、特长与不可告人的秘密需要剧情解锁。</p>
 
@@ -35,5 +36,5 @@
 <</if>>
 
 <div class="choice-list">
-<<back "返回">>
+[[返回|$returnTarget]]
 </div>

@@ -1,4 +1,5 @@
-:: Common_ClueList
+:: Common_ClueList [utility]
+<<setReturnTarget>>
 <<set _clues to Object.keys($game.clues)>>
 <h2>线索簿</h2>
 <<if _clues.length is 0>>
@@ -9,5 +10,5 @@
   <p class="muted"><<print Game.clueDesc(_id)>></p>
 <</for>>
 <</if>>
-<p><<back "返回">></p>
+<p>[[返回|$returnTarget]]</p>
 

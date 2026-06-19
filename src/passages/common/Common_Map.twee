@@ -1,4 +1,5 @@
-:: Common_Map
+:: Common_Map [utility]
+<<setReturnTarget>>
 <<run Game.visit()>>
 <h2>庄园地图</h2>
 <p class="system-hint">这是一座建造在雪山深处的老式庄园。主楼三层，东西两翼各有厢房，中庭被风雪包围，地下还有未知的空间。点击区域进入探索。</p>
@@ -30,5 +31,5 @@
 <<if Game.hasItem('old_key')>>
 [[地下空间|Map_Underground]]
 <</if>>
-<<back "返回">>
+[[返回|$returnTarget]]
 </div>
