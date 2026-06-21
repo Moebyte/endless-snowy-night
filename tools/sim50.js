@@ -15,6 +15,7 @@ const scripts = [
   'src/scripts/day-events.js',
   'src/scripts/skills/exile.js',
   'src/scripts/skills/traps.js',
+  'src/scripts/skills/medic.js',
 ];
 for (const s of scripts) vm.runInContext(fs.readFileSync(path.join(ROOT, s), 'utf8'), sandbox, { filename: s });
 const { Game, GameState } = sandbox.window;
@@ -47,6 +48,13 @@ function runOne(seed) {
     let exileResult = null;
     if (typeof Game.exileAIPhase === 'function') {
       exileResult = Game.exileAIPhase();
+    }
+
+    // Su Wan medic observation (only shares with Chen Mo)
+    let medicObs = null;
+    if (typeof Game.medicAIRun === 'function') {
+      const result = Game.medicAIRun();
+      if (result) medicObs = result;
     }
 
     // Day phase: Lin Xiaoman can duel (day action, before night)
@@ -160,7 +168,7 @@ function runOne(seed) {
         prophetCounter = { target: counterDecision.target, realKiller, hit, reason: counterDecision.reason };
       }
     }
-    log.push({ day, kill, swap, duelTarget, guardTarget, trap: trapCheck, exile: exileResult, prophetCheck: prophetCheck ? { target: prophetCheck.target, alignment: prophetCheck.result.result } : null, prophetShared, prophetShot, prophetCounter, witch: witchAct });
+    log.push({ day, kill, swap, duelTarget, guardTarget, trap: trapCheck, exile: exileResult, prophetCheck: prophetCheck ? { target: prophetCheck.target, alignment: prophetCheck.result.result } : null, prophetShared, prophetShot, prophetCounter, witch: witchAct, medic: medicObs });
     const goodAlive = Game.aliveList().filter(c => WOLVES.indexOf(c) === -1).length;
     const wolvesAlive = Game.aliveList().filter(c => WOLVES.indexOf(c) !== -1).length;
     if (goodAlive === 0 || wolvesAlive === 0) break;
@@ -178,7 +186,7 @@ let _dbgPatterns = all.reduce((s,r) => s + ((r.exileMeta&&r.exileMeta.patterns)|
 console.log('DEBUG exileMeta: ' + _dbgPatterns + ' patterns, ' + _dbgBackfire + ' backfires across 50 runs');
 
 // 统计
-let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0 };
+let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0, medicObs:0, medicDetect:0, medicDetectWolf:0 };
 all.forEach(r => r.log.forEach(l => {
   if (l.kill.killed) stats.deaths++;
   if (l.swap) stats.swaps++;
@@ -187,7 +195,8 @@ all.forEach(r => r.log.forEach(l => {
   if (l.duelTarget) { stats.duels++; if (l.duelTarget.result === 'killed_wolf') stats.duelsKilledWolf++; else if (l.duelTarget.result === 'wolf_king_mutual') { stats.duelsMutualKill++; stats.duelsKilledSelf++; } else if (l.duelTarget.result === 'innocent_killed') { stats.duelsInnocent++; stats.duelsKilledSelf++; } }
   if (l.prophetShared && l.prophetShared.ok) stats.shares++;
   if (l.prophetShot) { stats.prophetShots++; if (WOLVES.indexOf(l.prophetShot.target)!==-1) stats.prophetShotsKilledWolf++; if (l.prophetShot.mutualKill) stats.wk++; }
-  if (l.prophetCounter) { stats.prophetCounterShots++; if (l.prophetCounter.hit) stats.prophetCounterHit++; else stats.prophetCounterMiss++; }
+      if (l.medic) { stats.medicObs++; if (l.medic.detected) { stats.medicDetect++; if (l.medic.isKiller) stats.medicDetectWolf++; } }
+if (l.prophetCounter) { stats.prophetCounterShots++; if (l.prophetCounter.hit) stats.prophetCounterHit++; else stats.prophetCounterMiss++; }
   if (l.kill.special === 'wolf_king_mutual') stats.wk++;
   if (l.kill.friendlyFire) stats.ff++;
   if (l.kill.special === 'guarded') stats.guarded++;
@@ -238,7 +247,8 @@ console.log('幽主同归: ' + stats.wk + ' | 堕仙误杀同伴: ' + stats.ff +
 console.log('镇煞决斗: ' + stats.duels + ' (杀狼:' + stats.duelsKilledWolf + ' 同归狼王:' + stats.duelsMutualKill + ' 砍好人:' + stats.duelsInnocent + ')');
 console.log('隐狼觉醒击杀: ' + stats.hwKills);
 console.log('流放系统: 质疑' + stats.exileAccusations + '次 (成功:' + stats.exileSuccessful + ' 流放狼:' + stats.exiledWolves + ' 流放好人:' + stats.exiledGood + ' 陈默关键票翻盘:' + stats.swingWins + ' 票型反噬:' + stats.blocBackfires + ' 失败:' + stats.exileFailed + ')');
-console.log('江白陷阱: 触发' + stats.trapTriggered + ' 观察' + stats.trapObserved + ' 质疑' + stats.jbAccuse + '(质疑狼:' + stats.jbAccuseWolf + ' 流放狼:' + stats.jbExileWolf + ')');
+console.log('江白陷阱: 触发' + stats.trapTriggered + ' 观察' + stats.trapObserved + ' 质疑' + stats.jbAccuse + '(质疑狼:' + stats.jbAccuseWolf + ' 流放狼:' + stats.jbExileWolf + ')');;
+console.log('苏晚体检: 观察' + stats.medicObs + ' 检测' + stats.medicDetect + '(检出杀手:' + stats.medicDetectWolf + ')');
 
 // 给每轮打标签，挑特殊的
 function tag(r) {

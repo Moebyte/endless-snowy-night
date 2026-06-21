@@ -394,6 +394,7 @@ Game.resetLoopState = function () {
     // reset Jiang Bai trap system
 
     if (typeof Game.trapReset === 'function') Game.trapReset();
+    if (typeof Game.medicReset === 'function') Game.medicReset();
 
   }
 

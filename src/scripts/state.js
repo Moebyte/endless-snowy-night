@@ -388,6 +388,13 @@ GameState.getProfile = function (charId) {
         detected: false,
         totalTriggers: 0,
         lastObservedInjury: null
+      },
+
+      // Su Wan medic system (resets each loop)
+      medic: {
+        observations: [],
+        lastObserved: null,
+        lastResult: null
       }
     };
   };
