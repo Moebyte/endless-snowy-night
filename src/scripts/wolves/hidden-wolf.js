@@ -59,7 +59,10 @@
 
     var emotion = Game.tangEmotionState();
     var candidates = Object.keys(g.alive).filter(function (c) {
-      return g.alive[c] && c !== "tang_xiaotang";
+      if (!g.alive[c]) return false;
+      if (c === "tang_xiaotang") return false;
+      if (typeof Game.isExiled === "function" && Game.isExiled(c)) return false;
+      return true;
     });
     if (candidates.length === 0) return null;
 
