@@ -85,10 +85,18 @@ function runOne(seed) {
         prophetCheck = { target, result: result };
       }
       // Share based on trust (new v9 logic)
+      // [v9.4] Fang shares ALL accumulated checks, not just one.
       if (Game.prophetShouldShare && prophetCheck) {
         const shareResult = Game.prophetAIShareTarget();
-        if (shareResult) {
-          prophetShared = Game.prophetShareInfo(shareResult.shareTarget, shareResult.checkResult.target);
+        if (shareResult && shareResult.allChecks) {
+          let sharedCount = 0;
+          for (const chk of shareResult.allChecks) {
+            if (Game.isAlive(chk.target)) {
+              Game.prophetShareInfo(shareResult.shareTarget, chk.target);
+              sharedCount++;
+            }
+          }
+          prophetShared = { ok: sharedCount > 0, count: sharedCount };
         }
       }
     }

@@ -312,16 +312,17 @@
     // Only share if the most trusted person has trust > 15
     if (scored[0] && scored[0].trust > 15) {
       var shareTo = scored[0].id;
-      // [v9.4] When sharing a "hostile" result, prefer Lin Xiaoman if she's
-      // alive and reasonably trusted. She's young, action-capable, and Fang
-      // instinctively shares danger intel with someone who can act on it.
-      if (lastCheck.result === 'hostile' && g.alive['lin_xiaoman']) {
+      // [v9.4] When Fang has any "hostile" result, prefer Lin Xiaoman if
+      // she's alive and reasonably trusted. She's young, action-capable.
+      var hasHostile = pr.checks.some(function(c) { return c.result === 'hostile'; });
+      if (hasHostile && g.alive['lin_xiaoman']) {
         var linScore = scored.filter(function(s) { return s.id === 'lin_xiaoman'; })[0];
         if (linScore && linScore.trust > 5) {
           shareTo = 'lin_xiaoman';
         }
       }
-      return { shareTarget: shareTo, checkResult: lastCheck };
+      // [v9.4] Return ALL accumulated checks — Fang gives the full picture.
+      return { shareTarget: shareTo, allChecks: pr.checks.slice() };
     }
 
     return null;
@@ -330,16 +331,24 @@
   // Legacy compatibility: wrapper for old share functions
   Game.prophetAIShareHostileInfo = function () {
     var result = Game.prophetAIShareTarget();
-    if (!result) return null;
-    if (result.checkResult.result !== "hostile") return null;
-    return Game.prophetShareInfo(result.shareTarget, result.checkResult.target);
+    if (!result || !result.allChecks) return null;
+    var hostile = result.allChecks.filter(function(c) { return c.result === 'hostile'; });
+    if (!hostile.length) return null;
+    for (var i = 0; i < hostile.length; i++) {
+      Game.prophetShareInfo(result.shareTarget, hostile[i].target);
+    }
+    return { shareTarget: result.shareTarget, count: hostile.length };
   };
 
   Game.prophetAIShareFriendlyInfo = function () {
     var result = Game.prophetAIShareTarget();
-    if (!result) return null;
-    if (result.checkResult.result !== "friendly") return null;
-    return Game.prophetShareInfo(result.shareTarget, result.checkResult.target);
+    if (!result || !result.allChecks) return null;
+    var friendly = result.allChecks.filter(function(c) { return c.result === 'friendly'; });
+    if (!friendly.length) return null;
+    for (var i = 0; i < friendly.length; i++) {
+      Game.prophetShareInfo(result.shareTarget, friendly[i].target);
+    }
+    return { shareTarget: result.shareTarget, count: friendly.length };
   };
 
   // ── Hunter ability: shoot ──
