@@ -1,9 +1,16 @@
 /*
- * witch.js - Witch (Ye Zhiqiu) AI: sense death + save/curse + potions + AI
+ * witch.js - Witch (Ye Zhiqiu) AI
+ *
+ * v9 design:
+ *   - 还魂 (revive): 2 uses total. True scarcity — save who, when?
+ *   - 缚魂 (bind soul): FREE, no cooldown, 1 per night. Defensive tool.
+ *   - One action per night: bind OR revive (not both)
+ *   - Gentle: revives almost anyone. Bind only with a signal.
+ *   - Bind is decided BEFORE wolf kill. Revive is decided AFTER.
  */
 
 (function () {
-  'use strict';
+  "use strict";
 
   function ensureState() {
     if (!State.variables.game) {
@@ -13,28 +20,21 @@
   }
 
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
-  var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
-
-  // AI scoring weights for save decisions
-  Game.WITCH_AI_WEIGHTS = {
-    chenmo_proximity: 1.0,
-    role_value: 1.0,
-    threat: 1.2,
-    isolation: 1.0
-  };
+  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
 
   function ensureWitch(g) {
     var w = g.godSkills.witch;
     if (!w.curses) w.curses = [];
     if (!w.materials) w.materials = {};
     if (!w.potions) w.potions = {};
-    if (typeof w.uses !== 'number') w.uses = 0;
-    if (typeof w.maxUses !== 'number') w.maxUses = 3;
-    if (typeof w.broken !== 'boolean') w.broken = false;
+    if (typeof w.uses !== "number") w.uses = 0;
+    if (typeof w.maxUses !== "number") w.maxUses = 2; // revive only: 2 uses
+    if (typeof w.broken !== "boolean") w.broken = false;
     return w;
   }
 
+  // ── Sense death (passive) ──
   Game.witchSenseDeath = function () {
     var g = ensureState();
     var w = ensureWitch(g);
@@ -42,15 +42,14 @@
 
     var lastKill = g.lastWolfKill;
     if (!lastKill || !lastKill.killed) return null;
-    if (lastKill.special === 'body_removed') return null;
+    if (lastKill.special === "body_removed") return null;
 
     w.sensedDeath = lastKill.actualTarget;
     return lastKill.actualTarget;
   };
 
   Game.witchGetSensedDeath = function () {
-    var w = ensureState().godSkills.witch;
-    return w.sensedDeath || null;
+    return ensureState().godSkills.witch.sensedDeath || null;
   };
 
   Game.witchClearSensedDeath = function () {
@@ -59,194 +58,57 @@
     w.actedTonight = false;
   };
 
-  Game.witchScoreSave = function (targetId) {
+  // Clear all soul_bound flags (called at morning transition, daily reset)
+  Game.clearSoulBounds = function () {
     var g = ensureState();
-    var score = 0;
-    var w = Game.WITCH_AI_WEIGHTS;
-
-    // Proximity to Chen Mo (protagonist) makes a target worth saving
-    var proximityMap = {
-      su_wan: 10, jiang_bai: 8, zheng_shoushan: 6,
-      lin_xiaoman: 5, fang_heng: 5, shen_shen: 4,
-      ye_zhiqiu: 3, gu_yan: 3, zhou_yang: 1,
-      tang_xiaotang: 1, zhao_mingcheng: 1
-    };
-    score += (proximityMap[targetId] || 3) * w.chenmo_proximity;
-
-    var role = Game.roleOf(targetId);
-    if (GOD_ROLES.indexOf(role) !== -1) {
-      score += 9 * w.role_value;
-    } else if (targetId === 'zheng_shoushan' || targetId === 'chen_mo') {
-      score += 5 * w.role_value;
-    } else {
-      score += 3 * w.role_value;
-    }
-
-    // Exposed/known threats are more valuable to keep alive
-    if (Game.hasRevealed(targetId, 'identity_exposed')) {
-      score += 4 * w.threat;
-    }
-
-    // Random variance
-    score *= (0.85 + Math.random() * 0.3);
-    return Math.round(score);
-  };
-
-  Game.witchScoreCurse = function (targetId) {
-    var g = ensureState();
-    var score = 0;
-    var w = Game.WITCH_AI_WEIGHTS;
-
-    // Never curse someone the prophet verified as good (silver water)
-    if (Game.hasFlag('silver_water_' + targetId)) return -100;
-
-    var role = Game.roleOf(targetId);
-    if (WOLF_ROLES.indexOf(role) !== -1) {
-      // Wolves radiate killing intent the witch can sense; base score clears
-      // the curse threshold on its own (see witchAIGetCurseTarget).
-      score += 20 * w.threat;
-    } else {
-      score += 3;
-    }
-
-    // Suspect-flagged characters are prime curse targets
-    if (Game.hasFlag('suspect_' + targetId)) {
-      score += 8 * w.threat;
-    }
-    if (Game.hasFlag('suspicious_behavior_' + targetId)) {
-      score += 5 * w.threat;
-    }
-
-    // Isolated characters are safer curse targets (less fallout)
-    if (Game.hasRevealed(targetId, 'identity_exposed')) {
-      score += 4 * w.isolation;
-    }
-
-    score *= (0.85 + Math.random() * 0.3);
-    return Math.round(score);
-  };
-
-  // For saving, the target is the sensed death and may already be "dead" in the
-  // alive table (just killed this night). We score them by who they are, not by
-  // current alive status. Validity (revivable) is checked in witchRevive.
-  Game.witchAIShouldSave = function (targetId) {
-    if (!targetId) return false;
-    var score = Game.witchScoreSave(targetId);
-    // Score range is roughly 2-28; save gods and close allies (>=12)
-    return score >= 12;
-  };
-
-  Game.witchAIGetCurseTarget = function () {
-    var g = ensureState();
-    var candidates = [];
-
-    Object.keys(g.alive).forEach(function (charId) {
-      if (!g.alive[charId]) return;
-      if (charId === 'ye_zhiqiu') return;
-      candidates.push(charId);
-    });
-
-    if (candidates.length === 0) return null;
-
-    var best = null;
-    var bestScore = 0;
-    candidates.forEach(function (c) {
-      var s = Game.witchScoreCurse(c);
-      if (s > bestScore) { bestScore = s; best = c; }
-    });
-
-    // The witch is gentle: she only curses someone the prophet confirmed as
-    // an enemy (suspect flag), not merely anyone radiating killing intent.
-    // Threshold 30: a bare wolf scores ~24 (not enough), but a suspect-flagged
-    // wolf scores ~34 (clears it). Keeps curses rare and evidence-driven.
-    return bestScore >= 30 ? best : null;
-  };
-
-  // Main witch AI: decide between save, curse, or pass for the night
-  Game.witchAIDecide = function () {
-    if (Game.witchRemaining() <= 0) return { action: 'pass' };
-
-    var g = ensureState();
-
-    var saveTarget = null;
-    var saveScore = 0;
-    var curseTarget = null;
-    var curseScore = 0;
-
-    // Consider saving the sensed death
-    var sensed = Game.witchSenseDeath();
-    if (sensed && Game.witchAIShouldSave(sensed)) {
-      saveTarget = sensed;
-      saveScore = Game.witchScoreSave(sensed);
-    }
-
-    curseTarget = Game.witchAIGetCurseTarget();
-    if (curseTarget) {
-      curseScore = Game.witchScoreCurse(curseTarget);
-    }
-
-    var saveMargin = saveTarget ? (saveScore - 12) / 12 : -1;
-    var curseMargin = curseTarget ? (curseScore - 30) / 30 : -1;
-
-    if (saveMargin < 0 && curseMargin < 0) {
-      return { action: 'pass' };
-    }
-
-    if (saveMargin >= curseMargin) {
-      return { action: 'save', target: saveTarget, score: saveScore };
-    } else {
-      return { action: 'curse', target: curseTarget, score: curseScore };
+    if (!g.flags) return;
+    var keys = Object.keys(g.flags);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].indexOf("soul_bound_") === 0) {
+        delete g.flags[keys[i]];
+      }
     }
   };
 
-  Game.witchUses = function () {
-    return ensureState().godSkills.witch.uses;
-  };
-
-  Game.witchRemaining = function () {
-    var w = ensureState().godSkills.witch;
-    return w.broken ? 0 : (w.maxUses - w.uses);
-  };
-
-  Game.witchBroken = function () {
-    return !!ensureState().godSkills.witch.broken;
-  };
-
-  Game.witchCurse = function (targetId) {
+  // ── Bind Soul (缚魂) – FREE, 1 per night, blocks target's night action ──
+  Game.witchBindSoul = function (targetId) {
     var g = ensureState();
     var w = ensureWitch(g);
 
-    if (w.broken || w.uses >= w.maxUses) return { ok: false, reason: 'broken' };
-    if (w.actedTonight) return { ok: false, reason: 'already_acted' };
+    if (!g.alive[targetId]) return { ok: false, reason: "target_dead" };
+    if (targetId === "ye_zhiqiu") return { ok: false, reason: "cannot_bind_self" };
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: "target_exiled" };
+    if (w.actedTonight) return { ok: false, reason: "already_acted" };
+    // NOTE: bind does NOT consume revive uses (w.uses)
 
     w.actedTonight = true;
-    w.uses += 1;
-    w.curses.push({ target: targetId, type: 'curse' });
-    Game.kill(targetId);
+    w.curses.push({ target: targetId, type: "bind_soul", day: g.day });
+    g.flags["soul_bound_" + targetId] = true;
 
-    if (w.uses >= w.maxUses) {
-      w.broken = true;
-      return { ok: true, reason: 'broken' };
-    }
-
-    return { ok: true, reason: 'ok' };
+    return { ok: true, reason: "bound", target: targetId };
   };
 
+  Game.isSoulBound = function (charId) {
+    return !!ensureState().flags["soul_bound_" + charId];
+  };
+
+  // ── Revive (还魂) – 2 uses total ──
   Game.witchRevive = function (targetId, witnessed) {
     var g = ensureState();
     var w = ensureWitch(g);
 
-    if (w.broken || w.uses >= w.maxUses) return { ok: false, reason: 'broken' };
-    if (g.alive[targetId]) return { ok: false, reason: 'alive' };
+    if (w.broken || w.uses >= w.maxUses) return { ok: false, reason: "no_uses" };
+    if (g.alive[targetId]) return { ok: false, reason: "alive" };
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: "target_exiled" };
 
-    // Guard collision: if the knight is guarding the target, the revive fizzles
-    if (typeof Game.knightIsGuarding === 'function' && Game.knightIsGuarding(targetId)) {
+    // Guard collision: knight guard + witch revive = target dies anyway
+    if (typeof Game.knightIsGuarding === "function" && Game.knightIsGuarding(targetId)) {
       w.actedTonight = true;
       w.uses += 1;
-      return { ok: false, reason: 'guarded' };
+      return { ok: false, reason: "guarded_collision" };
     }
 
-    if (w.actedTonight) return { ok: false, reason: 'already_acted' };
+    if (w.actedTonight) return { ok: false, reason: "already_acted" };
 
     w.actedTonight = true;
     w.uses += 1;
@@ -256,40 +118,163 @@
     w.revivedTargets.push(targetId);
     w.sensedDeath = null;
 
-    if (witnessed) {
-      Game.revealInfo('ye_zhiqiu', 'witch_exposed');
+    if (witnessed) Game.revealInfo("ye_zhiqiu", "witch_exposed");
+
+    return { ok: true, reason: "ok", usesLeft: w.maxUses - w.uses };
+  };
+
+  // ── Scoring: who to bind tonight (decided BEFORE wolf kill) ──
+  // Ye Zhiqiu binds based on daytime observations — who felt "dangerous"
+  Game.witchScoreBind = function (targetId) {
+    var g = ensureState();
+    var score = 0;
+
+    // Check if Fang Heng shared hostile info about this person (gold-water)
+    var shared = g.godSkills.prophet.sharedWith;
+    if (shared && shared["ye_zhiqiu"]) {
+      for (var i = 0; i < shared["ye_zhiqiu"].length; i++) {
+        if (shared["ye_zhiqiu"][i].infoTarget === targetId && shared["ye_zhiqiu"][i].result === "hostile") {
+          score += 30; // prophet confirmed hostile — strong signal
+        }
+      }
     }
 
-    if (w.uses >= w.maxUses) {
-      w.broken = true;
-      return { ok: true, reason: 'broken' };
+    // Day events: who behaved dangerously today?
+    var events = Game.getEventsInvolving(targetId, g.day);
+    for (var j = 0; j < events.length; j++) {
+      var e = events[j];
+      // Wolf tell observed by Ye Zhiqiu
+      if (e.target === targetId && (e.type === 'observation' || e.type === 'suspicion')) {
+        score += Math.floor(e.weight / 2);
+      }
     }
 
-    return { ok: true, reason: 'ok' };
+    // Her personal unease map (from character interactions)
+    var uneaseMap = {
+      zhou_yang: 5,
+      zhao_mingcheng: 8,   // she has bad feeling about him
+      gu_yan: 5,
+      shen_shen: 3,
+      fang_heng: 2,        // slight unease but not much
+      chen_mo: 0,
+      su_wan: 0,
+      jiang_bai: 0,
+      zheng_shoushan: 0,
+      tang_xiaotang: 0,
+      lin_xiaoman: 0
+    };
+    score += (uneaseMap[targetId] || 0);
+
+    score += Math.floor(Math.random() * 5);
+    return score;
   };
 
-  Game.witchIsExposed = function () {
-    return Game.hasRevealed('ye_zhiqiu', 'witch_exposed');
-  };
-
-  Game.witchHeal = function (targetId) {
+  // ── AI: get bind target (decided before wolf kill) ──
+  Game.witchAIGetBindTarget = function () {
     var g = ensureState();
-    if (!g.pursuit || !g.pursuit.playerInjured) return { ok: false, reason: 'not_injured' };
+    if (!g.alive["ye_zhiqiu"]) return null;
 
-    g.pursuit.playerInjured = false;
-    Game.revealInfo('ye_zhiqiu', 'witch_exposed');
-    return { ok: true, reason: 'exposed' };
+    var candidates = Game.activeList().filter(function (c) {
+      return c !== "ye_zhiqiu" && c !== "chen_mo"; // never bind Chen Mo
+    });
+    if (!candidates.length) return null;
+
+    var best = null, bestScore = 0;
+    candidates.forEach(function (c) {
+      var s = Game.witchScoreBind(c);
+      if (s > bestScore) { bestScore = s; best = c; }
+    });
+
+    // Bind threshold: 20 (needs prophet confirmation or strong day events)
+    if (best && bestScore >= 20) return best;
+    return null;
   };
 
-  Game.witchAddMaterial = function (materialId) {
+  // ── AI: decide bind BEFORE wolf kill ──
+  // Returns { action: "bind", target } or null (save action for revive)
+  Game.witchAIDecidePreKill = function () {
     var g = ensureState();
+    if (!g.alive["ye_zhiqiu"]) return null;
+
     var w = ensureWitch(g);
+    if (w.actedTonight) return null;
+
+    var bindTarget = Game.witchAIGetBindTarget();
+    if (bindTarget) {
+      // She feels strongly enough to bind tonight
+      // But: if she has 0 revive uses left, she's more willing to bind
+      // If she has revive uses, she might prefer to save action for revive
+      var reviveUses = w.maxUses - w.uses;
+
+      // 60% chance to bind if she has a target (she can't just wait and hope)
+      // Higher if she's out of revive uses
+      var bindChance = reviveUses > 0 ? 0.6 : 0.9;
+      if (Math.random() < bindChance) {
+        return { action: "bind", target: bindTarget };
+      }
+    }
+
+    return null;
+  };
+
+  // ── AI: decide revive AFTER wolf kill ──
+  Game.witchAIDecideRevive = function () {
+    var g = ensureState();
+    if (!g.alive["ye_zhiqiu"]) return null;
+
+    var w = ensureWitch(g);
+    if (w.broken || w.uses >= w.maxUses) return null;
+    if (w.actedTonight) return null;
+
+    var sensed = Game.witchGetSensedDeath();
+    if (!sensed) return null;
+
+    // Ye Zhiqiu is gentle — she saves almost everyone
+    // Only hesitates if: only 1 use left AND the dead person is someone she distrusts
+    var reviveUses = w.maxUses - w.uses;
+    if (reviveUses === 1) {
+      // Last revive — 70% chance to save (she might hold it)
+      if (Math.random() < 0.3) return null;
+    }
+
+    // She saves. She doesn't judge.
+    return { action: "revive", target: sensed };
+  };
+
+  // ── Legacy: unified night action (for compatibility) ──
+  // Tries bind first, then revive
+  Game.witchAIDecideNightAction = function () {
+    var g = ensureState();
+    if (!g.alive["ye_zhiqiu"]) return null;
+
+    var w = ensureWitch(g);
+    if (w.actedTonight) return null;
+
+    // Try bind first
+    var preKill = Game.witchAIDecidePreKill();
+    if (preKill) return preKill;
+
+    // Then revive
+    return Game.witchAIDecideRevive();
+  };
+
+  // ── Utility ──
+  Game.witchUses = function () { return ensureState().godSkills.witch.uses; };
+  Game.witchRemaining = function () {
+    var w = ensureState().godSkills.witch;
+    return w.broken ? 0 : (w.maxUses - w.uses);
+  };
+  Game.witchBroken = function () { return !!ensureState().godSkills.witch.broken; };
+  Game.witchIsExposed = function () { return Game.hasRevealed("ye_zhiqiu", "witch_exposed"); };
+
+  // ── Materials & potions (mortal skills) ──
+  Game.witchAddMaterial = function (materialId) {
+    var w = ensureWitch(ensureState());
     w.materials[materialId] = (w.materials[materialId] || 0) + 1;
   };
 
   Game.witchHasMaterial = function (materialId) {
-    var w = ensureState().godSkills.witch;
-    return !!(w.materials && w.materials[materialId]);
+    return !!(ensureState().godSkills.witch.materials || {})[materialId];
   };
 
   Game.witchCanCraft = function (potionId) {
@@ -306,9 +291,7 @@
   Game.witchCraftPotion = function (potionId) {
     var g = ensureState();
     var w = ensureWitch(g);
-
-    if (!Game.witchCanCraft(potionId)) return { ok: false, reason: 'no_materials' };
-
+    if (!Game.witchCanCraft(potionId)) return { ok: false, reason: "no_materials" };
     var recipe = GameState.WITCH_POTIONS[potionId].recipe;
     for (var mat in recipe) {
       if (recipe.hasOwnProperty(mat)) {
@@ -316,31 +299,26 @@
         if (w.materials[mat] <= 0) delete w.materials[mat];
       }
     }
-
     w.potions[potionId] = (w.potions[potionId] || 0) + 1;
     return { ok: true, potion: potionId };
   };
 
   Game.witchHasPotion = function (potionId) {
-    var w = ensureState().godSkills.witch;
-    return !!(w.potions && w.potions[potionId]);
+    return !!(ensureState().godSkills.witch.potions || {})[potionId];
   };
 
   Game.witchUsePotion = function (potionId, targetId) {
     var g = ensureState();
     var w = ensureWitch(g);
-
-    if (!w.potions || !w.potions[potionId]) return { ok: false, reason: 'no_potion' };
-    if (!GameState.WITCH_POTIONS || !GameState.WITCH_POTIONS[potionId]) return { ok: false, reason: 'unknown_potion' };
+    if (!w.potions || !w.potions[potionId]) return { ok: false, reason: "no_potion" };
+    if (!GameState.WITCH_POTIONS || !GameState.WITCH_POTIONS[potionId]) return { ok: false, reason: "unknown_potion" };
 
     var potion = GameState.WITCH_POTIONS[potionId];
     w.potions[potionId] -= 1;
     if (w.potions[potionId] <= 0) delete w.potions[potionId];
 
-    // Record the active effect on the target for later resolution
     if (!g.flags) g.flags = {};
-    var effectKey = 'potion_effect_' + targetId;
-    g.flags[effectKey] = potion.effect;
+    g.flags["potion_effect_" + targetId] = potion.effect;
 
     return { ok: true, target: targetId, effect: potion.effect, name: potion.name };
   };
@@ -348,7 +326,6 @@
   Game.witchPotionEffect = function (targetId) {
     var g = ensureState();
     if (!g.flags) return null;
-    var effectKey = 'potion_effect_' + targetId;
-    return g.flags[effectKey] || null;
+    return g.flags["potion_effect_" + targetId] || null;
   };
 })();

@@ -1,9 +1,14 @@
 /*
  * fake-jump.js - Fake-jump wolf: pretends to be the prophet to mislead good guys
+ *
+ * Only Zhao Mingcheng (calculated, high-intelligence) or Gu Yan (ambitious)
+ * can initiate a fake-prophet jump.
+ * Tang Xiaotang (emotional) never fakes – she can''t maintain the lie.
+ * Zhou Yang (wolf king) doesn''t fake either – he leads openly.
  */
 
 (function () {
-  'use strict';
+  "use strict";
 
   function ensureState() {
     if (!State.variables.game) {
@@ -13,8 +18,8 @@
   }
 
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
-  var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
+  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
 
   function ensureFakeProphet(g) {
     if (!g.godSkills) g.godSkills = {};
@@ -32,23 +37,23 @@
     var g = ensureState();
 
     // Only Zhao Mingcheng or Gu Yan can fake-jump as prophet
-    var validJumpers = ['zhao_mingcheng', 'gu_yan'];
+    var validJumpers = ["zhao_mingcheng", "gu_yan"];
 
-    // If the last wolf kill produced a deep-water (hidden-wolf friendly fire)
-    // situation, sometimes hold off on the jump to keep cover
+    if (validJumpers.indexOf(wolfId) === -1) return { ok: false, reason: "cannot_jump" };
+    if (!g.alive[wolfId]) return { ok: false, reason: "dead" };
+
+    // If the pack is in a deep-water situation (recent kill drew attention),
+    // the fake jumper may hold off
     var lastKill = g.lastWolfKill;
     if (lastKill && lastKill.killed && lastKill.actualTarget && !g.alive[lastKill.actualTarget]) {
-      if (Math.random() < 0.5) return { ok: false, reason: 'deep_water' };
+      if (Math.random() < 0.4) return { ok: false, reason: "deep_water" };
     }
-
-    if (validJumpers.indexOf(wolfId) === -1) return { ok: false, reason: 'cannot_jump' };
-    if (!g.alive[wolfId]) return { ok: false, reason: 'dead' };
 
     g.godSkills.fakeProphet = {
       wolfId: wolfId,
       day: g.day,
-      reports: [],     // list of {target, alignment, faked}
-      exposed: true    // a fake-jumper is effectively "out" once declared
+      reports: [],
+      exposed: true
     };
 
     return { ok: true };
@@ -57,28 +62,28 @@
   Game.fakeProphetReport = function (targetId, alignment) {
     var g = ensureState();
     var fp = g.godSkills.fakeProphet;
-    if (!fp) return { ok: false, reason: 'no_jump' };
-    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+    if (!fp) return { ok: false, reason: "no_jump" };
+    if (!g.alive[targetId]) return { ok: false, reason: "target_dead" };
 
     for (var i = 0; i < fp.reports.length; i++) {
-      if (fp.reports[i].target === targetId) return { ok: false, reason: 'already_reported' };
+      if (fp.reports[i].target === targetId) return { ok: false, reason: "already_reported" };
     }
 
     var report = {
       target: targetId,
-      alignment: alignment,  // 'ally' or 'enemy', as faked by the wolf
+      alignment: alignment,
       day: g.day,
       faked: true
     };
 
     fp.reports.push(report);
 
-    // Distribute the faked info to god-role holders, mimicking real prophet sharing
+    // Distribute the faked info to god-role holders
     ensureFakeProphet(g);
     Object.keys(g.alive).forEach(function (charId) {
       if (!g.alive[charId]) return;
-      if (charId === fp.wolfId) return; // do not inform the faker itself
-      if (GOD_ROLES.indexOf(g.roles[charId]) === -1) return; // only gods receive prophet info
+      if (charId === fp.wolfId) return;
+      if (GOD_ROLES.indexOf(g.roles[charId]) === -1) return;
 
       if (!g.godSkills.prophet.sharedWith[charId]) g.godSkills.prophet.sharedWith[charId] = [];
       g.godSkills.prophet.sharedWith[charId].push({
@@ -94,49 +99,45 @@
     return { ok: true, report: report };
   };
 
+  // AI: fake prophet makes a report
   Game.fakeProphetAIReport = function () {
     var g = ensureState();
     var fp = g.godSkills.fakeProphet;
     if (!fp) return null;
     if (!g.alive[fp.wolfId]) return null;
 
-    var aliveList = Object.keys(g.alive).filter(function (k) { return g.alive[k]; });
-
+    var aliveList = Game.activeList();
     var unreported = aliveList.filter(function (k) {
       if (k === fp.wolfId) return false;
       return !fp.reports.some(function (r) { return r.target === k; });
     });
-
     if (unreported.length === 0) return null;
 
     var target = unreported[Math.floor(Math.random() * unreported.length)];
     var targetRole = g.roles[target];
     var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
 
-    var reportTrue = Math.random() < 0.5;
-
+    // The fake jumper strategically lies or tells truth
     var alignment;
-    if (reportTrue) {
-      // Report the real alignment
-      alignment = isWolf ? 'enemy' : 'ally';
+    if (isWolf) {
+      // 70% chance to claim a wolf is "ally" (protect packmate)
+      alignment = Math.random() < 0.7 ? "ally" : "enemy";
     } else {
-      // Lie: frame a good guy as enemy, or vouch for a fellow wolf
-      alignment = isWolf ? 'ally' : 'enemy';
+      // 60% chance to frame a good guy as "enemy"
+      alignment = Math.random() < 0.6 ? "enemy" : "ally";
     }
 
     return Game.fakeProphetReport(target, alignment);
   };
 
+  // Real prophet can detect the fake
   Game.prophetCheckFakeJump = function () {
     var g = ensureState();
     var fp = g.godSkills.fakeProphet;
     if (!fp) return null;
-
-    // The real prophet (Fang Heng) can sense whether the fake-jumper has an aura
-    if (!Game.isAlive('fang_heng')) return null;
+    if (!Game.isAlive("fang_heng")) return null;
 
     var hasAura = Game.prophetSenseAura(fp.wolfId);
-
     return {
       wolfId: fp.wolfId,
       hasAura: hasAura

@@ -90,8 +90,8 @@
 
   Game.leaderProposal = function (leaderId) {
     var g = ensureState();
-    var candidates = Object.keys(g.alive).filter(function (cid) {
-      return g.alive[cid] && cid !== "chen_mo" && cid !== "tang_xiaotang" &&
+    var candidates = Game.activeList().filter(function (cid) {
+      return cid !== "chen_mo" && cid !== "tang_xiaotang" &&
            WOLF_IDS.indexOf(cid) === -1 &&
            Game.roleOf(cid) !== "hidden_wolf";
     });

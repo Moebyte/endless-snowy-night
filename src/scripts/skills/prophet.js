@@ -273,7 +273,7 @@
     // Who does Fang Heng trust? Based on daytime interactions.
     // He trusts people who: are calm, helped resolve conflicts, agreed with him.
     // He distrusts people who: were aggressive, evasive, or too calculating.
-    var candidates = Game.aliveList().filter(function (c) {
+    var candidates = Game.activeList().filter(function (c) {
       return c !== "fang_heng";
     });
 
@@ -540,7 +540,7 @@
 
     // He must name a suspect. Refusing to shoot is allowed (save the bullet).
     // He only fires if he has SOME basis for a guess.
-    var candidates = Object.keys(g.alive).filter(function (cid) {
+    var candidates = Game.activeList().filter(function (cid) {
       if (!g.alive[cid]) return false;
       if (cid === "fang_heng") return false;
       // [v9.3.3 FIX] Cannot suspect someone already exiled (locked in cellar).

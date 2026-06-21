@@ -54,9 +54,8 @@
     if (!g.medic) Game.medicInit();
 
     // Candidates: alive, not Su Wan, not Chen Mo (she trusts him)
-    var candidates = Game.aliveList().filter(function (c) {
+    var candidates = Game.activeList().filter(function (c) {
       if (c === 'su_wan' || c === 'chen_mo') return false;
-      if (typeof Game.isExiled === 'function' && Game.isExiled(c)) return false;
       return true;
     });
     if (!candidates.length) return null;

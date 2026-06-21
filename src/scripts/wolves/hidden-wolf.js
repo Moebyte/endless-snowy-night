@@ -58,11 +58,8 @@
     if (!Game.hiddenWolfAwakened()) return null;
 
     var emotion = Game.tangEmotionState();
-    var candidates = Object.keys(g.alive).filter(function (c) {
-      if (!g.alive[c]) return false;
-      if (c === "tang_xiaotang") return false;
-      if (typeof Game.isExiled === "function" && Game.isExiled(c)) return false;
-      return true;
+    var candidates = Game.activeList().filter(function (c) {
+      return c !== "tang_xiaotang";
     });
     if (candidates.length === 0) return null;
 
@@ -107,8 +104,8 @@
     if (g.alive["su_wan"] && Math.random() < 0.4) {
       target = "su_wan";
     } else {
-      var candidates = Object.keys(g.alive).filter(function (c) {
-        return g.alive[c] && c !== "tang_xiaotang" && c !== "lin_xiaoman" && c !== "chen_mo";
+      var candidates = Game.activeList().filter(function (c) {
+        return c !== "tang_xiaotang" && c !== "lin_xiaoman" && c !== "chen_mo";
       });
       if (candidates.length > 0) {
         target = candidates[Math.floor(Math.random() * candidates.length)];

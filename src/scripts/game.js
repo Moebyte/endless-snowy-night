@@ -188,6 +188,28 @@ Game.aliveList = function () {
     var g = ensureState();
     return Object.keys(g.alive).filter(function (id) { return g.alive[id]; });
   };
+  // ── Active status: alive AND not exiled ──
+  // Use this for target selection, vote participation, AI decisions.
+  // Use isAlive() when you need biological life/death (e.g. witch revive).
+  Game.isActive = function (charId) {
+    var g = ensureState();
+    if (!g.alive[charId]) return false;
+    if (typeof Game.isExiled === 'function' && Game.isExiled(charId)) return false;
+    return true;
+  };
+
+  // Returns array of active (alive + not exiled) character IDs
+  Game.activeList = function () {
+    return Game.aliveList().filter(function (id) {
+      return !(typeof Game.isExiled === 'function' && Game.isExiled(id));
+    });
+  };
+
+  // Count of active characters
+  Game.activeCount = function () {
+    return Game.activeList().length;
+  };
+
 Game.kill = function (charId) {
 
     var g = ensureState();

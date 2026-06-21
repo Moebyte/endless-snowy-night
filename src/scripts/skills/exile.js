@@ -102,7 +102,7 @@
 
   // Characters who can still be targeted/voted on/checked.
   Game.exileActiveList = function () {
-    return Game.aliveList().filter(function (id) { return !Game.isExiled(id); });
+    return Game.activeList().filter(function (id) { return !Game.isExiled(id); });
   };
 
   // ---- Suspicion update (called once per day, after day events) ----
