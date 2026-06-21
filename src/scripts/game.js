@@ -411,7 +411,14 @@ Game.resetLoopState = function () {
 
     // reset god skills for new loop
 
-    Game.resetGodSkillsLoop();
+    if (typeof Game.resetGodSkillsLoop === 'function') Game.resetGodSkillsLoop();
+    // [v9.5] Reset per-loop witch state.
+    if (g.godSkills && g.godSkills.witch) {
+      g.godSkills.witch.silverWater = null;
+      g.godSkills.witch.sensedDeath = null;
+      g.godSkills.witch.actedTonight = false;
+    }
+    g.revealed = {};
 
     // reset Jiang Bai trap system
 

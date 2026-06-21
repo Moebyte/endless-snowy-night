@@ -109,6 +109,12 @@
       return { target: "zheng_shoushan", reason: "他能听见我们夜里的动静。必须处理掉。" };
     }
 
+    // [v9.5] If the witch (Ye Zhiqiu) exposed herself to veto an exile,
+    // wolves prioritize her — she can revive anyone they kill.
+    if (Game.hasFlag("ye_zhiqiu_exposed") && candidates.indexOf("ye_zhiqiu") !== -1 && g.alive["ye_zhiqiu"]) {
+      return { target: "ye_zhiqiu", reason: "She just revealed she can bring the dead back. She dies tonight." };
+    }
+
     }
 
     if (g.day <= 1) {

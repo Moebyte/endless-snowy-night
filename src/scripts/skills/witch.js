@@ -55,8 +55,60 @@
   Game.witchClearSensedDeath = function () {
     var w = ensureWitch(ensureState());
     w.sensedDeath = null;
+    // NOTE: silverWater is NOT cleared here. It must survive the morning
+    // so the exile phase (later today) can trigger her intervention.
     w.actedTonight = false;
   };
+
+  // Clear silverWater AFTER the exile phase resolves (next night begins).
+  Game.witchClearSilverWater = function () {
+    var w = ensureWitch(ensureState());
+    w.silverWater = null;
+  };
+
+  // Silver-water: the person Ye Zhiqiu revived this round.
+  Game.witchGetSilverWater = function () {
+    var w = ensureState().godSkills.witch;
+    return w ? (w.silverWater || null) : null;
+  };
+
+  // ---- Exile intervention AI ----
+  // Should Ye Zhiqiu publicly protect a silver-water target about to be exiled?
+  // Standing up = exposing herself as the witch.
+  Game.witchShouldProtect = function (target, voteResult) {
+    var g = ensureState();
+    if (!g.alive["ye_zhiqiu"]) return false;
+    if (!target) return false;
+    var w = ensureWitch(g);
+    if (w.silverWater !== target) return false;
+    if (Game.witchIsExposed()) return true;
+
+    // She already invested a revive in this person — she values their life.
+    // Base willingness to protect (then modified by situation).
+    var chance = 0.30;
+    var KEY_ROLES = ["fang_heng", "lin_xiaoman", "chen_mo"];
+    if (KEY_ROLES.indexOf(target) !== -1) chance += 0.35;
+    else if (target === "su_wan" || target === "jiang_bai" || target === "shen_shen") chance += 0.20;
+
+    // Her veto only matters if the vote is close (her 3 votes can flip it).
+    var margin = voteResult.votesFor - voteResult.votesAgainst;
+    if (margin <= 2) chance += 0.25;
+    else chance -= 0.15;  // landslide — no point exposing herself
+
+    // Self-preservation: exposure makes her a wolf priority tonight.
+    var wolvesLeft = 0;
+    Game.activeList().forEach(function (cid) {
+      if (WOLF_ROLES.indexOf(Game.roleOf(cid)) !== -1) wolvesLeft += 1;
+    });
+    if (wolvesLeft >= 3) chance -= 0.20;
+    if (wolvesLeft <= 1) chance += 0.15;
+
+    chance = Math.max(0.10, Math.min(0.90, chance));
+    return Math.random() < chance;
+  };
+
+  // Her opposition carries moral weight (3 votes when she stands up).
+  Game.witchProtectVoteWeight = function () { return 3; };
 
   // Clear all soul_bound flags (called at morning transition, daily reset)
   Game.clearSoulBounds = function () {
@@ -117,6 +169,7 @@
     if (!w.revivedTargets) w.revivedTargets = [];
     w.revivedTargets.push(targetId);
     w.sensedDeath = null;
+    w.silverWater = targetId;
 
     if (witnessed) Game.revealInfo("ye_zhiqiu", "witch_exposed");
 

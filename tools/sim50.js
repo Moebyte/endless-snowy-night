@@ -52,7 +52,6 @@ function runOne(seed) {
     if (typeof Game.exileAIPhase === 'function') {
       exileResult = Game.exileAIPhase();
     }
-
     // Su Wan medic observation (only shares with Chen Mo)
     let medicObs = null;
     if (typeof Game.medicAIRun === 'function') {
@@ -81,6 +80,7 @@ function runOne(seed) {
     if (Game.knightWeakened()) Game.knightReset();
     Game.magicianResetDaily();
     Game.witchClearSensedDeath();
+    if (typeof Game.witchClearSilverWater === "function") Game.witchClearSilverWater();
     let swap = null;
     if (Game.isAlive('shen_shen') && Game.magicianSwapsRemaining() > 0) {
       if (typeof Game.magicianAIDecideSwap === 'function') {
@@ -190,7 +190,7 @@ let _dbgPatterns = all.reduce((s,r) => s + ((r.exileMeta&&r.exileMeta.patterns)|
 console.log('DEBUG exileMeta: ' + _dbgPatterns + ' patterns, ' + _dbgBackfire + ' backfires across 50 runs');
 
 // 统计
-let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0, medicObs:0, medicDetect:0, medicDetectWolf:0, hearerWoke:0, hearerDir:0, hearerNeighbor:0 };
+let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0, medicObs:0, medicDetect:0, medicDetectWolf:0, hearerWoke:0, hearerDir:0, hearerNeighbor:0, witchProtect:0, witchProtectBlocked:0, witchExposed:0 };
 all.forEach(r => r.log.forEach(l => {
   if (l.kill.killed) stats.deaths++;
   if (l.swap) stats.swaps++;
@@ -225,6 +225,11 @@ if (l.prophetCounter) { stats.prophetCounterShots++; if (l.prophetCounter.hit) s
     } else {
       stats.exileFailed++;
     }
+    if (l.exile.witchProtectTriggered) {
+      stats.witchProtect++;
+      if (!l.exile.exiled) stats.witchProtectBlocked++;
+      stats.witchExposed++;
+    }
   }
 }));
 
@@ -252,6 +257,7 @@ console.log('幽主同归: ' + stats.wk + ' | 堕仙误杀同伴: ' + stats.ff +
 console.log('镇煞决斗: ' + stats.duels + ' (杀狼:' + stats.duelsKilledWolf + ' 同归狼王:' + stats.duelsMutualKill + ' 砍好人:' + stats.duelsInnocent + ')');
 console.log('隐狼觉醒击杀: ' + stats.hwKills);
 console.log('流放系统: 质疑' + stats.exileAccusations + '次 (成功:' + stats.exileSuccessful + ' 流放狼:' + stats.exiledWolves + ' 流放好人:' + stats.exiledGood + ' 陈默关键票翻盘:' + stats.swingWins + ' 票型反噬:' + stats.blocBackfires + ' 失败:' + stats.exileFailed + ')');
+console.log('叶知秋银水保护: 介入' + stats.witchProtect + '次 (成功阻断流放:' + stats.witchProtectBlocked + ' 暴露次数:' + stats.witchExposed + ')');
 console.log('江白陷阱: 触发' + stats.trapTriggered + ' 观察' + stats.trapObserved + ' 质疑' + stats.jbAccuse + '(质疑狼:' + stats.jbAccuseWolf + ' 流放狼:' + stats.jbExileWolf + ')');;
 console.log('老郑感知: 醒来' + stats.hearerWoke + '次(听出方向' + stats.hearerDir + ' 隔壁出门' + stats.hearerNeighbor + ')');
 console.log('苏晚体检: 观察' + stats.medicObs + ' 检测' + stats.medicDetect + '(检出杀手:' + stats.medicDetectWolf + ')');

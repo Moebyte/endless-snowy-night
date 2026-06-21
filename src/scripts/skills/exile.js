@@ -590,6 +590,23 @@ var protect = {
 
     var voteResult = Game.exileVote(accuser, target);
 
+    // [v9.5] Ye Zhiqiu silver-water intervention (BEFORE final tally).
+    // If the accused is the person she revived this round, she may publicly
+    // veto. Her veto adds moral weight (3 spare votes) and EXPOSES her as
+    // the witch -> wolves prioritize her tonight.
+    var witchProtectTriggered = false;
+    if (typeof Game.witchShouldProtect === "function" && Game.isAlive("ye_zhiqiu") && !Game.isExiled("ye_zhiqiu")) {
+      if (Game.witchShouldProtect(target, voteResult)) {
+        var wWeight = Game.witchProtectVoteWeight();
+        voteResult.votesAgainst += wWeight;
+        witchProtectTriggered = true;
+        Game.revealInfo("ye_zhiqiu", "witch_exposed");
+        if (!g.flags) g.flags = {};
+        g.flags["ye_zhiqiu_exposed"] = true;
+        voteResult.voters.push({ id: "ye_zhiqiu", vote: "spare", reason: "silver_water_veto", weight: wWeight });
+      }
+    }
+
     // [v9.3.2] SIMPLE MAJORITY: exile succeeds if votesFor > votesAgainst.
     // Abstains do NOT count. Even 2:1 exile wins. Silence = passive acceptance.
     var exiled = voteResult.votesFor > voteResult.votesAgainst;
@@ -607,6 +624,7 @@ var protect = {
         swingTriggered = true;
       }
     }
+
 
     // Accuser pays credibility (failed accusations cost more).
     var cost = exiled ? 15 : 25;
@@ -646,7 +664,8 @@ var protect = {
       votesAgainst: voteResult.votesAgainst,
       abstains: voteResult.abstains,
       exiled: exiled,
-      swingTriggered: swingTriggered
+      swingTriggered: swingTriggered,
+      witchProtectTriggered: witchProtectTriggered
     };
   };
 
