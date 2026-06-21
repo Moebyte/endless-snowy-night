@@ -40,7 +40,34 @@
   };
 
   // Display labels for roles (v8 terminology)
-  GameState.ROLE_LABELS = {
+  
+  // Room assignments (v9.5)
+  // 3 floors, 4 rooms each, stairs at both ends (east/west)
+  GameState.ROOMS = {
+    // Floor 1 (lobby level)
+    '101': { floor: 1, pos: 'W', char: 'zhou_yang' },
+    '102': { floor: 1, pos: 'W-M', char: 'zhao_mingcheng' },
+    '103': { floor: 1, pos: 'M-E', char: 'fang_heng' },
+    '104': { floor: 1, pos: 'E', char: 'shen_shen' },
+    // Floor 2 (protagonist level)
+    '201': { floor: 2, pos: 'W', char: 'chen_mo' },
+    '202': { floor: 2, pos: 'W-M', char: 'jiang_bai' },
+    '203': { floor: 2, pos: 'M-E', char: 'zheng_shoushan' },
+    '204': { floor: 2, pos: 'E', char: 'gu_yan' },
+    // Floor 3 (girls' level)
+    '301': { floor: 3, pos: 'W', char: 'su_wan' },
+    '302': { floor: 3, pos: 'W-M', char: 'lin_xiaoman' },
+    '303': { floor: 3, pos: 'M-E', char: 'tang_xiaotang' },
+    '304': { floor: 3, pos: 'E', char: 'ye_zhiqiu' }
+  };
+
+  // Reverse lookup: charId -> room number
+  GameState.CHAR_ROOMS = {};
+  Object.keys(GameState.ROOMS).forEach(function (rn) {
+    GameState.CHAR_ROOMS[GameState.ROOMS[rn].char] = rn;
+  });
+
+GameState.ROLE_LABELS = {
     memory: '劫主',
     prophet: '昭判',
     witch: '渡君',
@@ -95,7 +122,6 @@
     ritual_tablet: { name: "祭祀铭文", desc: "祭坛上的铭文：第七日，祭品满，门开。存者出，亡者留。", breaking: true },
     recruitment_tablet: { name: "招募铭文", desc: "铭文后半部分：掌祭者即掌生死，存者若取祭者之位，则轮回终，新神立。", breaking: true },
     shenshen_identity: { name: "沈慎暗示", desc: "沈慎说看所有人都是双重曝光的——他也能感知到轮回的痕迹。", breaking: true },
-    laozheng_survivor: { name: "老郑幸存者身份", desc: "老郑是上一轮轮回的幸存者，他知道部分真相。", breaking: true },
     god_kill_method: { name: "弑神方法", desc: "取代祭坛的守护者就能终结轮回，但需要等价交换。", breaking: true },
     fang_heng_theory: { name: "方衡的推测", desc: "狼的杀戮可能有特定目标顺序，而不是随机。" },
     tang_saw_3f: { name: "唐小棠目击证词", desc: "唐小棠声称昨晚23:00后看到有人上三楼。" },
@@ -202,7 +228,7 @@
     fang_heng: 'fang_corruption',
     shen_shen: 'shenshen_debt',
     ye_zhiqiu: 'yezhiqiu_malpractice',
-    zheng_shoushan: 'laozheng_knowledge',
+    zheng_shoushan: 'villager',
     lin_xiaoman: 'linxiaoman_devotion',
     zhou_yang: 'zhouyang_arrogance',
     tang_xiaotang: 'tangxiaotang_trauma',
@@ -245,12 +271,6 @@
 GameState.getProfile = function (charId) {
   return GameState.PROFILES[charId] || null;
 };
-
-// GOD_KILLERS: only chen_mo and lao_zheng can slay a god
-    GameState.GOD_KILLERS = {
-      CHEN_MO: 'chen_mo',
-      LAO_ZHENG: 'zheng_shoushan'
-  };
 
   // GameState.create: fresh game state
   GameState.create = function () {
@@ -395,6 +415,12 @@ GameState.getProfile = function (charId) {
         observations: [],
         lastObserved: null,
         lastResult: null
+      },
+
+      // Lao Zheng night hearing system (resets each loop)
+      hearer: {
+        lastResult: null,
+        history: []
       }
     };
   };

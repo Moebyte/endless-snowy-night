@@ -395,6 +395,7 @@ Game.resetLoopState = function () {
 
     if (typeof Game.trapReset === 'function') Game.trapReset();
     if (typeof Game.medicReset === 'function') Game.medicReset();
+    if (typeof Game.hearerReset === 'function') Game.hearerReset();
 
   }
 
@@ -490,7 +491,7 @@ Game.canKillGod = function (charId) {
 
     // 闁哄鍨堕惃 濞戞搫鎷烽柛娆欐嫹闁哄牆 鎰?鍙?娑?閹蜂即鎳撴笟 閸庢粓宕ｉ敓鑺ョ閵?鎼愮紒浣哄仜閵囨碍鎷呴敓 
 
-    return charId === GameState.GOD_KILLERS.CHEN_MO || charId === GameState.GOD_KILLERS.LAO_ZHENG;
+
 
   }
 

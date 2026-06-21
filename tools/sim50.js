@@ -16,6 +16,7 @@ const scripts = [
   'src/scripts/skills/exile.js',
   'src/scripts/skills/traps.js',
   'src/scripts/skills/medic.js',
+  'src/scripts/skills/hearer.js',
 ];
 for (const s of scripts) vm.runInContext(fs.readFileSync(path.join(ROOT, s), 'utf8'), sandbox, { filename: s });
 const { Game, GameState } = sandbox.window;
@@ -28,8 +29,10 @@ function runOne(seed) {
   const g = sandbox.State.variables.game;
   g.day = 2;
   const log = [];
+  let hearerResult = null;
   for (let day = 2; day <= 7; day++) {
     g.day = day;
+    hearerResult = null;
     // Generate daytime events (conflicts, suspicions, observations)
     Game.generateDayEvents();
     if (typeof Game.clearSoulBounds === 'function') Game.clearSoulBounds();
@@ -126,6 +129,7 @@ function runOne(seed) {
     if (typeof Game.trapArm === 'function') Game.trapArm();
 
     let kill = Game.executeWolfKill();
+    if (typeof Game.hearerNightCheck === 'function') { const hr = Game.hearerNightCheck(kill); if (hr) hearerResult = hr; }
     g.lastWolfKill = kill;
     // If main wolves are dead/inactive, check hidden wolf awakening.
     // Trigger when no kill happened AND it is because wolves are dead (not just hesitating).
@@ -168,7 +172,7 @@ function runOne(seed) {
         prophetCounter = { target: counterDecision.target, realKiller, hit, reason: counterDecision.reason };
       }
     }
-    log.push({ day, kill, swap, duelTarget, guardTarget, trap: trapCheck, exile: exileResult, prophetCheck: prophetCheck ? { target: prophetCheck.target, alignment: prophetCheck.result.result } : null, prophetShared, prophetShot, prophetCounter, witch: witchAct, medic: medicObs });
+    log.push({ day, kill, swap, duelTarget, guardTarget, trap: trapCheck, exile: exileResult, prophetCheck: prophetCheck ? { target: prophetCheck.target, alignment: prophetCheck.result.result } : null, prophetShared, prophetShot, prophetCounter, witch: witchAct, medic: medicObs, hearer: hearerResult });
     const goodAlive = Game.aliveList().filter(c => WOLVES.indexOf(c) === -1).length;
     const wolvesAlive = Game.aliveList().filter(c => WOLVES.indexOf(c) !== -1).length;
     if (goodAlive === 0 || wolvesAlive === 0) break;
@@ -186,7 +190,7 @@ let _dbgPatterns = all.reduce((s,r) => s + ((r.exileMeta&&r.exileMeta.patterns)|
 console.log('DEBUG exileMeta: ' + _dbgPatterns + ' patterns, ' + _dbgBackfire + ' backfires across 50 runs');
 
 // 统计
-let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0, medicObs:0, medicDetect:0, medicDetectWolf:0 };
+let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0, medicObs:0, medicDetect:0, medicDetectWolf:0, hearerWoke:0, hearerDir:0, hearerNeighbor:0 };
 all.forEach(r => r.log.forEach(l => {
   if (l.kill.killed) stats.deaths++;
   if (l.swap) stats.swaps++;
@@ -196,6 +200,7 @@ all.forEach(r => r.log.forEach(l => {
   if (l.prophetShared && l.prophetShared.ok) stats.shares++;
   if (l.prophetShot) { stats.prophetShots++; if (WOLVES.indexOf(l.prophetShot.target)!==-1) stats.prophetShotsKilledWolf++; if (l.prophetShot.mutualKill) stats.wk++; }
       if (l.medic) { stats.medicObs++; if (l.medic.detected) { stats.medicDetect++; if (l.medic.isKiller) stats.medicDetectWolf++; } }
+    if (l.hearer) { if (l.hearer.woke) { stats.hearerWoke++; if (l.hearer.direction) stats.hearerDir++; if (l.hearer.neighborLeft) stats.hearerNeighbor++; } }
 if (l.prophetCounter) { stats.prophetCounterShots++; if (l.prophetCounter.hit) stats.prophetCounterHit++; else stats.prophetCounterMiss++; }
   if (l.kill.special === 'wolf_king_mutual') stats.wk++;
   if (l.kill.friendlyFire) stats.ff++;
@@ -248,6 +253,7 @@ console.log('镇煞决斗: ' + stats.duels + ' (杀狼:' + stats.duelsKilledWolf
 console.log('隐狼觉醒击杀: ' + stats.hwKills);
 console.log('流放系统: 质疑' + stats.exileAccusations + '次 (成功:' + stats.exileSuccessful + ' 流放狼:' + stats.exiledWolves + ' 流放好人:' + stats.exiledGood + ' 陈默关键票翻盘:' + stats.swingWins + ' 票型反噬:' + stats.blocBackfires + ' 失败:' + stats.exileFailed + ')');
 console.log('江白陷阱: 触发' + stats.trapTriggered + ' 观察' + stats.trapObserved + ' 质疑' + stats.jbAccuse + '(质疑狼:' + stats.jbAccuseWolf + ' 流放狼:' + stats.jbExileWolf + ')');;
+console.log('老郑感知: 醒来' + stats.hearerWoke + '次(听出方向' + stats.hearerDir + ' 隔壁出门' + stats.hearerNeighbor + ')');
 console.log('苏晚体检: 观察' + stats.medicObs + ' 检测' + stats.medicDetect + '(检出杀手:' + stats.medicDetectWolf + ')');
 
 // 给每轮打标签，挑特殊的
