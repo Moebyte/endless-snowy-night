@@ -153,33 +153,40 @@
           e.suspicion.fang_heng[t3] = (e.suspicion.fang_heng[t3] || 0) + Math.floor(ev.weight / 3);
         }
       }
-      // Zhao Mingcheng: a wolf who inflates suspicion toward good people.
-      if (ev.a === 'zhao_mingcheng' || ev.observer === 'zhao_mingcheng') {
-        var t4 = ev.target;
-        if (t4 && t4 !== 'zhao_mingcheng') {
-          e.suspicion.zhao_mingcheng[t4] = (e.suspicion.zhao_mingcheng[t4] || 0) + Math.floor(ev.weight / 2);
-        }
+      // ── Both wolves actively frame good people (shared wolf tactic) ──
+      // Active suspicion construction is a wolf-team universal skill, not
+      // exclusive to one member. Both Zhao Mingcheng and Gu Yan absorb events
+      // from ALL observers (not just their own) and build cases against
+      // threats. Personality differences are reflected in weight and style.
+
+      var tWolf = ev.target || ev.b;
+      // Zhao Mingcheng: political fixer — watches from shadows, plants seeds.
+      // Absorbs events at 1/3 weight (quieter, less direct than Gu Yan).
+      if (tWolf && tWolf !== 'zhao_mingcheng') {
+        var zmWeight = (ev.observer === 'zhao_mingcheng') ? Math.floor(ev.weight / 2) : Math.floor(ev.weight / 3);
+        e.suspicion.zhao_mingcheng[tWolf] = (e.suspicion.zhao_mingcheng[tWolf] || 0) + zmWeight;
       }
-      // Gu Yan (mechanical wolf): analytical physicist who observes EVERYONE.
-      // He's the most observant character — he notices all conflicts and
-      // builds logical cases against threats to the wolf team.
-      // He absorbs suspicion from ALL events (not just his own), because
-      // he's always watching and analyzing.
-      var t5 = ev.target || ev.b;
-      if (t5 && t5 !== 'gu_yan') {
-        // He gives full weight to events he personally observed,
-        // and half weight to events others observed (he pieces things together).
+      // Gu Yan: physicist — analytical, builds logical cases openly.
+      // Absorbs events at 1/2 weight (more assertive than Zhao).
+      if (tWolf && tWolf !== 'gu_yan') {
         var gyWeight = (ev.observer === 'gu_yan') ? ev.weight : Math.floor(ev.weight / 2);
-        e.suspicion.gu_yan[t5] = (e.suspicion.gu_yan[t5] || 0) + gyWeight;
+        e.suspicion.gu_yan[tWolf] = (e.suspicion.gu_yan[tWolf] || 0) + gyWeight;
       }
-      // Gu Yan actively builds cases against key threats to wolves:
+
+      // Both wolves actively build cases against key threats:
       // Fang Heng (prophet), Lin Xiaoman (knight), Shen Shen (magician).
-      // Any event involving them -> extra suspicion from Gu Yan.
-      var gyThreats = ['fang_heng', 'lin_xiaoman', 'shen_shen'];
-      for (var gt = 0; gt < gyThreats.length; gt++) {
-        var threat = gyThreats[gt];
-        if ((ev.a === threat || ev.b === threat || ev.target === threat) && threat !== 'gu_yan') {
-          e.suspicion.gu_yan[threat] = (e.suspicion.gu_yan[threat] || 0) + Math.floor(ev.weight / 3);
+      var wolfThreats = ['fang_heng', 'lin_xiaoman', 'shen_shen'];
+      for (var wt = 0; wt < wolfThreats.length; wt++) {
+        var wThreat = wolfThreats[wt];
+        if (ev.a === wThreat || ev.b === wThreat || ev.target === wThreat) {
+          // Gu Yan: 1/3 extra (analytical, builds detailed case)
+          if (wThreat !== 'gu_yan') {
+            e.suspicion.gu_yan[wThreat] = (e.suspicion.gu_yan[wThreat] || 0) + Math.floor(ev.weight / 3);
+          }
+          // Zhao Mingcheng: 1/4 extra (quieter, but just as targeted)
+          if (wThreat !== 'zhao_mingcheng') {
+            e.suspicion.zhao_mingcheng[wThreat] = (e.suspicion.zhao_mingcheng[wThreat] || 0) + Math.floor(ev.weight / 4);
+          }
         }
       }
     }
