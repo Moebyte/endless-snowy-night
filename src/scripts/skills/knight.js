@@ -279,18 +279,22 @@
 
     if (!alive.length) return null;
 
-    // [v9.4] If Fang Heng shared a "hostile" gold-water read about someone
-    // who is still alive, Lin Xiaoman has a 50% chance to duel that person
-    // directly. She doesn't fully trust the cop, but a specific professional
-    // warning is hard to completely dismiss — sometimes she acts on it.
+    // [v9.4] Cross-validation: Lin Xiaoman doesn't trust Fang Heng, but
+    // if he points at someone AND she personally has some unease about that
+    // same person (suspicion >= 10), the two independent signals align and
+    // she acts. This isn't trust — it's "two different sources saying the
+    // same thing is harder to ignore than one."
+    // If her own suspicion is 0 (she saw nothing), she ignores Fang entirely.
     if (typeof Game.prophetReceivedInfo === 'function') {
       for (var gwi = 0; gwi < alive.length; gwi++) {
         var gwInfo = Game.prophetReceivedInfo('lin_xiaoman', alive[gwi]);
         if (gwInfo && gwInfo.result === 'hostile') {
-          if (Math.random() < 0.5) {
+          var ownSusp = k.suspicion[alive[gwi]] || 0;
+          if (ownSusp >= 10) {
+            // Cross-validated: her gut + cop's intel agree. She acts.
             return alive[gwi];
           }
-          break;  // only check the first hostile target, then fall through
+          break;  // only check the first hostile target
         }
       }
     }

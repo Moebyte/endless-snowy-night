@@ -312,14 +312,18 @@
     // Only share if the most trusted person has trust > 15
     if (scored[0] && scored[0].trust > 15) {
       var shareTo = scored[0].id;
-      // [v9.4] When Fang has any "hostile" result, prefer Lin Xiaoman if
-      // she's alive and reasonably trusted. She's young, action-capable.
+      // [v9.4] When Fang has a "hostile" result, he doesn't just share with
+      // whoever he trusts most — he shares with someone who can ACT on it.
+      // Lin Xiaoman is impulsive, physical, and not afraid of confrontation.
+      // Fang doesn't like her, but he's pragmatic: she's the kind of person
+      // who'll actually DO something about a threat, not just nod politely.
+      // He's using her as a weapon, not befriending her.
       var hasHostile = pr.checks.some(function(c) { return c.result === 'hostile'; });
       if (hasHostile && g.alive['lin_xiaoman']) {
-        var linScore = scored.filter(function(s) { return s.id === 'lin_xiaoman'; })[0];
-        if (linScore && linScore.trust > 5) {
-          shareTo = 'lin_xiaoman';
-        }
+        // He doesn't need to trust her deeply — just needs her to be alive
+        // and not openly hostile toward him. Even a low trust score is fine:
+        // he's not sharing a secret, he's pointing her at a target.
+        shareTo = 'lin_xiaoman';
       }
       // [v9.4] Return ALL accumulated checks — Fang gives the full picture.
       return { shareTarget: shareTo, allChecks: pr.checks.slice() };
