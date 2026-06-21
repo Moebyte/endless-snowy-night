@@ -119,4 +119,16 @@
     Game.hearerInit();
   };
 
+
+  // ── Mark that Lao Zheng spoke publicly about his hearing ──
+  // This makes wolves aware he can hear corridor movement at night.
+  Game.hearerMarkSpoke = function () {
+    Game.setFlag("zheng_spoke_hearing");
+  };
+
+  // ── Did Lao Zheng speak publicly about hearing? ──
+  Game.hearerHasSpoke = function () {
+    return Game.hasFlag("zheng_spoke_hearing");
+  };
+
 })();

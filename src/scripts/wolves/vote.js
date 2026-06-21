@@ -1,9 +1,15 @@
 /*
- * vote.js - Wolf team voting system: score targets + decide night kill
+ * vote-beta.js - Wolf pack discussion flow (BETA)
+ *
+ * Key change from vote.js:
+ *   - Soul-bound (缚魂) wolves CANNOT attend the nightly meeting
+ *   - Remaining wolves need UNANIMOUS consent to kill
+ *   - If even 1 attending wolf disagrees -> safe night (no kill)
+ *   - Single wolf alone: 50% chance too scared to act alone
  */
 
 (function () {
-  'use strict';
+  "use strict";
 
   function ensureState() {
     if (!State.variables.game) {
@@ -13,159 +19,267 @@
   }
 
   var Game = window.Game;
+  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
 
-  var WOLF_IDS = ['zhou_yang', 'tang_xiaotang', 'zhao_mingcheng', 'gu_yan'];
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
-
-  // Scoring weights for wolf target selection
-  var WEIGHTS = {
-    threat: 2.0,
-    isolation: 1.5,
-    trust_chenmo: -1.0,
-    ability: 1.0,
-    info: 1.2
+  var REASONS = {
+    aggressive: ["他白天太活跃了。", "他看我的眼神不对劲。", "留着他迟早出事。"],
+    calculated: ["他知道得太多了。", "他是最大的变数。", "他活着对我们不利。"],
+    mech: ["他身上有我想要的东西。", "杀了他我能获得能力。"],
+    wolf_king: ["他是最硬的骨头。", "杀了他其他人就不敢动了。"]
   };
 
-  // Score a potential target for a wolf (higher = more likely to kill)
-  Game.scoreTarget = function (charId) {
-    var g = ensureState();
-    if (!g.alive[charId]) return -1;
-    if (WOLF_IDS.indexOf(charId) !== -1) return -1;
-    if (charId === 'chen_mo') return -1; // protagonist protected
+  function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-    var role = Game.roleOf(charId);
-    var profile = GameState.PROFILES[charId] || {};
-
-    var score = 10;
-
-    // Threat score: gods are high threat
-    var threatScore = 3;
-    if (['prophet', 'witch', 'knight', 'magician'].indexOf(role) !== -1) {
-      threatScore = 7;
-    }
-    // Chen Mo with loop memory is dangerous
-    if (charId === 'chen_mo' && Game.hasFlag('loop_awakened')) {
-      threatScore = 8;
-    }
-    // Exposed roles are known threats
-    if (Game.hasRevealed(charId, 'witch_exposed') || Game.hasRevealed(charId, 'identity_exposed')) {
-      threatScore += 3;
-    }
-    score += threatScore * WEIGHTS.threat;
-
-    // Isolation score: targets that are isolated are easier kills
-    var isolationScore = 0;
-    if (charId === 'fang_heng' && Game.hasRevealed(charId, 'identity_exposed')) {
-      isolationScore += 4;
-    }
-    if (charId === 'lin_xiaoman' && Game.knightWeakened()) {
-      isolationScore += 4;
-    }
-    if (charId === 'ye_zhiqiu' && Game.witchBroken()) {
-      isolationScore += 3;
-    }
-    score += isolationScore * WEIGHTS.isolation;
-
-    // Trust score: if Chen Mo trusts someone, wolves want them dead
-    var trustKey = 'trust_' + charId;
-    var trustVal = g.stats[trustKey] || 0;
-    var trustScore = trustVal / 10;
-    if (charId === 'su_wan' || charId === 'jiang_bai') {
-      trustScore = 7;
-    }
-    score += trustScore * WEIGHTS.trust_chenmo;
-
-    score += (profile.ability || 3) * WEIGHTS.ability;
-
-    // Info score: characters with backstory clues are info-rich targets
-    var infoScore = 3;
-    var backstoryClue = GameState.BACKSTORY_KEYS[charId];
-    if (backstoryClue && Game.hasClue(backstoryClue)) {
-      infoScore += 2;
-    }
-    score += infoScore * WEIGHTS.info;
-
-    // Random variance
-    score *= (0.85 + Math.random() * 0.3);
-
-    return Math.round(score);
+  Game.wolfName = function (wolfId) {
+    var names = { zhou_yang: "周阳", tang_xiaotang: "唐小棠", zhao_mingcheng: "赵明城", gu_yan: "顾言" };
+    return names[wolfId] || wolfId;
   };
 
-  // Team-level wolf target selection.
-  // Wolves cannot communicate at night (per design), so instead of requiring
-  // independent votes to reach consensus, the pack acts as one: each alive wolf
-  // contributes its personal preference weights, we aggregate them into a single
-  // weighted distribution, and pick one target. This keeps per-wolf personality
-  // (protecting friends, targeting rivals) while guaranteeing a kill happens.
-  Game.getWolfTarget = function () {
+  // ── Get attending wolves (alive AND not soul-bound) ──
+  // Kill-heart threshold: probability each wolf will attend tonight's hunt.
+  // Early days = high hesitation. Each wolf has different psychology.
+  // Root cause: system psychological erosion intensifies over days.
+  var KILL_HEART = {
+    // zhou_yang: killed before as a child, violence closest to surface
+    zhou_yang:       { d2: 0.60, d3: 0.85, d4plus: 0.98 },
+    // zhao_mingcheng: white glove, used to dirty business but first-hand kill is a threshold
+    zhao_mingcheng:  { d2: 0.30, d3: 0.70, d4plus: 0.95 },
+    // gu_yan: physicist, scholar, hardest to cross the line
+    gu_yan:          { d2: 0.10, d3: 0.40, d4plus: 0.85 }
+  };
+
+  Game.wolfKillHeart = function (wolfId) {
     var g = ensureState();
+    var kh = KILL_HEART[wolfId];
+    if (!kh) return 1.0;
+    var day = g.day || 2;
+    var threshold;
+    if (day <= 2) threshold = kh.d2;
+    else if (day === 3) threshold = kh.d3;
+    else threshold = kh.d4plus;
+    return threshold;
+  };
 
-    var candidates = [];
-
-    Object.keys(g.alive).forEach(function (charId) {
-      if (!g.alive[charId]) return;
-      if (WOLF_IDS.indexOf(charId) !== -1) return;
-      if (charId === 'chen_mo') return; // protagonist protected
-      candidates.push(charId);
+  Game.getAttendingWolves = function () {
+    var g = ensureState();
+    return WOLF_IDS.filter(function (w) {
+      if (!g.alive[w]) return false;
+      // [v9.3.3 FIX] Exiled wolves are locked in the cellar — cannot attend
+      // the nightly kill meeting or participate in any wolf action.
+      if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
+      if (Game.isSoulBound(w)) return false;
+      // Kill-heart check: wolf may hesitate (not attend) early on
+      var heart = Game.wolfKillHeart(w);
+      return Math.random() < heart;
     });
+  };
 
+  Game.selectWolfLeader = function (exclude) {
+    exclude = exclude || [];
+    var attending = Game.getAttendingWolves();
+    if (attending.length === 0) return null;
+    var priority = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+    for (var i = 0; i < priority.length; i++) {
+      if (attending.indexOf(priority[i]) !== -1 && exclude.indexOf(priority[i]) === -1) {
+        return priority[i];
+      }
+    }
+    return attending[attending.length - 1];
+  };
+
+  Game.leaderProposal = function (leaderId) {
+    var g = ensureState();
+    var candidates = Object.keys(g.alive).filter(function (cid) {
+      return g.alive[cid] && cid !== "chen_mo" && cid !== "tang_xiaotang" &&
+           WOLF_IDS.indexOf(cid) === -1 &&
+           Game.roleOf(cid) !== "hidden_wolf";
+    });
     if (candidates.length === 0) return null;
 
-    // Day 1: wolves don't know identities, random kill
-    if (g.day === 1) {
-      return candidates[Math.floor(Math.random() * candidates.length)];
+    // Global: if Fang Heng has been exposed (shot someone), ALL wolves prioritize him.
+    // In China, a man with a gun is terrifying — he must be eliminated first.
+    var pr = g.godSkills.prophet;
+    if (pr && pr.exposed && candidates.indexOf("fang_heng") !== -1 && g.alive["fang_heng"]) {
+      return { target: "fang_heng", reason: "He has a gun. He already killed someone. Eliminate him now." };
+
+    // If Lao Zheng publicly spoke about hearing footsteps at night,
+    // ALL wolves prioritize killing him — he's a surveillance threat.
+    if (Game.hasFlag("zheng_spoke_hearing") && candidates.indexOf("zheng_shoushan") !== -1 && g.alive["zheng_shoushan"]) {
+      return { target: "zheng_shoushan", reason: "他能听见我们夜里的动静。必须处理掉。" };
     }
 
-    var aliveWolves = WOLF_IDS.filter(function (w) { return g.alive[w]; });
+    }
 
-    // Aggregate each wolf's preference weights across all candidates
-    var teamWeights = {};
-    candidates.forEach(function (c) { teamWeights[c] = 1; }); // baseline
+    if (g.day <= 1) {
+      return { target: candidates[Math.floor(Math.random() * candidates.length)], reason: "先随便解决一个。" };
+    }
 
-    aliveWolves.forEach(function (wolfId) {
-      var preferences = {};
-      if (wolfId === 'tang_xiaotang') {
-        preferences['su_wan'] = 4;       // jealous of the female lead
-        preferences['ye_zhiqiu'] = 2;
-      } else if (wolfId === 'gu_yan') {
-        preferences['zheng_shoushan'] = 3; // old zheng knows too much
-        preferences['jiang_bai'] = 2;
-        preferences['su_wan'] = 1;
-      } else if (wolfId === 'zhao_mingcheng') {
-        preferences['zheng_shoushan'] = 4; // old zheng knows too much
-        preferences['fang_heng'] = 3;
-      } else if (wolfId === 'zhou_yang') {
-        preferences['lin_xiaoman'] = 3;   // knight is dangerous
-        preferences['fang_heng'] = 2;     // prophet is dangerous
-        preferences['shen_shen'] = 1;
+    var target = null, reason = "";
+
+    if (leaderId === "zhou_yang") {
+      var aggressive = candidates.filter(function (c) {
+        return Game.hasFlag("confronted_wolf_" + c) || GOD_ROLES.indexOf(Game.roleOf(c)) !== -1;
+      });
+      target = aggressive.length > 0 ? aggressive[Math.floor(Math.random() * aggressive.length)] : candidates[Math.floor(Math.random() * candidates.length)];
+      reason = randomFrom(REASONS.aggressive);
+    } else if (leaderId === "zhao_mingcheng") {
+      // If Fang Heng has been exposed (shot someone), he is top priority —
+      // a man with a gun who is not afraid to use it is the biggest threat.
+      var exposed = false;
+      var pr = g.godSkills.prophet;
+      if (pr && pr.exposed) exposed = true;
+      if (exposed && candidates.indexOf("fang_heng") !== -1) {
+        return { target: "fang_heng", reason: "He has a gun. He already killed someone. We are next." };
+      }
+      var infoRisks = candidates.filter(function (c) {
+        return c === "zheng_shoushan" || c === "fang_heng" || Game.hasRevealed(c, "backstory");
+      });
+      target = infoRisks.length > 0 ? infoRisks[Math.floor(Math.random() * infoRisks.length)] : candidates[Math.floor(Math.random() * candidates.length)];
+      reason = randomFrom(REASONS.calculated);
+    } else if (leaderId === "gu_yan") {
+      var gods = candidates.filter(function (c) {
+        return GOD_ROLES.indexOf(Game.roleOf(c)) !== -1 && !Game.hasFlag("gu_yan_stole_god_power");
+      });
+      if (gods.length > 0) {
+        target = gods[Math.floor(Math.random() * gods.length)];
+        reason = randomFrom(REASONS.mech);
+      } else {
+        target = candidates[Math.floor(Math.random() * candidates.length)];
+        reason = "没有更好的目标了。";
+      }
+    }
+
+    return { target: target, reason: reason };
+  };
+
+  Game.wolfResponse = function (wolfId, proposedTarget, leaderId) {
+    var g = ensureState();
+    var resp = { wolf: wolfId, vote: null, narrative: "" };
+
+    if (wolfId === "zhao_mingcheng") {
+      if (proposedTarget === "chen_mo") {
+        resp.vote = "oppose";
+      } else if (proposedTarget === "zheng_shoushan" || proposedTarget === "fang_heng") {
+        resp.vote = "approve";
+      } else if (Math.random() < 0.2 && leaderId !== "zhao_mingcheng") {
+        resp.vote = "oppose";
+      } else {
+        resp.vote = "approve";
+      }
+    } else if (wolfId === "gu_yan") {
+      var targetRole = Game.roleOf(proposedTarget);
+      if (GOD_ROLES.indexOf(targetRole) !== -1) {
+        resp.vote = "approve";
+      } else if (Math.random() < 0.4) {
+        resp.vote = "oppose";
+      } else {
+        resp.vote = "approve";
+      }
+    } else if (wolfId === "zhou_yang") {
+      if (wolfId === leaderId) {
+        resp.vote = "leader";
+      } else {
+        if (proposedTarget === "tang_xiaotang" || proposedTarget === "chen_mo") {
+          resp.vote = "oppose";
+        } else {
+          resp.vote = "approve";
+        }
+      }
+    }
+    return resp;
+  };
+
+  // ── Resolve discussion: UNANIMOUS consent required ──
+  Game.resolveWolfDiscussion = function () {
+    var g = ensureState();
+    var attending = Game.getAttendingWolves();
+
+    // No wolves attending -> safe night
+    if (attending.length === 0) {
+      return { leader: null, finalTarget: null, resolution: "no_attendance", absent: "all_bound" };
+    }
+
+    // Single wolf alone: 50% chance too scared to act
+    if (attending.length === 1) {
+      if (Math.random() < 0.5) {
+        return { leader: attending[0], finalTarget: null, resolution: "lone_wolf_hesitated", absent: "alone" };
+      }
+    }
+
+    var maxRounds = 3;
+    var usedLeaders = [];
+
+    for (var round = 1; round <= maxRounds; round++) {
+      var leader = Game.selectWolfLeader(usedLeaders);
+      if (!leader) break;
+      usedLeaders.push(leader);
+
+      var proposal = Game.leaderProposal(leader);
+      if (!proposal) return null;
+
+      // Check responses from ALL attending wolves
+      var approve = 0, oppose = 0;
+      attending.forEach(function (wid) {
+        if (wid === leader) { approve++; return; }
+        var r = Game.wolfResponse(wid, proposal.target, leader);
+        if (r.vote === "approve") approve++;
+        else if (r.vote === "oppose") oppose++;
+      });
+
+      // UNANIMOUS: everyone must approve (no opposes)
+      if (oppose === 0) {
+        return {
+          leader: leader,
+          finalTarget: proposal.target,
+          resolution: "unanimous",
+          attendingCount: attending.length
+        };
       }
 
-      // Boost preference for exposed roles (pack-wide signal)
-      candidates.forEach(function (cid) {
-        if (Game.hasRevealed(cid, 'witch_exposed') || Game.hasRevealed(cid, 'identity_exposed')) {
-          preferences[cid] = (preferences[cid] || 0) + 4;
-        }
-      });
-
-      // Some wolves refuse to target certain characters (personal bonds)
-      var veto = [];
-      if (wolfId === 'tang_xiaotang') veto = ['lin_xiaoman', 'chen_mo'];
-
-      candidates.forEach(function (cid) {
-        if (veto.indexOf(cid) !== -1) return;
-        teamWeights[cid] += (preferences[cid] || 0);
-      });
-    });
-
-    // Weighted random selection from the aggregated distribution
-    var total = 0;
-    candidates.forEach(function (c) { total += teamWeights[c]; });
-    var r = Math.random() * total;
-    var accum = 0;
-    for (var i = 0; i < candidates.length; i++) {
-      accum += teamWeights[candidates[i]];
-      if (r <= accum) return candidates[i];
+      // Someone disagreed — try next round with a different leader
     }
-    return candidates[candidates.length - 1];
+
+    // All rounds exhausted, no consensus -> SAFE NIGHT
+    return {
+      leader: null,
+      finalTarget: null,
+      resolution: "no_consensus",
+      attendingCount: attending.length
+    };
   };
+
+  function makeResult(leader, proposal, responses, resolution, finalTarget) {
+    return {
+      leader: leader,
+      leaderName: leader ? Game.wolfName(leader) : null,
+      proposal: proposal,
+      responses: responses,
+      resolution: resolution,
+      finalTarget: finalTarget
+    };
+  }
+
+  // ── Target selection ──
+  Game.getWolfTarget = function () {
+    var discussion = Game.resolveWolfDiscussion();
+    if (discussion && discussion.finalTarget) return discussion.finalTarget;
+    return null;
+  };
+
+  // ── Expose how many wolves are attending (for stats) ──
+  Game.wolfAttendingCount = function () {
+    return Game.getAttendingWolves().length;
+  };
+
+  // ── Expose last discussion result for stats ──
+  Game.lastDiscussionResult = null;
+  var origGetWolfTarget = Game.getWolfTarget;
+  Game.getWolfTarget = function () {
+    var result = Game.resolveWolfDiscussion();
+    Game.lastDiscussionResult = result;
+    if (result && result.finalTarget) return result.finalTarget;
+    return null;
+  };
+
 })();
