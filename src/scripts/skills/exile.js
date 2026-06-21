@@ -665,7 +665,7 @@ var protect = {
     }
 
     // Normal order for the other four accusers.
-    var order = ['lin_xiaoman', 'fang_heng', 'zhao_mingcheng', 'gu_yan'];
+    var order = ['fang_heng', 'lin_xiaoman', 'zhao_mingcheng', 'gu_yan'];
     for (var i = 0; i < order.length; i++) {
       var acc = order[i];
       if (!g.alive[acc]) continue;
