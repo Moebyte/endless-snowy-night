@@ -113,10 +113,16 @@
       g.lastWolfKill.special = "body_removed";
     }
 
-    // ── Wolf king mutual kill ──
-    if (killer === "zhou_yang" && !g.alive["zhou_yang"]) {
-      // Zhou Yang was killed in the process (e.g. by knight duel)
-      // Handled elsewhere; note it here
+    // ── Wolf king mutual kill (被动同归) ──
+    // When Zhou Yang (wolf king) is KILLED by a wolf teammate due to
+    // magician swap (致幻自杀), his death reflex triggers and takes
+    // the killer down with him.
+    if (friendlyFire && resolvedTarget === "zhou_yang" && killer !== "zhou_yang") {
+      // Zhou Yang is dead (just killed), now kill the killer too
+      Game.kill(killer);
+      special = "wolf_king_mutual_swap";
+      g.lastWolfKill.special = special;
+      g.lastWolfKill.mutualKillTarget = killer;
     }
 
     // Record the killer preference for narrative
@@ -196,21 +202,33 @@
     var targetRole = Game.roleOf(target);
     var isGod = GOD_ROLES.indexOf(targetRole) !== -1;
 
-    // Gu Yan wants to kill gods to steal their power
+    // ── God targets: special motives ──
+    // Gu Yan (mech wolf) wants to kill gods to steal their power
     if (isGod && aliveWolves.indexOf("gu_yan") !== -1 && !Game.hasFlag("gu_yan_stole_god_power")) {
-      // 70% chance Gu Yan volunteers for the kill
-      if (Math.random() < 0.7) return "gu_yan";
+      if (Math.random() < 0.6) return "gu_yan";
     }
-
-    // Zhao Mingcheng prefers to kill high-value targets (body removal)
+    // Zhao Mingcheng (cleaner) wants to kill gods to remove the body
     if (isGod && aliveWolves.indexOf("zhao_mingcheng") !== -1) {
-      if (Math.random() < 0.5) return "zhao_mingcheng";
+      if (Math.random() < 0.45) return "zhao_mingcheng";
     }
 
-    // Zhou Yang, as wolf king, takes charge by default
-    if (aliveWolves.indexOf("zhou_yang") !== -1) return "zhou_yang";
-
-    // Fallback: random alive wolf
-    return aliveWolves[Math.floor(Math.random() * aliveWolves.length)];
+    // ── Non-god targets or god kill fell through: rotate fairly ──
+    // All three wolves share the risk. No one defaults to always killing.
+    // Weighted random: Zhou Yang slightly lower (he's the most valuable piece).
+    var candidates = aliveWolves.filter(function (w) { return w !== "tang_xiaotang"; });
+    var weights = candidates.map(function (w) {
+      if (w === "zhou_yang") return 2;      // wolf king: valuable, less risky assignments
+      if (w === "zhao_mingcheng") return 3; // cleaner: willing
+      if (w === "gu_yan") return 3;         // mech wolf: willing
+      return 1;
+    });
+    var total = weights.reduce(function (a, b) { return a + b; }, 0);
+    var roll = Math.random() * total;
+    var acc = 0;
+    for (var i = 0; i < candidates.length; i++) {
+      acc += weights[i];
+      if (roll < acc) return candidates[i];
+    }
+    return candidates[candidates.length - 1];
   };
 })();

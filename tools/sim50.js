@@ -202,7 +202,7 @@ all.forEach(r => r.log.forEach(l => {
       if (l.medic) { stats.medicObs++; if (l.medic.detected) { stats.medicDetect++; if (l.medic.isKiller) stats.medicDetectWolf++; } }
     if (l.hearer) { if (l.hearer.woke) { stats.hearerWoke++; if (l.hearer.direction) stats.hearerDir++; if (l.hearer.neighborLeft) stats.hearerNeighbor++; } }
 if (l.prophetCounter) { stats.prophetCounterShots++; if (l.prophetCounter.hit) stats.prophetCounterHit++; else stats.prophetCounterMiss++; }
-  if (l.kill.special === 'wolf_king_mutual') stats.wk++;
+  if (l.kill.special === 'wolf_king_mutual' || l.kill.special === 'wolf_king_mutual_swap') stats.wk++;
   if (l.kill.friendlyFire) stats.ff++;
   if (l.kill.special === 'guarded') stats.guarded++;
   if (l.witch && l.witch.ok) {
@@ -263,7 +263,7 @@ function tag(r) {
   const curses = r.log.filter(l=>l.witch && l.witch.action==='curse' && l.witch.ok).length;
   const saves = r.log.filter(l=>l.witch && l.witch.action==='save' && l.witch.ok).length;
   const ff = r.log.filter(l=>l.kill.friendlyFire).length;
-  const wk = r.log.filter(l=>l.kill.special==='wolf_king_mutual').length;
+  const wk = r.log.filter(l=>l.kill.special==='wolf_king_mutual'||l.kill.special==='wolf_king_mutual_swap').length;
   const guarded = r.log.filter(l=>l.kill.special==='guarded').length;
   if (r.wolvesDead >= 3) tags.push('堕仙队覆灭('+r.wolvesDead+'狼死)');
   if (curses >= 3) tags.push('渡君三杀');
@@ -300,6 +300,7 @@ special.forEach(r => {
     if (l.kill.special === 'hidden_wolf_kill') line += ' {隐狼觉醒}';
     if (l.kill.special === 'body_removed') line += ' {抹尸}';
     else if (l.kill.special === 'wolf_king_mutual') line += ' {幽主同归}';
+    else if (l.kill.special === 'wolf_king_mutual_swap') line += ' {致幻同归}';
     else if (l.kill.special === 'friendly_fire') line += ' {致幻自杀}';
     else if (l.kill.special === 'guarded') line += ' {镇煞挡下}';
     if (l.duelTarget) line += ' | 镇煞决斗' + nm(l.duelTarget.target) + '(' + (l.duelTarget.result==='killed_wolf'?'杀狼':l.duelTarget.result==='wolf_king_mutual'?'同归':'自杀') + ')';
