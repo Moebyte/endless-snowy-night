@@ -44,7 +44,7 @@
     memory: '劫主',
     prophet: '昭判',
     witch: '渡君',
-    knight: '镇煚',
+    knight: '镇煞',
     magician: '幻真',
     villager: '凡人',
     wolf_king: '幽主',
@@ -53,12 +53,11 @@
     mechanical_wolf: '噬道'
   };
 
-  // Ending IDs
+  // Ending IDs (v8 three-tier system)
   GameState.ENDINGS = {
+    BAD: 'bad',
     GOOD: 'good',
-    BAD_STARVATION: 'starvation',
-    HIDDEN_GOD: 'god_of_gods',
-    REFUSE_GOD: 'refuse_god'
+    TRUE: 'true'
   };
   // ITEMS: Chinese names + descriptions
   GameState.ITEMS = {
@@ -232,14 +231,14 @@
     chen_mo: { name: "陈默", firstImpression: "你自己。白衫衫皱巴巴的，袖口还有血迹。", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，寡言，习惯用笔记与逻辑拆解问题", talent: "逻辑分析、记笔记、观察系统漏洞", secret: "你是劫主，唯一保留轮回记忆的人。" },
     su_wan: { name: "苏晚", firstImpression: "穿白大褂的女生，气质温和，一直随身带着急救箱。", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔坚定，医者仁心", talent: "急救、诊断中毒/伤势、安抚他人", secret: "凡人·青囊。她没有超自然能力，但凡人的存在决定伪神力量的强弱。" },
     jiang_bai: { name: "江白", firstImpression: "戴耳机的男生，话不多，总坐在靠窗的位置。", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具", secret: "凡人·雷工。他右手腕的旧瘤不是玻璃划的，来源他一直含糊带过。" },
-    fang_heng: { name: "方衡", firstImpression: "三十多岁的男人，穿着深色夹克，话不多，总在观察四周。", age: 35, job: "市刑警支队副队长", personality: "沉稳敏锐，表面温和", talent: "观察微表情、布局审讯、焦点孤立目标", secret: "昭判。他是黑警，收钱封口，与赵明城来山庄前就有私下来往。" },
+    fang_heng: { name: "方衡", firstImpression: "四十出头的男人，穿着深色夹克，第一天主动亮明身份：我是警察，在市局工作。话不多，总在观察四周。", age: 41, job: "警察（自称）", personality: "沉稳敏锐，表面温和", talent: "观察微表情、布局审讯、焦点孤立目标", secret: "昭判。实际是市刑警支队副队长（副处级）、黑警。对外只说在市局工作，不提级别和部门。收钱封口，与赵明城做过交易、互知底牌。" },
     shen_shen: { name: "沈慎", firstImpression: "沉默的中年男人，手指修长，动作很轻，几乎不发出声音。", age: 38, job: "网吧网管", personality: "沉默寡言，动作利落", talent: "手速快、操控感知、观察人心", secret: "伪神·幻真。他曾是地下赌场荷官兼老千，出千害得别人家破人亡。" },
     ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，不爱说话。", age: 32, job: "止仪馆入殓师", personality: "沉静温柔，不爱多言", talent: "医疗护理、急救包扎、配制药剂", secret: "渡君。她能感知生命流逝，还魂夺命，但超过3次就会崩溃。" },
     zheng_shoushan: { name: "郑守山", firstImpression: "年纪最大的男人，自称老郑，说自己是这次旅行的导游。", age: 58, job: "大巴司机", personality: "热情能说会道，熟悉山路", talent: "野外生存、认路、讲故事", secret: "引路人。他开了20年这条山路，有模糊的既视感，似乎知道山庄的某些真相。" },
-    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "伪神·镇煚。她有太妹背景，为了保护唐小棠可以不择手段。" },
+    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "伪神·镇煞。她有太妹背景，为了保护唐小棠可以不择手段。" },
     zhou_yang: { name: "周阳", firstImpression: "高个子体育生，笑容阳光，喜欢和人打招呼。", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好", talent: "奔跑、体能好、带动气氛", secret: "堕仙·幽主。他好胜心极强，享受在竞争中把对手压垮。被杀时可以同归于尽。" },
     tang_xiaotang: { name: "唐小棠", firstImpression: "爱笑的女生，紧紧挝着林小满的手臂，看起来有点怕生。", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强", talent: "读文字、察言观色、写作", secret: "堕仙·匿魂。她幼年被养父虐待猝㷴，精神状态长期不稳定，暗恋陈默。领言家查验为盟友。" },
-    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，自称做外贸生意。", age: 45, job: "外贸公司老板", personality: "圆滑世故，擅长旋旦", talent: "谈判、资源调配、心理施压", secret: "堕仙·无常。他是政治掌客、黑手套，与方衡一起来山庄各取所需。能抹除尸体。" },
+    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，自称做外贸生意。", age: 45, job: "外贸公司老板", personality: "圆滑世故，擅长旋旦", talent: "谈判、资源调配、心理施压", secret: "堕仙·无常。他是政治掮客、白手套，与方衡做过交易、互知对方真实身份（方衡知道他是白手套，他知道方衡是黑警）。来山庄是为收购度假村。能抹除尸体。" },
     gu_yan: { name: "顾言", firstImpression: "戴眼镜的年轻人，手里拿着笔记本，不时低头记录什么。", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强", talent: "物理推理、拆解机关、实验验证", secret: "堕仙·噬道。他曾强夺同门师兄弟的学术成果，引掌能力后只能用一次。" },
   };
 
@@ -336,7 +335,7 @@ GameState.getProfile = function (charId) {
       godSkills: {
         witch: {
           uses: 0,
-          maxUses: 3,
+          maxUses: 2,
           broken: false,
           curses: [],
           materials: {},
@@ -349,12 +348,17 @@ GameState.getProfile = function (charId) {
           // Independent cooldowns: duel (day) and guard (night) no longer share.
           duelCooldown: 0,
           guardCooldown: 0,
-          lastTarget: null,
-          guarding: null
+          // Guard can be consecutive (night apart), so no lastGuardTarget lock.
+          guarding: null,
+          // Lin Xiaoman's personal suspicion toward each character (0-100).
+          // Driven by day events: who targets Tang Xiaotang gets big spikes.
+          suspicion: {}
         },
         prophet: {
           checks: [],
-          exposed: false
+          exposed: false,
+          // Hunter ability: 2 bullets (passive counter-kill + active shoot)
+          bullets: 2
         },
         magician: {
           swapsUsed: 0,
@@ -368,8 +372,23 @@ GameState.getProfile = function (charId) {
       // last wolf kill result
       lastWolfKill: null,
 
+      // day events generated each morning (conflicts, suspicions, observations)
+      // Drives all god-role AI decisions. See day-events.js
+      dayEvents: [],
+
       // memory fragments (persist across loops)
-      memories: []
+      memories: [],
+
+      // Jiang Bai trap system (resets each loop)
+      traps: {
+        armed: false,
+        triggered: false,
+        injuredWolf: null,
+        lastTriggerDay: 0,
+        detected: false,
+        totalTriggers: 0,
+        lastObservedInjury: null
+      }
     };
   };
 

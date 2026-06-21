@@ -1,10 +1,13 @@
 /*
  * night-kill.js
  * Night kill resolution + god/wolf action checks
+ *
+ * Gu Yan (mechanical wolf) only gets power-steal when HE personally kills
+ * a god. If another wolf makes the kill, no power-steal triggers.
  */
 
 (function () {
-  'use strict';
+  "use strict";
 
   function ensureState() {
     if (!State.variables.game) {
@@ -15,156 +18,199 @@
 
   var Game = window.Game;
 
-  // Resolve the wolf pack's night kill. Handles knight guard, magician swap
-  // (including friendly fire / wolf king mutual kill), and mech-wolf power steal.
+  // Known wolves (Tang Xiaotang is hidden — not part of pack kills)
+  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+
+  // Resolve the wolf pack's night kill.
+  // Returns { target, killed, actualTarget, killer, special }
   Game.executeWolfKill = function () {
     var g = ensureState();
 
-    var wolves = ['zhou_yang', 'tang_xiaotang', 'zhao_mingcheng', 'gu_yan'];
-    var godRoles = ['prophet', 'witch', 'knight', 'magician'];
-
     var wolfTarget = Game.getWolfTarget();
-    if (!wolfTarget) return { target: null, killed: false, special: 'no_target' };
+    if (!wolfTarget) return { target: null, killed: false, special: "no_target" };
 
-    var aliveWolves = wolves.filter(function (w) { return g.alive[w]; });
-
-    // Determine the actual killer. Mech wolf (gu_yan) prioritises known gods to
-    // steal their power; otherwise prefer a regular wolf; zhao_mingcheng (cleaner)
-    // sometimes takes the kill so the body can be removed.
-    var killer = null;
-    var targetRole = Game.roleOf(wolfTarget);
-    var isKnownGod = godRoles.indexOf(targetRole) !== -1;
-
-    var availableKillers = aliveWolves.filter(function (w) {
-      var swap = Game.getMagicianSwap();
-      if (swap) {
-        var resolved = Game.resolveSwapTarget(w);
-        if (resolved === wolfTarget) return false;
-      }
+    var aliveWolves = WOLF_IDS.filter(function (w) {
+      if (!g.alive[w]) return false;
+      if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
       return true;
     });
-    if (availableKillers.length === 0) availableKillers = aliveWolves;
+    if (aliveWolves.length === 0) return { target: wolfTarget, killed: false, special: "no_wolves" };
 
-    // Mech wolf prioritises known gods to steal their power.
-    if (isKnownGod && availableKillers.indexOf('gu_yan') !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
-      killer = 'gu_yan';
-    } else {
-      // Cleaner wolf acts as a normal wolf here; body removal is decided
-      // AFTER the kill based on the victim's actual role.
-      var regulars = availableKillers.filter(function (w) { return w !== 'gu_yan'; });
-      if (regulars.length > 0) { killer = regulars[Math.floor(Math.random() * regulars.length)]; }
-      else { killer = availableKillers[Math.floor(Math.random() * availableKillers.length)]; }
+    // Check if target is magician-swapped
+    var resolvedTarget = wolfTarget;
+    var swap = Game.getMagicianSwap();
+    if (swap) {
+      var mapped = Game.resolveSwapTarget(wolfTarget);
+      if (mapped && mapped !== wolfTarget) resolvedTarget = mapped;
     }
 
-    var result = {
+    // Check if target is soul-bound (witch's 缚魂)
+    if (Game.isSoulBound(resolvedTarget)) {
+      return { target: wolfTarget, killed: false, actualTarget: resolvedTarget, special: "soul_bound" };
+    }
+
+    // Determine the killer for this kill
+    var killer = Game.selectWolfKiller(resolvedTarget, aliveWolves, g);
+
+    // Check knight guard: if the knight is guarding the target, kill fails
+    if (typeof Game.knightIsGuarding === "function" && Game.knightIsGuarding(resolvedTarget)) {
+      return {
+        target: wolfTarget,
+        killed: false,
+        actualTarget: resolvedTarget,
+        killer: killer,
+        special: "guarded"
+      };
+    }
+
+    // Detect friendly fire: magician swap redirected the kill onto a wolf
+    var resolvedIsWolf = WOLF_IDS.indexOf(resolvedTarget) !== -1;
+    var friendlyFire = resolvedTarget !== wolfTarget && resolvedIsWolf;
+
+    // Execute the kill
+    Game.kill(resolvedTarget);
+    var isGod = GOD_ROLES.indexOf(Game.roleOf(resolvedTarget)) !== -1;
+
+    // Track the kill result
+    g.lastWolfKill = {
       target: wolfTarget,
-      targetName: GameState.PROFILES[wolfTarget] ? GameState.PROFILES[wolfTarget].name : wolfTarget,
-      actualTarget: wolfTarget,
-      actualTargetName: GameState.PROFILES[wolfTarget] ? GameState.PROFILES[wolfTarget].name : wolfTarget,
+      actualTarget: resolvedTarget,
       killed: true,
+      day: g.day,
+      loop: g.loop,
       killer: killer,
-      killerName: killer ? (GameState.PROFILES[killer] ? GameState.PROFILES[killer].name : killer) : null,
-      special: null,
-      swapped: false,
-      friendlyFire: false,
-      mutualKill: false
+      isGod: isGod,
+      friendlyFire: friendlyFire
     };
 
-    // Knight guard cancels the kill
-    if (typeof Game.knightIsGuarding === 'function' && Game.knightIsGuarding(wolfTarget)) {
-      result.killed = false;
-      result.special = 'protected_by_knight';
-      Game.magicianResetDaily();
-      return result;
+    // Jiang Bai's trap: if the killer triggers a trap, record the injury.
+    // Does NOT prevent the kill — only leaves evidence for the day phase.
+    if (typeof Game.trapCheckTrigger === 'function' && killer) {
+      Game.trapCheckTrigger(killer);
     }
 
-    // Magician swap: the wolves think they killed A, but actually killed B
-    var actualVictim = wolfTarget;
+    var special = null;
+
+    // ── Friendly fire (magician swap caused wolves to kill their own) ──
+    if (friendlyFire) {
+      special = "friendly_fire";
+      g.lastWolfKill.special = "friendly_fire";
+    }
+
+    // ── Mech wolf power steal ──
+    // ONLY triggers if Gu Yan personally made the kill
+    if (killer === "gu_yan" && isGod && !Game.hasFlag("gu_yan_stole_god_power")) {
+      var stolenRole = Game.roleOf(resolvedTarget);
+      Game.mechWolfStealPower(resolvedTarget);
+      special = "mech_steal_" + stolenRole;
+      g.lastWolfKill.special = special;
+    }
+
+    // ── Body removal (cleaner wolf) ──
+    if (killer === "zhao_mingcheng" && isGod) {
+      special = "body_removed";
+      g.lastWolfKill.special = "body_removed";
+    }
+
+    // ── Wolf king mutual kill ──
+    if (killer === "zhou_yang" && !g.alive["zhou_yang"]) {
+      // Zhou Yang was killed in the process (e.g. by knight duel)
+      // Handled elsewhere; note it here
+    }
+
+    // Record the killer preference for narrative
+    g.lastWolfKill.killer = killer;
+    if (special) g.lastWolfKill.special = special;
+
+    return {
+      target: wolfTarget,
+      killed: true,
+      actualTarget: resolvedTarget,
+      killer: killer,
+      special: special,
+      friendlyFire: friendlyFire
+    };
+  };
+
+  // ── Hidden wolf awakening kill ──
+  // When all 3 known wolves are dead, Tang Xiaotang awakens and kills alone.
+  // She is invisible to the prophet (always reads friendly/neutral).
+  // Her kills happen AFTER the main wolf kill check returns no_target (no wolves alive).
+  Game.hiddenWolfKill = function () {
+    var g = ensureState();
+    if (!g.alive["tang_xiaotang"]) return { target: null, killed: false, special: "hw_dead" };
+    if (typeof Game.hiddenWolfAwakened !== "function" || !Game.hiddenWolfAwakened()) {
+      return { target: null, killed: false, special: "hw_not_awakened" };
+    }
+
+    var target = Game.hiddenWolfAIGetKillTarget();
+    if (!target) return { target: null, killed: false, special: "hw_no_target" };
+
+    // Check knight guard
+    if (typeof Game.knightIsGuarding === "function" && Game.knightIsGuarding(target)) {
+      return { target: target, killed: false, actualTarget: target, killer: "tang_xiaotang", special: "hw_guarded" };
+    }
+
+    // Check soul bind
+    if (Game.isSoulBound(target)) {
+      return { target: target, killed: false, actualTarget: target, killer: "tang_xiaotang", special: "hw_soul_bound" };
+    }
+
+    // Check magician swap
+    var resolvedTarget = target;
     var swap = Game.getMagicianSwap();
-    if (swap && Game.isAlive('shen_shen')) {
-      var resolved = Game.resolveSwapTarget(wolfTarget);
-      if (resolved !== wolfTarget) {
-        actualVictim = resolved;
-        result.swapped = true;
-        result.actualTarget = resolved;
-        result.actualTargetName = GameState.PROFILES[resolved] ? GameState.PROFILES[resolved].name : resolved;
-
-        // Hitting another wolf = friendly fire
-        if (aliveWolves.indexOf(resolved) !== -1) {
-          result.friendlyFire = true;
-          result.special = 'friendly_fire';
-          if (resolved === 'zhou_yang') {
-            // Wolf king mutual kill: dies and takes the killer with them
-            result.mutualKill = true;
-            result.special = 'wolf_king_mutual';
-            Game.kill('zhou_yang');
-            if (killer) Game.kill(killer);
-          } else {
-            Game.kill(resolved);
-          }
-          Game.magicianResetDaily();
-          return result;
-        }
-      }
+    if (swap) {
+      var mapped = Game.resolveSwapTarget(target);
+      if (mapped && mapped !== target) resolvedTarget = mapped;
     }
 
-    Game.kill(actualVictim);
+    // Execute kill
+    Game.kill(resolvedTarget);
 
-    // Mech wolf steals the god's power on a god kill
-    if (killer === 'gu_yan' && godRoles.indexOf(Game.roleOf(actualVictim)) !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
-      Game.mechWolfStealPower(actualVictim);
+    g.lastWolfKill = {
+      target: target,
+      actualTarget: resolvedTarget,
+      killed: true,
+      day: g.day,
+      loop: g.loop,
+      killer: "tang_xiaotang",
+      isGod: GOD_ROLES.indexOf(Game.roleOf(resolvedTarget)) !== -1,
+      special: "hidden_wolf_kill"
+    };
+
+    return {
+      target: target,
+      killed: true,
+      actualTarget: resolvedTarget,
+      killer: "tang_xiaotang",
+      special: "hidden_wolf_kill"
+    };
+  };
+
+  // ── Select which wolf makes the kill ──
+  // Gu Yan (mech wolf) actively volunteers if target is a known god
+  // Zhao Mingcheng (cleaner) steps up if he wants the body gone
+  // Zhou Yang (wolf king) takes charge by default
+  Game.selectWolfKiller = function (target, aliveWolves, g) {
+    var targetRole = Game.roleOf(target);
+    var isGod = GOD_ROLES.indexOf(targetRole) !== -1;
+
+    // Gu Yan wants to kill gods to steal their power
+    if (isGod && aliveWolves.indexOf("gu_yan") !== -1 && !Game.hasFlag("gu_yan_stole_god_power")) {
+      // 70% chance Gu Yan volunteers for the kill
+      if (Math.random() < 0.7) return "gu_yan";
     }
 
-    // Cleaner removes the body ONLY if the victim is a god, so the witch
-    // cannot sense/revive a dead god. Villager corpses are left normally.
-    if (killer === 'zhao_mingcheng' && godRoles.indexOf(Game.roleOf(actualVictim)) !== -1) {
-      result.special = 'body_removed';
+    // Zhao Mingcheng prefers to kill high-value targets (body removal)
+    if (isGod && aliveWolves.indexOf("zhao_mingcheng") !== -1) {
+      if (Math.random() < 0.5) return "zhao_mingcheng";
     }
 
-    Game.magicianResetDaily();
-    return result;
-  };
+    // Zhou Yang, as wolf king, takes charge by default
+    if (aliveWolves.indexOf("zhou_yang") !== -1) return "zhou_yang";
 
-  Game.getLastWolfKill = function () {
-    var g = ensureState();
-    return g.lastWolfKill || null;
-  };
-
-  Game.setLastWolfKill = function (result) {
-    var g = ensureState();
-    g.lastWolfKill = result;
-  };
-
-  // Gods draw power from the villagers' belief, so they may act at any time.
-  Game.canGodAct = function () {
-    return true;
-  };
-
-  Game.canWolfAct = function (charId) {
-    if (Game.isNight()) return true;
-    var role = Game.roleOf(charId);
-    // Mech wolf may use a stolen god power during the day
-    if (role === 'mechanical_wolf') {
-      return !!Game.hasFlag('gu_yan_stole_god_power');
-    }
-    return false;
-  };
-
-  // Wolf king retaliation: triggered when killed by a villager/god, but NOT by curse.
-  Game.canWolfKingRetaliate = function (causeOfDeath) {
-    if (causeOfDeath === 'curse') return false;
-    return true;
-  };
-
-  Game.resetGodSkillsDaily = function () {
-    var g = ensureState();
-    g.godSkills.knight.weakened = false;
-  };
-
-  Game.resetGodSkillsLoop = function () {
-    var g = ensureState();
-    g.godSkills.witch = { uses: 0, maxUses: 3, broken: false, hasReviveTarget: null, curses: [], actedTonight: false };
-    g.godSkills.knight = { duelsUsed: 0, weakened: false, lastTarget: null };
-    g.godSkills.prophet = { checks: [], exposed: false, sharedWith: {} };
+    // Fallback: random alive wolf
+    return aliveWolves[Math.floor(Math.random() * aliveWolves.length)];
   };
 })();

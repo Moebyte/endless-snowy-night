@@ -391,6 +391,10 @@ Game.resetLoopState = function () {
 
     Game.resetGodSkillsLoop();
 
+    // reset Jiang Bai trap system
+
+    if (typeof Game.trapReset === 'function') Game.trapReset();
+
   }
 
 Game.advanceDay = function () {
