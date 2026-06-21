@@ -44,12 +44,11 @@
   var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
 
   // The three tracked accusers
-  var ACCUSERS = ['lin_xiaoman', 'fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'];
+  var ACCUSERS = ['fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'];
 
   // Accusation thresholds (suspicion needed to trigger)
   var THRESHOLDS = {
-    lin_xiaoman: 60,     // she acts on emotion; moderate threshold
-    fang_heng: 55,       // cop instinct; slightly lower
+        fang_heng: 55,       // cop instinct; slightly lower
     zhao_mingcheng: 50,  // manipulator; uses accusations strategically
     gu_yan: 45,           // physicist
     jiang_bai: 55          // trap evidence
@@ -114,7 +113,7 @@
     var events = Game.getDayEvents(day);
 
     // Daily decay so old suspicions fade slightly across the loop.
-    ['lin_xiaoman', 'fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'].forEach(function (acc) {
+    ['fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'].forEach(function (acc) {
       var s = e.suspicion[acc];
       if (!s) { e.suspicion[acc] = {}; return; }
       Object.keys(s).forEach(function (tgt) {
@@ -217,7 +216,7 @@ var protect = {
       jiang_bai: ['jiang_bai', 'chen_mo', 'su_wan']
     };
     var wolfTeam = ['zhou_yang', 'tang_xiaotang', 'gu_yan', 'zhao_mingcheng'];
-    ['lin_xiaoman', 'fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'].forEach(function (acc) {
+    ['fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'].forEach(function (acc) {
       var s = e.suspicion[acc];
       if (!s) { e.suspicion[acc] = {}; return; }
       Object.keys(s).forEach(function (tgt) {
@@ -672,7 +671,7 @@ var protect = {
     }
 
     // Normal order for the other four accusers.
-    var order = ['fang_heng', 'lin_xiaoman', 'zhao_mingcheng', 'gu_yan'];
+    var order = ['fang_heng', 'zhao_mingcheng', 'gu_yan'];
     for (var i = 0; i < order.length; i++) {
       var acc = order[i];
       if (!g.alive[acc]) continue;
