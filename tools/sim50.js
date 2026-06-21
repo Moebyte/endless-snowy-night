@@ -300,7 +300,7 @@ special.forEach(r => {
     if (l.kill.special === 'hidden_wolf_kill') line += ' {隐狼觉醒}';
     if (l.kill.special === 'body_removed') line += ' {抹尸}';
     else if (l.kill.special === 'wolf_king_mutual') line += ' {幽主同归}';
-    else if (l.kill.special === 'friendly_fire') line += ' {致幻误杀同伴}';
+    else if (l.kill.special === 'friendly_fire') line += ' {致幻自杀}';
     else if (l.kill.special === 'guarded') line += ' {镇煞挡下}';
     if (l.duelTarget) line += ' | 镇煞决斗' + nm(l.duelTarget.target) + '(' + (l.duelTarget.result==='killed_wolf'?'杀狼':l.duelTarget.result==='wolf_king_mutual'?'同归':'自杀') + ')';
     if (l.prophetCheck) line += ' | 验' + nm(l.prophetCheck.target) + '=' + ({friendly:'友善',neutral:'中立',hostile:'恶意'}[l.prophetCheck.alignment]||l.prophetCheck.alignment);
