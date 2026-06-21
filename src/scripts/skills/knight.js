@@ -337,12 +337,17 @@
       }
     }
 
-    if (bestSusp >= 65) {
-      return best;
-    }
-
-    // Lower threshold on later days (she gets more desperate)
-    if (g.day >= 5 && bestSusp >= 50) {
+    if (bestSusp >= 65 || (g.day >= 5 && bestSusp >= 50)) {
+      // [v9.4] Hesitation: if the target is actually a good person (not a wolf),
+      // Lin Xiaoman has a 50% chance to hesitate at the last moment. She's
+      // impulsive, not cold-blooded — the voice in her head says "what if
+      // you're wrong?" and she pulls back. This does NOT apply when she has
+      // Fang's cross-validated intel (that returns earlier in the function).
+      var targetRole = Game.roleOf(best);
+      var isWolf = ['wolf', 'wolf_king', 'mechanical_wolf', 'hidden_wolf'].indexOf(targetRole) !== -1;
+      if (!isWolf && Math.random() < 0.5) {
+        return null;  // she hesitates, cools down, doesn't duel today
+      }
       return best;
     }
 
