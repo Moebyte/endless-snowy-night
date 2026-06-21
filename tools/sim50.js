@@ -178,13 +178,13 @@ let _dbgPatterns = all.reduce((s,r) => s + ((r.exileMeta&&r.exileMeta.patterns)|
 console.log('DEBUG exileMeta: ' + _dbgPatterns + ' patterns, ' + _dbgBackfire + ' backfires across 50 runs');
 
 // 统计
-let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0 };
+let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0 };
 all.forEach(r => r.log.forEach(l => {
   if (l.kill.killed) stats.deaths++;
   if (l.swap) stats.swaps++;
   if (l.guardTarget) stats.guards++;
   if (l.kill.special === 'hidden_wolf_kill') { stats.hwKills++; }
-  if (l.duelTarget) { stats.duels++; if (l.duelTarget.result === 'killed_wolf') stats.duelsKilledWolf++; else if (l.duelTarget.result === 'innocent_killed' || l.duelTarget.result === 'wolf_king_mutual') stats.duelsKilledSelf++; }
+  if (l.duelTarget) { stats.duels++; if (l.duelTarget.result === 'killed_wolf') stats.duelsKilledWolf++; else if (l.duelTarget.result === 'wolf_king_mutual') { stats.duelsMutualKill++; stats.duelsKilledSelf++; } else if (l.duelTarget.result === 'innocent_killed') { stats.duelsInnocent++; stats.duelsKilledSelf++; } }
   if (l.prophetShared && l.prophetShared.ok) stats.shares++;
   if (l.prophetShot) { stats.prophetShots++; if (WOLVES.indexOf(l.prophetShot.target)!==-1) stats.prophetShotsKilledWolf++; if (l.prophetShot.mutualKill) stats.wk++; }
   if (l.prophetCounter) { stats.prophetCounterShots++; if (l.prophetCounter.hit) stats.prophetCounterHit++; else stats.prophetCounterMiss++; }
@@ -235,7 +235,7 @@ console.log('渡君救人: ' + stats.witchSave + ' | 渡君缚魂: ' + stats.wit
 console.log('幻真交换: ' + stats.swaps + ' | 镇煞守卫: ' + stats.guards + ' | 昭判分享: ' + stats.shares);
 console.log('昭判主动开枪: ' + stats.prophetShots + ' (杀狼:' + stats.prophetShotsKilledWolf + ') | 临死反杀: ' + stats.prophetCounterShots + ' (猜中凶手:' + stats.prophetCounterHit + ' 打偏:' + stats.prophetCounterMiss + ')');
 console.log('幽主同归: ' + stats.wk + ' | 堕仙误杀同伴: ' + stats.ff + ' | 镇煞挡刀: ' + stats.guarded);
-console.log('镇煞决斗: ' + stats.duels + ' (杀狼:' + stats.duelsKilledWolf + ' 自杀:' + stats.duelsKilledSelf + ')');
+console.log('镇煞决斗: ' + stats.duels + ' (杀狼:' + stats.duelsKilledWolf + ' 同归狼王:' + stats.duelsMutualKill + ' 砍好人:' + stats.duelsInnocent + ')');
 console.log('隐狼觉醒击杀: ' + stats.hwKills);
 console.log('流放系统: 质疑' + stats.exileAccusations + '次 (成功:' + stats.exileSuccessful + ' 流放狼:' + stats.exiledWolves + ' 流放好人:' + stats.exiledGood + ' 陈默关键票翻盘:' + stats.swingWins + ' 票型反噬:' + stats.blocBackfires + ' 失败:' + stats.exileFailed + ')');
 console.log('江白陷阱: 触发' + stats.trapTriggered + ' 观察' + stats.trapObserved + ' 质疑' + stats.jbAccuse + '(质疑狼:' + stats.jbAccuseWolf + ' 流放狼:' + stats.jbExileWolf + ')');
