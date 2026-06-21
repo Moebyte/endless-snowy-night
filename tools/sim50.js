@@ -122,8 +122,8 @@ function runOne(seed) {
     // If main wolves are dead/inactive, check hidden wolf awakening.
     // Trigger when no kill happened AND it is because wolves are dead (not just hesitating).
     if (!kill.killed) {
-      var knownWolvesAlive = ['zhou_yang', 'zhao_mingcheng', 'gu_yan'].some(function(w) { return g.alive[w]; });
-      if (!knownWolvesAlive) {
+      var knownWolvesActive = ['zhou_yang', 'zhao_mingcheng', 'gu_yan'].some(function(w) { return g.alive[w] && !(typeof Game.isExiled === 'function' && Game.isExiled(w)); });
+      if (!knownWolvesActive) {
       if (typeof Game.hiddenWolfKill === 'function') {
         const hwKill = Game.hiddenWolfKill();
         if (hwKill.killed) {
