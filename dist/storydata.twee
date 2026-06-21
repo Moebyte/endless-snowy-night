@@ -1,5 +1,276 @@
 :: StoryJavaScript
 /*
+ * day-events.js
+ *
+ * White-day event simulator. Generates plausible daytime interactions
+ * (conflicts, suspicions, observations) that drive all god-role AI.
+ *
+ * Events are based on the character interaction matrix:
+ *   - Natural tensions (who dislikes whom)
+ *   - Random triggered conflicts (two people clash over something)
+ *   - Observations (someone notices something "off" about another)
+ *
+ * Each event has: { day, type, a, b, target, observer, weight, desc }
+ *   - type: "conflict" | "suspicion" | "observation" | "tang_hint"
+ *   - weight: how much this event affects suspicion (5-50)
+ *   - "tang_hint": Tang Xiaotang subtly hints someone is suspicious (huge weight for Lin Xiaoman)
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+
+  // Natural tension matrix: a -> b means a has friction with b
+  // Values are base suspicion weights when a conflict triggers
+  var TENSIONS = {
+    // Lin Xiaoman's natural dislikes (from they.md)
+    // She observes others' behavior — not because they target Tang,
+    // but because their vibe is "wrong" to her protective instinct
+    lin_xiaoman: {
+      zhou_yang: 20,      // she senses "hunter's eyes", something dark under his smile
+      fang_heng: 15,      // he interrogates people like suspects
+      zhao_mingcheng: 20, // he evaluates people like merchandise
+      shen_shen: 10,      // he makes people uncomfortable, calculating gaze
+      gu_yan: 15          // he looks at people like lab samples, too intense
+    },
+    // Fang Heng's natural targets (cop instinct)
+    fang_heng: {
+      zhou_yang: 20,      // "right hand always in pocket"
+      chen_mo: 15,        // "knows something but won't say"
+      zhao_mingcheng: 10, // old acquaintance, mutual wariness
+      gu_yan: 10          // "writing formulas, intense"
+    },
+    // Tang Xiaotang's emotional dislikes (hidden wolf, but has feelings)
+    tang_xiaotang: {
+      su_wan: 10,         // rival for Chen Mo
+      fang_heng: 5        // fears being caught
+    },
+    // Zhao Mingcheng targets Fang Heng (secret rivalry)
+    zhao_mingcheng: {
+      fang_heng: 25       // wants to eliminate Fang Heng
+    },
+    // Zhou Yang's fear (he fears people who can expose him)
+    zhou_yang: {
+      chen_mo: 15,        // "he knows something, won't say"
+      fang_heng: 20       // "cop instinct, can see through me"
+    },
+    // Gu Yan observes everyone analytically
+    gu_yan: {
+      fang_heng: 10,
+      chen_mo: 10
+    },
+    // Shen Shen evaluates everyone
+    shen_shen: {
+      zhao_mingcheng: 10,
+      chen_mo: 10
+    }
+  };
+
+  // Characters who can trigger conflict events
+  var CONFLICT_STARTERS = Object.keys(TENSIONS);
+
+  // ---- Public API ----
+
+  // Generate day events for the current day.
+  // Called once per day (at morning transition).
+  Game.generateDayEvents = function () {
+    var g = ensureState();
+    var day = g.day;
+    g.dayEvents = g.dayEvents || [];
+
+    var aliveList = Game.activeList();
+    if (aliveList.length < 3) return g.dayEvents;
+
+    var newEvents = [];
+
+    // 1. Generate 1-3 conflict/suspicion events based on tensions
+    var numEvents = Math.floor(Math.random() * 3); // 0-2 (less noise, B-type carries more signal)
+
+    for (var i = 0; i < numEvents; i++) {
+      // Pick a random starter who is alive
+      var starters = CONFLICT_STARTERS.filter(function (s) {
+        return aliveList.indexOf(s) !== -1;
+      });
+      if (!starters.length) break;
+
+      var starter = starters[Math.floor(Math.random() * starters.length)];
+      var targets = Object.keys(TENSIONS[starter]).filter(function (t) {
+        return aliveList.indexOf(t) !== -1;
+      });
+      if (!targets.length) continue;
+
+      var target = targets[Math.floor(Math.random() * targets.length)];
+      var baseWeight = TENSIONS[starter][target];
+      // Good-vs-good tensions produce weaker events (noise)
+      var starterRole = (typeof Game !== 'undefined' && typeof Game.roleOf === 'function') ? Game.roleOf(starter) : '';
+      var targetRole2 = (typeof Game !== 'undefined' && typeof Game.roleOf === 'function') ? Game.roleOf(target) : '';
+      var isWolfStarter = starterRole === 'wolf_king' || starterRole === 'hidden_wolf' || starterRole === 'wolf' || starterRole === 'mechanical_wolf';
+      var isWolfTarget = targetRole2 === 'wolf_king' || targetRole2 === 'hidden_wolf' || targetRole2 === 'wolf' || targetRole2 === 'mechanical_wolf';
+      // If neither is a wolf, this is good-vs-good noise — halve the weight
+      if (!isWolfStarter && !isWolfTarget) baseWeight = Math.floor(baseWeight / 2);
+
+      // Random variation
+      var weight = Math.max(5, baseWeight + Math.floor(Math.random() * 10) - 5);
+
+      // Pick event type
+      var types = ['conflict', 'suspicion', 'observation'];
+      var type = types[Math.floor(Math.random() * types.length)];
+
+      // For conflict: both parties are involved
+      // For suspicion: starter observes target
+      // For observation: starter notices something about target
+      var event = {
+        day: day,
+        type: type,
+        a: starter,
+        b: target,
+        target: target,
+        observer: starter,
+        weight: weight,
+        desc: type + ': ' + starter + ' -> ' + target + ' (w:' + weight + ')'
+      };
+
+      newEvents.push(event);
+      g.dayEvents.push(event);
+    }
+
+    var WOLF_ROLES_FOR_TELL = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+    // 1b. B-type events: wolves reveal tells during the day
+    // These give good guys a chance to catch wolves through observation
+    var WOLF_TELLS = {
+      zhou_yang: [
+        { type: 'observation', desc: 'zhou_yang right hand always in pocket', weight: 15 },
+        { type: 'observation', desc: 'zhou_yang smile vanishes for a split second', weight: 12 },
+        { type: 'suspicion', desc: 'zhou_yang looks at someone like prey', weight: 18 }
+      ],
+      zhao_mingcheng: [
+        { type: 'observation', desc: 'zhao_mingcheng exchanges glances with fang_heng', weight: 15 },
+        { type: 'suspicion', desc: 'zhao_mingcheng mediates a conflict too smoothly', weight: 10 },
+        { type: 'observation', desc: 'zhao_mingcheng evaluates people like merchandise', weight: 18 }
+      ],
+      gu_yan: [
+        { type: 'observation', desc: 'gu_yan stares at people too intensely', weight: 12 },
+        { type: 'suspicion', desc: 'gu_yan writes formulas obsessively, muttering', weight: 15 },
+        { type: 'observation', desc: 'gu_yan tries to get close to someone with god powers', weight: 20 }
+      ],
+      shen_shen: [
+        // Shen Shen is a god, but his behavior looks suspicious (sitting in corners, evaluating)
+        { type: 'observation', desc: 'shen_shen sits alone, watching everyone', weight: 8 },
+        { type: 'suspicion', desc: 'shen_shen makes someone see things that arent real', weight: 25 }
+      ]
+    };
+
+    // 40% chance of a wolf tell event per day
+    if (Math.random() < 0.7) {
+      var wolfTellStarters = Object.keys(WOLF_TELLS).filter(function(w) {
+        return aliveList.indexOf(w) !== -1;
+      });
+      if (wolfTellStarters.length) {
+        var tellWolf = wolfTellStarters[Math.floor(Math.random() * wolfTellStarters.length)];
+        var tells = WOLF_TELLS[tellWolf];
+        var tell = tells[Math.floor(Math.random() * tells.length)];
+
+        // A random good guy observes this tell
+        var observers = aliveList.filter(function(c) {
+          return c !== tellWolf &&
+                 WOLF_ROLES_FOR_TELL.indexOf(c) === -1; // not a wolf
+        });
+        if (observers.length) {
+          var observer = observers[Math.floor(Math.random() * observers.length)];
+          var tellEvent = {
+            day: day,
+            type: tell.type,
+            a: tellWolf,
+            b: tellWolf,       // the wolf is both source and target of observation
+            target: tellWolf,
+            observer: observer,
+            weight: tell.weight,
+            desc: tell.desc + ' (observed by ' + observer + ')'
+          };
+          newEvents.push(tellEvent);
+          g.dayEvents.push(tellEvent);
+        }
+      }
+    }
+
+        // 2. Tang Xiaotang hint event (only if Tang is alive and it's day 3+)
+    // She subtly hints someone is suspicious — Lin Xiaoman trusts this implicitly.
+    // [v9.3.3 FIX] Tang Xiaotang is a hidden wolf. She senses her wolf teammates
+    // (awakened via the system on Night 1). She would NEVER hint a teammate as
+    // suspicious — that would get them killed. Her hints always target GOOD people.
+    if (g.alive['tang_xiaotang'] && day >= 3 && Math.random() < 0.3) {
+      var WOLF_TEAM = ['zhou_yang', 'tang_xiaotang', 'gu_yan', 'zhao_mingcheng'];
+      var tangTargets = aliveList.filter(function (c) {
+        // Never hint herself, Chen Mo (she loves him), Lin Xiaoman (her best friend),
+        // or any wolf teammate (she protects them).
+        return c !== 'tang_xiaotang' && c !== 'chen_mo' && c !== 'lin_xiaoman' &&
+               WOLF_TEAM.indexOf(c) === -1;
+      });
+      if (tangTargets.length) {
+        var hintTarget = tangTargets[Math.floor(Math.random() * tangTargets.length)];
+        var hintEvent = {
+          day: day,
+          type: 'tang_hint',
+          a: 'tang_xiaotang',
+          b: hintTarget,
+          target: hintTarget,
+          observer: 'lin_xiaoman', // Lin overhears
+          weight: 50, // Huge weight for Lin Xiaoman
+          desc: 'tang_hint: tang_xiaotang hints ' + hintTarget + ' is suspicious'
+        };
+        newEvents.push(hintEvent);
+        g.dayEvents.push(hintEvent);
+      }
+    }
+
+    return newEvents;
+  };
+
+  // Get all events for a specific day
+  Game.getDayEvents = function (day) {
+    var g = ensureState();
+    var d = day || g.day;
+    return (g.dayEvents || []).filter(function (e) { return e.day === d; });
+  };
+
+  // Get all events involving a specific character (as a, b, target, or observer)
+  Game.getEventsInvolving = function (charId, day) {
+    var g = ensureState();
+    var events = g.dayEvents || [];
+    if (day !== undefined) events = events.filter(function (e) { return e.day === day; });
+    return events.filter(function (e) {
+      return e.a === charId || e.b === charId || e.target === charId || e.observer === charId;
+    });
+  };
+
+  // Get events where someone targets Tang Xiaotang (for Lin Xiaoman's rage)
+  Game.getEventsTargetingTang = function (day) {
+    var g = ensureState();
+    var events = g.dayEvents || [];
+    if (day !== undefined) events = events.filter(function (e) { return e.day === day; });
+    return events.filter(function (e) {
+      return e.target === 'tang_xiaotang' || e.b === 'tang_xiaotang';
+    });
+  };
+
+  // Clear all day events (on loop reset)
+  Game.clearDayEvents = function () {
+    var g = ensureState();
+    g.dayEvents = [];
+  };
+
+})();
+
+
+/*
  * game.js
  * Game API: items, clues, flags, endings, loop, safehouse
  */
@@ -189,6 +460,28 @@ Game.aliveList = function () {
     var g = ensureState();
     return Object.keys(g.alive).filter(function (id) { return g.alive[id]; });
   };
+  // ── Active status: alive AND not exiled ──
+  // Use this for target selection, vote participation, AI decisions.
+  // Use isAlive() when you need biological life/death (e.g. witch revive).
+  Game.isActive = function (charId) {
+    var g = ensureState();
+    if (!g.alive[charId]) return false;
+    if (typeof Game.isExiled === 'function' && Game.isExiled(charId)) return false;
+    return true;
+  };
+
+  // Returns array of active (alive + not exiled) character IDs
+  Game.activeList = function () {
+    return Game.aliveList().filter(function (id) {
+      return !(typeof Game.isExiled === 'function' && Game.isExiled(id));
+    });
+  };
+
+  // Count of active characters
+  Game.activeCount = function () {
+    return Game.activeList().length;
+  };
+
 Game.kill = function (charId) {
 
     var g = ensureState();
@@ -390,7 +683,20 @@ Game.resetLoopState = function () {
 
     // reset god skills for new loop
 
-    Game.resetGodSkillsLoop();
+    if (typeof Game.resetGodSkillsLoop === 'function') Game.resetGodSkillsLoop();
+    // [v9.5] Reset per-loop witch state.
+    if (g.godSkills && g.godSkills.witch) {
+      g.godSkills.witch.silverWater = null;
+      g.godSkills.witch.sensedDeath = null;
+      g.godSkills.witch.actedTonight = false;
+    }
+    g.revealed = {};
+
+    // reset Jiang Bai trap system
+
+    if (typeof Game.trapReset === 'function') Game.trapReset();
+    if (typeof Game.medicReset === 'function') Game.medicReset();
+    if (typeof Game.hearerReset === 'function') Game.hearerReset();
 
   }
 
@@ -486,7 +792,7 @@ Game.canKillGod = function (charId) {
 
     // 闁哄鍨堕惃 濞戞搫鎷烽柛娆欐嫹闁哄牆 鎰?鍙?娑?閹蜂即鎳撴笟 閸庢粓宕ｉ敓鑺ョ閵?鎼愮紒浣哄仜閵囨碍鎷呴敓 
 
-    return charId === GameState.GOD_KILLERS.CHEN_MO || charId === GameState.GOD_KILLERS.LAO_ZHENG;
+
 
   }
 
@@ -906,7 +1212,35 @@ Game.getStatus = function () {
 })();
 
 /*
- * knight.js - Knight (Lin Xiaoman) skills: duel + guard + AI
+ * exile.js - Public accusation + exile system (daytime social combat)
+ *
+ * v9.2 design (design-doc 8.5):
+ *   Three tracked accusers can publicly accuse someone:
+ *     - Lin Xiaoman (knight): driven by her own suspicion (protects Tang)
+ *     - Fang Heng (prophet):  driven by "hostile" check results + cop instinct
+ *     - Zhao Mingcheng (wolf): political manipulator, frames good people
+ *
+ *   Flow per day (at most ONE accusation):
+ *     1. Accuser accumulated suspicion toward someone crosses threshold
+ *     2. Accuser publicly accuses: "I think X is a traitor"
+ *     3. COLLECTIVE VOTE: every alive character votes exile / spare
+ *        - Chen Mo (player) is a normal participant, one vote
+ *        - Majority (> half of alive, excluding the accused) -> exile
+ *     4. Exiled character is locked in a cellar, exits all interactions
+ *        (cannot be killed, cannot kill, cannot vote, cannot be checked)
+ *     5. Chen Mo can visit the cellar (protagonist privilege) for intel
+ *
+ *   Social credit: each accusation costs the accuser credibility.
+ *   Frequent accusers lose influence -> later votes swing against them.
+ *   Fang Heng CANNOT accuse after his gun is exposed (nobody believes him).
+ *
+ *   Vote logic by role:
+ *     - Good: votes by own judgment (day events + received info), can be misled
+ *     - Wolves: secretly protect teammates, frame good people (not too obvious)
+ *     - Tang Xiaotang (hidden wolf): tacitly aids wolf team, leans toward
+ *       exiling good people, but never too visibly
+ *     - Fang Heng: uses cop instinct, but post-exposure his vote is ignored
+ *     - Lin Xiaoman: heavily influenced by Tang Xiaotang hints
  */
 
 (function () {
@@ -922,7 +1256,999 @@ Game.getStatus = function () {
   var Game = window.Game;
   var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
 
-  // Knight challenges target to a duel. Kills wolf -> ok. Kills villager -> knight dies.
+  // The three tracked accusers
+  var ACCUSERS = ['fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'];
+
+  // Accusation thresholds (suspicion needed to trigger)
+  var THRESHOLDS = {
+        fang_heng: 55,       // cop instinct; slightly lower
+    zhao_mingcheng: 50,  // manipulator; uses accusations strategically
+    gu_yan: 45,           // physicist
+    jiang_bai: 55          // trap evidence
+  };
+
+  // Exile majority = strictly more than half of "voters"
+  // voters = alive characters except the accused (accuser CAN vote)
+  function majorityNeeded(aliveCount) {
+    return Math.floor(aliveCount / 2) + 1;
+  }
+
+  function ensureExile(g) {
+    if (!g.exile) {
+      g.exile = {
+        suspicion: { lin_xiaoman: {}, fang_heng: {}, jiang_bai: {}, zhao_mingcheng: {}, gu_yan: {} },
+        credit: { lin_xiaoman: 80, fang_heng: 80, jiang_bai: 70, zhao_mingcheng: 70, gu_yan: 65 },
+        history: [],
+        exiled: {},
+        lastAccusationDay: 0,
+        fangExposed: false
+      };
+    }
+    var e = g.exile;
+    if (!e.suspicion) e.suspicion = { lin_xiaoman: {}, fang_heng: {}, jiang_bai: {}, zhao_mingcheng: {}, gu_yan: {} };
+    if (!e.credit) e.credit = { lin_xiaoman: 80, fang_heng: 80, jiang_bai: 70, zhao_mingcheng: 70, gu_yan: 65 };
+    if (!e.history) e.history = [];
+    if (!e.exiled) e.exiled = {};
+    return e;
+  }
+
+  Game.exileEnsure = function () { return ensureExile(ensureState()); };
+
+  // ---- Query ----
+
+  Game.isExiled = function (charId) {
+    var g = ensureState();
+    return !!(g.exile && g.exile.exiled && g.exile.exiled[charId]);
+  };
+
+  Game.exiledList = function () {
+    var g = ensureState();
+    if (!g.exile || !g.exile.exiled) return [];
+    return Object.keys(g.exile.exiled).filter(function (id) { return g.exile.exiled[id]; });
+  };
+
+  Game.exileCanParticipate = function (charId) {
+    if (Game.isExiled(charId)) return false;
+    return Game.isAlive(charId);
+  };
+
+  // Characters who can still be targeted/voted on/checked.
+  Game.exileActiveList = function () {
+    return Game.activeList().filter(function (id) { return !Game.isExiled(id); });
+  };
+
+  // ---- Suspicion update (called once per day, after day events) ----
+
+  Game.exileUpdateSuspicion = function () {
+    var g = ensureState();
+    var e = ensureExile(g);
+    var day = g.day;
+    var events = Game.getDayEvents(day);
+
+    // Daily decay so old suspicions fade slightly across the loop.
+    ['fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'].forEach(function (acc) {
+      var s = e.suspicion[acc];
+      if (!s) { e.suspicion[acc] = {}; return; }
+      Object.keys(s).forEach(function (tgt) {
+        s[tgt] = Math.max(0, s[tgt] - 3);
+      });
+    });
+
+    for (var i = 0; i < events.length; i++) {
+      var ev = events[i];
+
+      // Lin Xiaoman: echoes events she personally observed.
+      if (ev.observer === 'lin_xiaoman' || ev.a === 'lin_xiaoman') {
+        var t1 = ev.target;
+        if (t1 && t1 !== 'lin_xiaoman') {
+          e.suspicion.lin_xiaoman[t1] = (e.suspicion.lin_xiaoman[t1] || 0) + Math.floor(ev.weight / 3);
+        }
+      }
+      // Anyone targeting Tang -> Lin Xiaoman's exile-suspicion spikes hard.
+      if (ev.target === 'tang_xiaotang' || ev.b === 'tang_xiaotang') {
+        var agg = ev.a;
+        if (agg && agg !== 'lin_xiaoman') {
+          e.suspicion.lin_xiaoman[agg] = (e.suspicion.lin_xiaoman[agg] || 0) + ev.weight;
+        }
+      }
+      // Fang Heng: weights events he observed; heavier on direct cop tells.
+      if (ev.observer === 'fang_heng' || ev.a === 'fang_heng') {
+        var t2 = ev.target;
+        if (t2 && t2 !== 'fang_heng') {
+          e.suspicion.fang_heng[t2] = (e.suspicion.fang_heng[t2] || 0) + Math.floor(ev.weight / 2);
+        }
+      }
+      // Fang Heng also echoes strong observation tells from anyone.
+      if (ev.type === 'observation' && ev.observer !== 'fang_heng') {
+        var t3 = ev.target;
+        if (t3 && t3 !== 'fang_heng' && ev.weight >= 12) {
+          e.suspicion.fang_heng[t3] = (e.suspicion.fang_heng[t3] || 0) + Math.floor(ev.weight / 3);
+        }
+      }
+      // ── Both wolves actively frame good people (shared wolf tactic) ──
+      // Active suspicion construction is a wolf-team universal skill, not
+      // exclusive to one member. Both Zhao Mingcheng and Gu Yan absorb events
+      // from ALL observers (not just their own) and build cases against
+      // threats. Personality differences are reflected in weight and style.
+
+      var tWolf = ev.target || ev.b;
+      // Zhao Mingcheng: political fixer — watches from shadows, plants seeds.
+      // Absorbs events at 1/3 weight (quieter, less direct than Gu Yan).
+      if (tWolf && tWolf !== 'zhao_mingcheng') {
+        var zmWeight = (ev.observer === 'zhao_mingcheng') ? Math.floor(ev.weight / 2) : Math.floor(ev.weight / 3);
+        e.suspicion.zhao_mingcheng[tWolf] = (e.suspicion.zhao_mingcheng[tWolf] || 0) + zmWeight;
+      }
+      // Gu Yan: physicist — analytical, builds logical cases openly.
+      // Absorbs events at 1/2 weight (more assertive than Zhao).
+      if (tWolf && tWolf !== 'gu_yan') {
+        var gyWeight = (ev.observer === 'gu_yan') ? ev.weight : Math.floor(ev.weight / 2);
+        e.suspicion.gu_yan[tWolf] = (e.suspicion.gu_yan[tWolf] || 0) + gyWeight;
+      }
+
+      // Both wolves actively build cases against key threats:
+      // Fang Heng (prophet), Lin Xiaoman (knight), Shen Shen (magician).
+      var wolfThreats = ['fang_heng', 'lin_xiaoman', 'shen_shen'];
+      for (var wt = 0; wt < wolfThreats.length; wt++) {
+        var wThreat = wolfThreats[wt];
+        if (ev.a === wThreat || ev.b === wThreat || ev.target === wThreat) {
+          // Gu Yan: 1/3 extra (analytical, builds detailed case)
+          if (wThreat !== 'gu_yan') {
+            e.suspicion.gu_yan[wThreat] = (e.suspicion.gu_yan[wThreat] || 0) + Math.floor(ev.weight / 3);
+          }
+          // Zhao Mingcheng: 1/4 extra (quieter, but just as targeted)
+          if (wThreat !== 'zhao_mingcheng') {
+            e.suspicion.zhao_mingcheng[wThreat] = (e.suspicion.zhao_mingcheng[wThreat] || 0) + Math.floor(ev.weight / 4);
+          }
+        }
+      }
+    }
+
+    // Lin Xiaoman: mirror knight.suspicion (authoritative, includes Tang bias).
+    if (g.godSkills && g.godSkills.knight && g.godSkills.knight.suspicion) {
+      var ks = g.godSkills.knight.suspicion;
+      Object.keys(ks).forEach(function (tgt) {
+        e.suspicion.lin_xiaoman[tgt] = Math.max(e.suspicion.lin_xiaoman[tgt] || 0, ks[tgt] || 0);
+      });
+    }
+
+    // Fang Heng: fold his "hostile" prophet checks into suspicion.
+    if (g.godSkills && g.godSkills.prophet && g.godSkills.prophet.checks) {
+      g.godSkills.prophet.checks.forEach(function (chk) {
+        if (chk.result === 'hostile') {
+          e.suspicion.fang_heng[chk.target] = (e.suspicion.fang_heng[chk.target] || 0) + 25;
+        }
+      });
+    }
+
+    // Cap + protected characters per accuser.
+var protect = {
+      lin_xiaoman: ['tang_xiaotang', 'chen_mo', 'lin_xiaoman'],
+      fang_heng: ['fang_heng', 'chen_mo'],
+      zhao_mingcheng: ['zhao_mingcheng'],
+      gu_yan: ['gu_yan'],  // Gu Yan
+      jiang_bai: ['jiang_bai', 'chen_mo', 'su_wan']
+    };
+    var wolfTeam = ['zhou_yang', 'tang_xiaotang', 'gu_yan', 'zhao_mingcheng'];
+    ['fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'].forEach(function (acc) {
+      var s = e.suspicion[acc];
+      if (!s) { e.suspicion[acc] = {}; return; }
+      Object.keys(s).forEach(function (tgt) {
+        if (s[tgt] > 100) s[tgt] = 100;
+        if (protect[acc].indexOf(tgt) !== -1) s[tgt] = 0;
+      });
+      // Zhao Mingcheng never seriously accuses his own wolf teammates.
+      if (acc === 'zhao_mingcheng') {
+        wolfTeam.forEach(function (wt) {
+          if (s[wt]) s[wt] = Math.min(s[wt], 20);
+        });
+      }
+      // Gu Yan also protects wolf teammates from his own accusations
+      if (acc === 'gu_yan') {
+        wolfTeam.forEach(function (wt) {
+          if (s[wt]) s[wt] = Math.min(s[wt], 20);
+        });
+      }
+    });
+  };
+
+  Game.exileGetSuspicion = function (accuser, target) {
+    var e = ensureExile(ensureState());
+    return (e.suspicion[accuser] || {})[target] || 0;
+  };
+
+  Game.exileGetCredit = function (accuser) {
+    var e = ensureExile(ensureState());
+    return e.credit[accuser] || 0;
+  };
+
+  // ---- Fang Heng exposure (called by prophet.js when he shoots) ----
+
+  Game.exileMarkFangExposed = function () {
+    var e = ensureExile(ensureState());
+    e.fangExposed = true;
+    e.credit.fang_heng = 0;  // nobody trusts an exposed gunman
+  };
+
+  // ---- AI: who does each accuser want to accuse today? ----
+
+  Game.exileAIGetAccusationTarget = function (accuser) {
+    var g = ensureState();
+    var e = ensureExile(g);
+
+    if (g.day === e.lastAccusationDay) return null;
+    if (accuser === 'fang_heng' && e.fangExposed) return null;
+    if (!g.alive[accuser]) return null;
+
+    // Jiang Bai: his accusation comes from TRAP EVIDENCE, not accumulated
+    // suspicion. Check this BEFORE the generic candidates filter, because
+    // his suspicion values won't reach threshold through day events.
+    if (accuser === 'jiang_bai') {
+      var jbG = ensureState();
+      var trapTarget = null;
+      if (jbG.traps && jbG.traps.lastObservedInjury && jbG.alive[jbG.traps.lastObservedInjury]) {
+        trapTarget = jbG.traps.lastObservedInjury;
+      }
+      if (trapTarget) {
+        // Protected: never accuse roommate or girlfriend
+        if (trapTarget === 'chen_mo' || trapTarget === 'su_wan' || trapTarget === 'jiang_bai') return null;
+        // Low-credit check: even with evidence, sometimes holds back
+        if ((e.credit['jiang_bai'] || 0) < 20 && Math.random() < 0.4) return null;
+        return trapTarget;
+      }
+      // No trap evidence -> Jiang Bai doesn't accuse
+      return null;
+    }
+
+    var threshold = THRESHOLDS[accuser] || 60;
+    var s = e.suspicion[accuser] || {};
+
+    var candidates = Game.exileActiveList().filter(function (id) {
+      if (id === accuser) return false;
+      if (s[id] === undefined || s[id] < threshold) return false;
+      return true;
+    });
+    if (!candidates.length) return null;
+
+    candidates.sort(function (a, b) { return s[b] - s[a]; });
+    var target = candidates[0];
+
+// Zhao Mingcheng: never accuse a wolf teammate, never on day 1.
+    if (accuser === 'zhao_mingcheng') {
+      var tRole = Game.roleOf(target);
+      if (WOLF_ROLES.indexOf(tRole) !== -1) return null;
+      if (g.day < 2) return null;
+    }
+
+    // Gu Yan: never accuse a wolf teammate, never on day 1.
+    // He's more patient than Zhao — waits for day 2+ to build a case.
+    if (accuser === 'gu_yan') {
+      var tRoleG = Game.roleOf(target);
+      if (WOLF_ROLES.indexOf(tRoleG) !== -1) return null;
+      if (g.day < 2) return null;
+    }
+
+    // Lin Xiaoman: never accuse Tang or Chen Mo.
+    if (accuser === 'lin_xiaoman') {
+      if (target === 'tang_xiaotang' || target === 'chen_mo') return null;
+    }
+
+    // Low-credit accusers sometimes hold back.
+    if ((e.credit[accuser] || 0) < 20 && Math.random() < 0.6) return null;
+
+    return target;
+  };
+
+  // ---- Vote simulation (three-state: exile / abstain / spare) ----
+  // [v9.3.2] Rule: exile succeeds if votesFor > votesAgainst (simple majority).
+  // Abstains do NOT count — silence is neither support nor opposition.
+  // Returns { votesFor, votesAgainst, abstains, voters: [{id, vote, reason}] }
+
+  Game.exileVote = function (accuser, target) {
+    var g = ensureState();
+    var voters = Game.exileActiveList().filter(function (id) {
+      return id !== target;
+    });
+
+    var e = ensureExile(g);
+    var targetRole = Game.roleOf(target);
+    var targetIsWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
+    var accuserExposed = (accuser === 'fang_heng' && e.fangExposed);
+
+    var votesFor = 0, votesAgainst = 0, abstains = 0;
+    var voterLog = [];
+
+    // Precompute Chen Mo's vote so Jiang Bai & Su Wan can follow it.
+    // Chen Mo NEVER abstains — the player always makes a choice.
+    var chenMoVoteResult = null;  // 'exile' | 'spare'
+    if (g.alive['chen_mo'] && voters.indexOf('chen_mo') !== -1) {
+      var _sAcc = (e.suspicion[accuser] || {})[target] || 0;
+      var _pEvt = 0;
+      var _evsCM = Game.getDayEvents(g.day);
+      for (var _k = 0; _k < _evsCM.length; _k++) {
+        if (_evsCM[_k].target === target || _evsCM[_k].b === target) _pEvt += _evsCM[_k].weight;
+      }
+      var _cmScore = _sAcc * 0.5 + _pEvt * 0.5 + (e.credit[accuser] || 0) * 0.2;
+      // Jiang Bai's trap evidence is compelling — Chen Mo trusts physical proof
+      if (accuser === 'jiang_bai' && g.traps && g.traps.lastObservedInjury === target) {
+        _cmScore += 30;  // physical evidence boost
+      }
+      chenMoVoteResult = _cmScore > 45 ? 'exile' : 'spare';
+    }
+
+    for (var i = 0; i < voters.length; i++) {
+      var v = voters[i];
+      var vRole = Game.roleOf(v);
+      var vIsWolf = WOLF_ROLES.indexOf(vRole) !== -1;
+      var vote = 'abstain';  // default to abstain (three-state)
+      var reason = '';
+
+      if (v === accuser) {
+        // Accuser votes exile (unless exposed -> abstain, nobody listens)
+        vote = accuserExposed ? 'abstain' : 'exile';
+        reason = accuserExposed ? 'accuser_exposed_abstain' : 'self_accuse';
+      }
+      // Chen Mo: player vote. NEVER abstains (player always chooses).
+      else if (v === 'chen_mo') {
+        vote = chenMoVoteResult !== null ? chenMoVoteResult : 'spare';
+        reason = 'player_judgment';
+      }
+      // Su Wan: follow Chen Mo 65% (45% if Fang accuses).
+      // Jiang Bai: NOW a tracked accuser with trap evidence, so he has his
+      // own vote logic below. When he's a voter (not the accuser), he still
+      // leans toward Chen Mo but has independent judgment from trap evidence.
+      else if (v === 'su_wan') {
+        if (chenMoVoteResult !== null) {
+          var followRate = (accuser === 'fang_heng') ? 0.45 : 0.65;
+          if (Math.random() < followRate) {
+            vote = chenMoVoteResult;
+            reason = 'follow_chen_mo';
+          } else {
+            vote = 'abstain';
+            reason = 'no_opinion';
+          }
+        } else {
+          vote = 'abstain';
+          reason = 'lost_chenmo_anchor';
+        }
+      }
+      // Jiang Bai as voter: if his trap caught the accused person, he votes
+      // exile with high confidence (physical proof). Otherwise follows Chen Mo
+      // but more independently than Su Wan (he's the pragmatic engineer).
+      else if (v === 'jiang_bai') {
+        var jbTrapMatch = false;
+        if (g.traps && g.traps.lastObservedInjury === target) {
+          jbTrapMatch = true;
+        }
+        if (jbTrapMatch) {
+          // Trap evidence matches the accused — strong conviction
+          vote = 'exile';
+          reason = 'trap_evidence_match';
+        } else if (chenMoVoteResult !== null) {
+          var jbFollow = (accuser === 'fang_heng') ? 0.45 : 0.65;
+          if (Math.random() < jbFollow) {
+            vote = chenMoVoteResult;
+            reason = 'follow_chen_mo';
+          } else {
+            vote = 'abstain';
+            reason = 'no_opinion';
+          }
+        } else {
+          vote = 'abstain';
+          reason = 'lost_chenmo_anchor';
+        }
+      }
+      // Wolves vote strategically.
+      else if (vIsWolf) {
+        if (targetIsWolf) {
+          // Protect teammate — but smart wolves sometimes abstain to hide
+          if ((v === 'zhao_mingcheng' || v === 'gu_yan') && Math.random() < 0.25) {
+            vote = 'abstain';
+            reason = 'wolf_hide_stance';
+          } else {
+            vote = 'spare';
+            reason = 'wolf_protect_teammate';
+          }
+        } else {
+          // Frame a good person — willingness varies by personality
+          var blocWillingness = {
+            zhao_mingcheng: 0.50,
+            gu_yan: 0.55,
+            zhou_yang: 0.85,
+            tang_xiaotang: 0.75
+          };
+          var will = blocWillingness[v] !== undefined ? blocWillingness[v] : 0.7;
+          if (v === 'tang_xiaotang' && g.day <= 3) will = 0.30;
+
+          var roll = Math.random();
+          if (roll < will) {
+            vote = 'exile';
+            reason = (v === 'tang_xiaotang' && g.day <= 3) ? 'tang_laying_low' : 'wolf_frame_good';
+          } else if (roll < will + 0.20) {
+            // Smart wolves sometimes abstain instead of openly opposing
+            vote = 'abstain';
+            reason = 'wolf_abstain_strategic';
+          } else {
+            vote = 'spare';
+            reason = 'wolf_feign_neutral';
+          }
+        }
+      }
+      // Fang Heng: never abstains (cop instinct — he always has an opinion).
+      else if (v === 'fang_heng') {
+        var fSusp = (e.suspicion.fang_heng || {})[target] || 0;
+        var fCred = e.credit[accuser] || 0;
+        if (accuserExposed) fCred = 0;
+        // Fang Heng gives weight to Jiang Bai's trap evidence (physical proof)
+        if (accuser === 'jiang_bai' && g.traps && g.traps.lastObservedInjury === target) {
+          fSusp += 35;
+        }
+        vote = (fSusp + fCred * 0.3) > 50 ? 'exile' : 'spare';
+        reason = 'cop_instinct';
+      }
+      // Lin Xiaoman: rarely abstains (she always has strong feelings).
+      // Only abstains if Tang hasn't hinted AND she has no personal read.
+      else if (v === 'lin_xiaoman') {
+        var lSusp = (e.suspicion.lin_xiaoman || {})[target] || 0;
+        // Check Tang hint
+        var tangHinted = false;
+        var evsL = Game.getDayEvents(g.day);
+        for (var li = 0; li < evsL.length; li++) {
+          if (evsL[li].type === 'tang_hint' && evsL[li].target === target) { tangHinted = true; break; }
+        }
+        if (tangHinted) lSusp += 40;
+        // Gold water for Lin too (she barely trusts Fang, but +45 is strong)
+        if (typeof Game.prophetReceivedInfo === 'function') {
+          var lGold = Game.prophetReceivedInfo('lin_xiaoman', target);
+          if (lGold && lGold.result === 'hostile') lSusp += 45;
+        }
+        if (lSusp > 50) { vote = 'exile'; reason = tangHinted ? 'tang_hinted' : 'own_suspicion'; }
+        else if (lSusp > 15) { vote = 'spare'; reason = 'insufficient_suspicion'; }
+        else { vote = 'abstain'; reason = 'no_read'; }  // rare
+      }
+      // Ye Zhiqiu (witch): gentle, hesitant. Abstains when unsure.
+      else if (v === 'ye_zhiqiu') {
+        var ySusp = 0;
+        // Ye Zhiqiu trusts Jiang Bai's physical trap evidence
+        if (accuser === 'jiang_bai' && g.traps && g.traps.lastObservedInjury === target) {
+          ySusp += 40;
+        }
+        var evsY = Game.getDayEvents(g.day);
+        for (var yi = 0; yi < evsY.length; yi++) {
+          if ((evsY[yi].target === target || evsY[yi].b === target) && evsY[yi].observer === 'ye_zhiqiu') {
+            ySusp += evsY[yi].weight;
+          }
+        }
+        // Silver water: if she revived this person, she trusts them -> spare
+        var witchY = g.godSkills && g.godSkills.witch;
+        if (witchY && witchY.revivedTargets && witchY.revivedTargets.indexOf(target) !== -1) {
+          vote = 'spare'; reason = 'silver_water_trust';
+        } else if (ySusp > 50) { vote = 'exile'; reason = 'observed_suspicion'; }
+        else if (ySusp > 20) { vote = 'abstain'; reason = 'uncertain'; }  // gentle hesitation
+        else { vote = 'abstain'; reason = 'no_opinion'; }
+      }
+      // Shen Shen (magician): gambler, hedges bets -> abstains often.
+      else if (v === 'shen_shen') {
+        var sSusp = 0;
+        var evsS = Game.getDayEvents(g.day);
+        for (var si = 0; si < evsS.length; si++) {
+          if ((evsS[si].target === target || evsS[si].b === target)) sSusp += Math.floor(evsS[si].weight / 2);
+        }
+        if (sSusp > 55) { vote = 'exile'; reason = 'gambler_read'; }
+        else if (sSusp > 30) { vote = 'abstain'; reason = 'hedging'; }
+        else { vote = 'abstain'; reason = 'no_stake'; }
+      }
+      // Zheng Shoushan (old driver villager): not a detective, abstains often.
+      else if (v === 'zheng_shoushan') {
+        var zSusp = 0;
+        var evsZ = Game.getDayEvents(g.day);
+        for (var zi = 0; zi < evsZ.length; zi++) {
+          if ((evsZ[zi].target === target || evsZ[zi].b === target) && evsZ[zi].observer === 'zheng_shoushan') {
+            zSusp += evsZ[zi].weight;
+          }
+        }
+        // Gold water helps — if Fang told him, he listens
+        if (typeof Game.prophetReceivedInfo === 'function') {
+          var zGold = Game.prophetReceivedInfo('zheng_shoushan', target);
+          if (zGold && zGold.result === 'hostile') zSusp += 45;
+        }
+        if (zSusp > 50) { vote = 'exile'; reason = 'gold_water_or_observation'; }
+        else if (zSusp > 25) { vote = 'abstain'; reason = 'insufficient_info'; }
+        else { vote = 'abstain'; reason = 'just_a_driver'; }
+      }
+      // Generic good character (fallback)
+      else {
+        var gSusp = 0;
+        var evsG = Game.getDayEvents(g.day);
+        for (var gi = 0; gi < evsG.length; gi++) {
+          if ((evsG[gi].target === target || evsG[gi].b === target) && evsG[gi].observer === v) {
+            gSusp += evsG[gi].weight;
+          }
+        }
+        // Gold water
+        if (typeof Game.prophetReceivedInfo === 'function') {
+          var gGold = Game.prophetReceivedInfo(v, target);
+          if (gGold && gGold.result === 'hostile') { gSusp += 45; reason = 'gold_water'; }
+        }
+        var gCred = e.credit[accuser] || 0;
+        if (accuserExposed) gCred = 0;
+        var gTotal = gSusp + gCred * 0.3;
+        if (gTotal > 50) { vote = 'exile'; if(!reason) reason = 'own_judgment'; }
+        else if (gTotal > 20) { vote = 'abstain'; reason = 'uncertain'; }
+        else { vote = 'abstain'; reason = 'no_opinion'; }
+      }
+
+      // Tally
+      if (vote === 'exile') votesFor++;
+      else if (vote === 'spare') votesAgainst++;
+      else abstains++;
+      voterLog.push({ id: v, vote: vote, reason: reason });
+    }
+
+    return { votesFor: votesFor, votesAgainst: votesAgainst, abstains: abstains, voters: voterLog };
+  };
+
+  // ---- Execute accusation + vote + exile ----
+
+  Game.exileAccuse = function (accuser, target) {
+    var g = ensureState();
+    var e = ensureExile(g);
+
+    if (g.day === e.lastAccusationDay) return { ok: false, reason: 'already_accused_today' };
+    if (!g.alive[accuser]) return { ok: false, reason: 'accuser_dead' };
+    if (!g.alive[target]) return { ok: false, reason: 'target_dead' };
+    if (Game.isExiled(target)) return { ok: false, reason: 'target_already_exiled' };
+    if (accuser === 'fang_heng' && e.fangExposed) return { ok: false, reason: 'fang_exposed_cannot_accuse' };
+
+    e.lastAccusationDay = g.day;
+
+    var voteResult = Game.exileVote(accuser, target);
+
+    // [v9.5] Ye Zhiqiu silver-water intervention (BEFORE final tally).
+    // If the accused is the person she revived this round, she may publicly
+    // veto. Her veto adds moral weight (3 spare votes) and EXPOSES her as
+    // the witch -> wolves prioritize her tonight.
+    var witchProtectTriggered = false;
+    if (typeof Game.witchShouldProtect === "function" && Game.isAlive("ye_zhiqiu") && !Game.isExiled("ye_zhiqiu")) {
+      if (Game.witchShouldProtect(target, voteResult)) {
+        var wWeight = Game.witchProtectVoteWeight();
+        voteResult.votesAgainst += wWeight;
+        witchProtectTriggered = true;
+        Game.revealInfo("ye_zhiqiu", "witch_exposed");
+        if (!g.flags) g.flags = {};
+        g.flags["ye_zhiqiu_exposed"] = true;
+        voteResult.voters.push({ id: "ye_zhiqiu", vote: "spare", reason: "silver_water_veto", weight: wWeight });
+      }
+    }
+
+    // [v9.3.2] SIMPLE MAJORITY: exile succeeds if votesFor > votesAgainst.
+    // Abstains do NOT count. Even 2:1 exile wins. Silence = passive acceptance.
+    var exiled = voteResult.votesFor > voteResult.votesAgainst;
+
+    // [v9.3.2] CHEN MO TIE-BREAKER: if it's a tie (votesFor === votesAgainst)
+    // and Chen Mo voted exile, his vote breaks the tie -> exile succeeds.
+    // This gives the player decisive influence in close votes.
+    var swingTriggered = false;
+    if (!exiled && voteResult.votesFor === voteResult.votesAgainst && voteResult.votesFor > 0) {
+      var chenMoVotedExile = voteResult.voters.some(function (vt) {
+        return vt.id === 'chen_mo' && vt.vote === 'exile';
+      });
+      if (chenMoVotedExile) {
+        exiled = true;
+        swingTriggered = true;
+      }
+    }
+
+
+    // Accuser pays credibility (failed accusations cost more).
+    var cost = exiled ? 15 : 25;
+    if (accuser === 'zhao_mingcheng') cost = Math.floor(cost * 0.7);
+    e.credit[accuser] = Math.max(0, (e.credit[accuser] || 0) - cost);
+
+    var record = {
+      day: g.day,
+      loop: g.loop,
+      accuser: accuser,
+      target: target,
+      votesFor: voteResult.votesFor,
+      votesAgainst: voteResult.votesAgainst,
+      abstains: voteResult.abstains,
+      exiled: exiled,
+      voters: voteResult.voters
+    };
+    e.history.push(record);
+
+    // [v9.3-C] Track vote patterns for bloc-detection backfire.
+    Game.exileRecordVotePattern(voteResult, target, exiled);
+
+    if (exiled) {
+      e.exiled[target] = true;
+      // Clear pending god-skill state involving them (e.g. knight guarding).
+      if (g.godSkills && g.godSkills.knight && g.godSkills.knight.guarding === target) {
+        g.godSkills.knight.guarding = null;
+      }
+    }
+
+    return {
+      ok: true,
+      reason: exiled ? 'exiled' : 'spared',
+      accuser: accuser,
+      target: target,
+      votesFor: voteResult.votesFor,
+      votesAgainst: voteResult.votesAgainst,
+      abstains: voteResult.abstains,
+      exiled: exiled,
+      swingTriggered: swingTriggered,
+      witchProtectTriggered: witchProtectTriggered
+    };
+  };
+
+  // ---- AI: run the daytime accusation phase (at most one per day) ----
+  // Priority: Jiang Bai (physical trap evidence) > Lin Xiaoman > Fang Heng > Zhao Mingcheng > Gu Yan.
+  // Jiang Bai's trap evidence is a hard physical fact, so it takes precedence
+  // over everyone else's suspicion/intuition/framing. When he has no evidence,
+  // he simply doesn't participate and the normal order runs.
+
+  Game.exileAIPhase = function () {
+    var g = ensureState();
+    if (!g.alive['chen_mo']) return null;
+
+    Game.exileUpdateSuspicion();
+
+    // Jiang Bai goes FIRST if he has trap evidence today.
+    if (g.alive['jiang_bai'] && !(typeof Game.isExiled === 'function' && Game.isExiled('jiang_bai'))) {
+      var jbTarget = Game.exileAIGetAccusationTarget('jiang_bai');
+      if (jbTarget) {
+        return Game.exileAccuse('jiang_bai', jbTarget);
+      }
+    }
+
+    // Normal order for the other four accusers.
+    var order = ['fang_heng', 'zhao_mingcheng', 'gu_yan'];
+    for (var i = 0; i < order.length; i++) {
+      var acc = order[i];
+      if (!g.alive[acc]) continue;
+      // [v9.3.3 FIX] Exiled accusers cannot initiate accusations.
+      if (typeof Game.isExiled === 'function' && Game.isExiled(acc)) continue;
+      var target = Game.exileAIGetAccusationTarget(acc);
+      if (target) {
+        return Game.exileAccuse(acc, target);
+      }
+    }
+    return null;
+  };
+
+  // ---- Chen Mo visits an exiled character (protagonist privilege) ----
+
+  Game.exileVisit = function (target) {
+    var g = ensureState();
+    if (!Game.isExiled(target)) return { ok: false, reason: 'not_exiled' };
+    return { ok: true, target: target, day: g.day };
+  };
+
+  // ---- Reset (on loop reset) ----
+
+  Game.exileReset = function () {
+    var g = ensureState();
+    g.exile = null;
+    ensureExile(g);
+  };
+
+
+  // ---- [v9.3-C] Vote-pattern detection: bloc-voting backfires on wolves ----
+  // In real werewolf, 4 wolves always voting together is the easiest tell.
+  // We track which wolves voted "exile" on successful good-person exiles.
+  // After 2 bloc patterns (>=3 wolves voting exile on a good target),
+  // a day event fires that raises suspicion toward those wolves.
+
+  Game.exileRecordVotePattern = function (voteResult, target, exiled) {
+    var g = ensureState();
+    var e = ensureExile(g);
+    if (!e.votePatterns) e.votePatterns = [];
+
+    // Only track patterns when the target was a GOOD person (wolves framing).
+    var targetRole = Game.roleOf(target);
+    var targetIsWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
+    if (targetIsWolf) return;  // wolves voting to protect a wolf isn't a tell
+
+    // Record which wolves voted "exile" (frame good) this round.
+    var wolvesVotingExile = [];
+    for (var i = 0; i < voteResult.voters.length; i++) {
+      var vt = voteResult.voters[i];
+      var vtRole = Game.roleOf(vt.id);
+      if (WOLF_ROLES.indexOf(vtRole) !== -1 && vt.vote === 'exile') {
+        wolvesVotingExile.push(vt.id);
+      }
+    }
+
+    // A "bloc pattern" = >=2 wolves voting exile on a good target.
+    // (In a 12-player game, even 2 people always voting together is a tell.)
+    if (wolvesVotingExile.length >= 2) {
+      e.votePatterns.push({
+        day: g.day,
+        loop: g.loop,
+        target: target,
+        exiled: exiled,
+        wolves: wolvesVotingExile
+      });
+    }
+
+    // [v9.3-C tuned] After 1 bloc pattern, trigger suspicion backfire immediately.
+    // Even a single instance of 2+ wolves voting together to frame a good
+    // person is a noticeable tell to a cop (Fang Heng) and Chen Mo.
+    if (e.votePatterns.length >= 1 && !e.backfireTriggered) {
+      Game.exileTriggerBackfire(e.votePatterns);
+      e.backfireTriggered = true;
+    }
+  };
+
+  Game.exileTriggerBackfire = function (patterns) {
+    var g = ensureState();
+    var e = ensureExile(g);
+
+    // Count how many times each wolf appeared in bloc patterns.
+    var wolfCounts = {};
+    for (var i = 0; i < patterns.length; i++) {
+      for (var j = 0; j < patterns[i].wolves.length; j++) {
+        var w = patterns[i].wolves[j];
+        wolfCounts[w] = (wolfCounts[w] || 0) + 1;
+      }
+    }
+
+    // Generate a day event: "several people always vote together, it's suspicious"
+    // This raises Fang Heng's and Chen Mo's suspicion toward repeat offenders.
+    var backfireEvent = {
+      day: g.day,
+      type: 'observation',
+      a: 'chen_mo',               // Chen Mo notices the voting pattern
+      b: 'chen_mo',
+      target: 'chen_mo',          // placeholder, overridden per-wolf below
+      observer: 'fang_heng',      // Fang Heng (cop) also reads the pattern
+      weight: 30,                 // strong signal
+      desc: '票型反噬: 大家发现这几个人总是一起投票，杀心太重'
+    };
+    g.dayEvents = g.dayEvents || [];
+    g.dayEvents.push(backfireEvent);
+
+    // Also directly inject suspicion into Fang Heng and Chen Mo toward
+    // wolves who appeared in >=2 patterns (the core bloc).
+    Object.keys(wolfCounts).forEach(function (wid) {
+      if (wolfCounts[wid] >= 1 && g.alive[wid]) {
+        // Fang Heng's exile-suspicion spikes toward repeat bloc-voters.
+        e.suspicion.fang_heng[wid] = (e.suspicion.fang_heng[wid] || 0) + 35;
+        // Per-wolf day event so other observers pick it up too.
+        var ev = {
+          day: g.day,
+          type: 'observation',
+          a: wid,
+          b: wid,
+          target: wid,
+          observer: 'fang_heng',
+          weight: 25,
+          desc: wid + ' 连续多轮绑票，行为可疑'
+        };
+        g.dayEvents.push(ev);
+      }
+    });
+  };
+
+  // ---- Integration guards: exiled characters cannot be targeted by any system ----
+  // We wrap the key entry points so exile filtering lives entirely in this module.
+
+  function wrapIf(name) {
+    if (typeof Game[name] !== 'function') return;
+    if (Game['__exile_wrapped_' + name]) return;
+    var orig = Game[name];
+    Game[name] = function (targetId) {
+      // For target-selection getters: return null if the picked target is exiled.
+      if (targetId && Game.isExiled(targetId)) {
+        return null;
+      }
+      var result = orig.apply(this, arguments);
+      // getters that return a STRING target id pointing at an exiled char
+      if (typeof result === 'string' && Game.isExiled(result)) {
+        return null;
+      }
+      // getters that return an object with .target/.a/.b pointing at an exiled char
+      if (result && typeof result === 'object') {
+        if (result.target && Game.isExiled(result.target)) return null;
+        if (result.a && Game.isExiled(result.a)) return null;
+        if (result.b && Game.isExiled(result.b)) return null;
+      }
+      return result;
+    };
+    Game['__exile_wrapped_' + name] = true;
+  }
+
+  // Wrap wolf-target getter: wolves cannot pick an exiled target.
+  if (typeof Game.getWolfTarget === 'function' && !Game.__exile_wrapped_getWolfTarget) {
+    var origGWT = Game.getWolfTarget;
+    Game.getWolfTarget = function () {
+      var t = origGWT.apply(this, arguments);
+      if (t && Game.isExiled(t)) return null;
+      return t;
+    };
+    Game.__exile_wrapped_getWolfTarget = true;
+  }
+
+  // Wrap prophet check: cannot investigate an exiled character.
+  wrapIf('prophetAIGetCheckTarget');
+
+  // Wrap witch bind/revive AI: should not target exiled characters.
+  wrapIf('witchAIDecidePreKill');
+  wrapIf('witchAIDecideRevive');
+
+  // Wrap knight AI targeters: cannot duel/guard an exiled character.
+  wrapIf('knightAIGetDuelTarget');
+  wrapIf('knightAIGetGuardTarget');
+
+  // Wrap magician AI: cannot swap an exiled character.
+  wrapIf('magicianAIDecideSwap');
+
+})();
+
+
+/*
+ * hearer.js
+ * Lao Zheng (郑守山) night footstep perception skill.
+ *
+ * Lao Zheng has driven mountain roads for 30 years and stayed in
+ * countless inns. He has an old man'''s light sleep and a driver'''s
+ * directional instinct. When wolves walk the corridor at night to kill,
+ * there'''s a chance he wakes up and can tell which direction they came
+ * from (west stairs vs east stairs) and which way they went.
+ *
+ * Key rules:
+ *   - Only triggers on WOLF kill movement (not witch/knight/magician).
+ *   - Only感知 his own floor (Floor 2, room 203).
+ *   - 35% chance to wake up when a wolf kills on his floor.
+ *   - If he wakes, he detects the direction: W->E or E->W.
+ *   - He can also tell if someone left the room NEXT to his (204 = Gu Yan).
+ *   - Intel is shared verbally during daytime, not auto-transmitted.
+ *
+ * This is a reality skill (现实技能), not a god power.
+ */
+
+(function () {
+  "use strict";
+
+  var Game = window.Game;
+
+  function ensureState() {
+    if (!State.variables.game) State.variables.game = GameState.create();
+    return State.variables.game;
+  }
+
+  // Lao Zheng'''s room and floor
+  var LAO_ZHENG_ROOM = "204";
+  var LAO_ZHENG_FLOOR = 2;
+  var NEIGHBOR_ROOM = "203"; // Gu Yan lives next door (203)
+
+  // ── Initialize hearing state ──
+  Game.hearerInit = function () {
+    var g = ensureState();
+    g.hearer = {
+      lastResult: null,
+      history: []
+    };
+  };
+
+  // ── Main: called after wolf kill each night ──
+  // killInfo: { killer, target, killed, actualTarget, special }
+  // Returns { woke, direction, neighborLeft, day } or null if Lao Zheng is dead.
+  Game.hearerNightCheck = function (killInfo) {
+    var g = ensureState();
+    if (!g.alive["zheng_shoushan"]) return null;
+    if (typeof Game.isExiled === "function" && Game.isExiled("zheng_shoushan")) return null;
+    if (!g.hearer) Game.hearerInit();
+
+    var result = {
+      day: g.day,
+      woke: false,
+      direction: null,      // "W2E" or "E2W"
+      neighborLeft: false,   // did someone leave room 204 (Gu Yan)?
+      killerOnFloor: false   // was the kill on the same floor?
+    };
+
+    // Only check if the wolf kill happened on Lao Zheng'''s floor.
+    // Determine the killer'''s room and target'''s room.
+    var killerRoom = GameState.CHAR_ROOMS ? GameState.CHAR_ROOMS[killInfo.killer] : null;
+    var targetRoom = GameState.CHAR_ROOMS ? GameState.CHAR_ROOMS[killInfo.actualTarget || killInfo.target] : null;
+
+    var killerFloor = killerRoom ? GameState.ROOMS[killerRoom].floor : null;
+    var targetFloor = targetRoom ? GameState.ROOMS[targetRoom].floor : null;
+
+    // Did the wolf pass through floor 2 corridor?
+    // This happens if: killer is on floor 2, or target is on floor 2,
+    // or wolf crossed through floor 2 (from floor 1 to floor 3 via stairs).
+    // For simplicity: only trigger if killer OR target is on floor 2.
+    if (killerFloor === LAO_ZHENG_FLOOR || targetFloor === LAO_ZHENG_FLOOR) {
+      result.killerOnFloor = true;
+
+      // 35% chance to wake up
+      if (Math.random() < 0.35) {
+        result.woke = true;
+
+        // Determine direction based on killer and target room positions
+        // If killer is west of target: W->E
+        // If killer is east of target: E->W
+        if (killerRoom && targetRoom) {
+          var killerPos = GameState.ROOMS[killerRoom].pos;
+          var targetPos = GameState.ROOMS[targetRoom].pos;
+          // Simple heuristic: compare room numbers on same floor
+          var killerNum = parseInt(killerRoom, 10);
+          var targetNum = parseInt(targetRoom, 10);
+          if (killerNum < targetNum) {
+            result.direction = "W2E"; // west to east
+          } else {
+            result.direction = "E2W"; // east to west
+          }
+        }
+
+        // Check if the neighbor (204, Gu Yan) left his room
+        if (killInfo.killer === GameState.ROOMS[NEIGHBOR_ROOM].char) {
+          result.neighborLeft = true;
+        }
+      }
+    }
+
+    g.hearer.lastResult = result;
+    g.hearer.history.push(result);
+    return result;
+  };
+
+  // ── Get today'''s hearing result (for UI / dialogue) ──
+  Game.hearerGetResult = function () {
+    var g = ensureState();
+    if (!g.hearer) return null;
+    return g.hearer.lastResult;
+  };
+
+  // ── Reset on loop reset ──
+  Game.hearerReset = function () {
+    Game.hearerInit();
+  };
+
+
+  // ── Mark that Lao Zheng spoke publicly about his hearing ──
+  // This makes wolves aware he can hear corridor movement at night.
+  Game.hearerMarkSpoke = function () {
+    Game.setFlag("zheng_spoke_hearing");
+  };
+
+  // ── Did Lao Zheng speak publicly about hearing? ──
+  Game.hearerHasSpoke = function () {
+    return Game.hasFlag("zheng_spoke_hearing");
+  };
+
+})();
+
+
+/*
+ * knight.js - Knight (Lin Xiaoman) skills: duel + guard + AI
+ *
+ * v9 AI redesign:
+ *   - Guard: driven by day events (who is in danger/conflict)
+ *   - Duel: driven by Lin Xiaoman's own suspicion, NOT prophet sharing
+ *   - Tang Xiaotang bias: Tang's hints are weighted 10x
+ *   - Anyone targeting Tang gets massive suspicion spike
+ *   - Guard can be consecutive (night apart)
+ */
+
+(function () {
+  'use strict';
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+
+  // ---- Skill: Duel (day action) ----
+
   Game.knightDuel = function (targetId) {
     var g = ensureState();
     var k = g.godSkills.knight;
@@ -930,12 +2256,13 @@ Game.getStatus = function () {
     if (!g.alive['lin_xiaoman']) return { ok: false, reason: 'knight_dead' };
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
     if (targetId === 'lin_xiaoman') return { ok: false, reason: 'cannot_duel_self' };
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: 'target_exiled' };
 
     var targetRole = Game.roleOf(targetId);
     var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
 
-    // Duel is a day action with its own cooldown, independent of guarding.
     k.duelCooldown = 1;
+    k.duelsUsed = (k.duelsUsed || 0) + 1;
 
     if (isWolf) {
       Game.kill(targetId);
@@ -950,73 +2277,8 @@ Game.getStatus = function () {
     }
   };
 
-  Game.knightWeakened = function () {
-    var k = ensureState().godSkills.knight;
-    return (k.duelCooldown || 0) > 0 || (k.guardCooldown || 0) > 0;
-  };
+  // ---- Skill: Guard (night action) ----
 
-  // Precise per-skill cooldown checks (day duel vs night guard are independent).
-  Game.knightDuelOnCooldown = function () {
-    var k = ensureState().godSkills.knight;
-    return (k.duelCooldown || 0) > 0;
-  };
-  Game.knightGuardOnCooldown = function () {
-    var k = ensureState().godSkills.knight;
-    return (k.guardCooldown || 0) > 0;
-  };
-
-  Game.knightReset = function () {
-    var g = ensureState();
-    var k = g.godSkills.knight;
-    // Each night both independent cooldowns tick down by one.
-    if ((k.duelCooldown || 0) > 0) k.duelCooldown -= 1;
-    if ((k.guardCooldown || 0) > 0) k.guardCooldown -= 1;
-    // Legacy field kept at 0 for old-save compatibility.
-    k.weakenedDays = 0;
-    k.currentGuard = null;
-    k.guarding = null;
-  };
-
-  // AI: decide who to duel based on prophet info shared with knight
-  Game.knightAIGetDuelTarget = function () {
-    var g = ensureState();
-    if (!g.alive['lin_xiaoman']) return null;
-    if (Game.knightWeakened()) return null;
-
-    var shared = g.godSkills.prophet.sharedWith;
-    if (!shared || !shared['lin_xiaoman']) return null;
-
-    var enemyInfos = [];
-    var prophetEnemies = [];
-    var transferredEnemies = [];
-
-    for (var i = 0; i < shared['lin_xiaoman'].length; i++) {
-      var info = shared['lin_xiaoman'][i];
-      if (info.alignment === 'enemy') {
-        var isFromProphet = false;
-        // Check if info came directly from prophet
-        if (info.sources) {
-          for (var s = 0; s < info.sources.length; s++) {
-            if (info.sources[s] === 'fang_heng' && !info.faked) {
-              isFromProphet = true;
-              break;
-            }
-          }
-        }
-        if (isFromProphet) {
-          prophetEnemies.push(info.infoTarget);
-        } else {
-          transferredEnemies.push(info.infoTarget);
-        }
-      }
-    }
-
-    // Prefer prophet-confirmed enemies
-    var target = prophetEnemies[0] || transferredEnemies[0];
-    return target || null;
-  };
-
-  // Guard: protect a target for the night (cannot guard self, causes weakness)
   Game.knightGuard = function (targetId) {
     var g = ensureState();
     var k = g.godSkills.knight;
@@ -1025,14 +2287,36 @@ Game.getStatus = function () {
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
     if (targetId === 'lin_xiaoman') return { ok: false, reason: 'cannot_guard_self' };
 
-    // Cannot guard same person two nights in a row
-    if (k.lastGuardTarget === targetId) return { ok: false, reason: 'consecutive_guard' };
-
+    // Guard CAN be consecutive — night apart is enough recovery.
     k.guarding = targetId;
-    k.lastGuardTarget = targetId;
-    // Guard has its own cooldown, independent of dueling.
     k.guardCooldown = 1;
     return { ok: true, reason: 'guarding', target: targetId };
+  };
+
+  // ---- Cooldown / state management ----
+
+  Game.knightWeakened = function () {
+    var k = ensureState().godSkills.knight;
+    return (k.duelCooldown || 0) > 0;
+  };
+
+  Game.knightDuelOnCooldown = function () {
+    var k = ensureState().godSkills.knight;
+    return (k.duelCooldown || 0) > 0;
+  };
+
+  Game.knightGuardOnCooldown = function () {
+    var k = ensureState().godSkills.knight;
+    return (k.guardCooldown || 0) > 0;
+  };
+
+  Game.knightReset = function () {
+    var g = ensureState();
+    var k = g.godSkills.knight;
+    if ((k.duelCooldown || 0) > 0) k.duelCooldown -= 1;
+    if ((k.guardCooldown || 0) > 0) k.guardCooldown -= 1;
+    k.weakenedDays = 0;
+    k.guarding = null;
   };
 
   Game.knightIsGuarding = function (targetId) {
@@ -1043,126 +2327,279 @@ Game.getStatus = function () {
   };
 
   Game.knightClearGuard = function () {
-    var g = ensureState();
-    g.godSkills.knight.guarding = null;
+    ensureState().godSkills.knight.guarding = null;
   };
 
-  // AI: decide who to guard
+  // ---- AI: Suspicion system ----
+
+  // Update Lin Xiaoman's suspicion based on day events.
+  // Called at the start of each night (after day events are generated).
+  Game.knightUpdateSuspicion = function () {
+    var g = ensureState();
+    var k = g.godSkills.knight;
+    k.suspicion = k.suspicion || {};
+
+    var todayEvents = Game.getDayEvents(g.day);
+    if (!todayEvents.length) return;
+
+    for (var i = 0; i < todayEvents.length; i++) {
+      var e = todayEvents[i];
+
+      // Rule 1: Anyone targeting Tang Xiaotang gets massive suspicion spike
+      if (e.target === 'tang_xiaotang' || e.b === 'tang_xiaotang') {
+        var aggressor = e.a;
+        if (aggressor && aggressor !== 'lin_xiaoman') {
+          k.suspicion[aggressor] = (k.suspicion[aggressor] || 0) + (e.weight * 2);
+        }
+      }
+
+      // Rule 2: Tang Xiaotang hints someone is suspicious -> +50 (she trusts Tang blindly)
+      if (e.type === 'tang_hint') {
+        var hintTarget = e.target;
+        k.suspicion[hintTarget] = (k.suspicion[hintTarget] || 0) + e.weight;
+      }
+
+      // Rule 3: General events Lin Xiaoman personally observes
+      // She notices conflicts and forms her own opinions
+      if (e.observer === 'lin_xiaoman' || e.a === 'lin_xiaoman') {
+        var observedTarget = e.target;
+        if (observedTarget && observedTarget !== 'lin_xiaoman') {
+          k.suspicion[observedTarget] = (k.suspicion[observedTarget] || 0) + Math.floor(e.weight / 2);
+        }
+      }
+
+      // Rule 4: Events she witnesses as a bystander (weaker effect)
+      // Only if the event involves someone she cares about
+      if (e.a !== 'lin_xiaoman' && e.b !== 'lin_xiaoman') {
+        var target = e.target;
+        if (target && target !== 'lin_xiaoman' && target !== 'tang_xiaotang') {
+          // Small suspicion from bystander observation
+          k.suspicion[target] = (k.suspicion[target] || 0) + Math.floor(e.weight / 4);
+        }
+      }
+    }
+
+    // Rule 5: Fang Heng's shared info — Lin Xiaoman distrusts him deeply.
+    // She thinks he's targeting Tang Xiaotang, so his info is heavily discounted.
+    // (He shares "hostile" checks -> she barely listens, tiny suspicion bump)
+    if (typeof Game.prophetReceivedInfo === 'function') {
+      var fangChecked = Game.aliveList().filter(function (cid) {
+        if (cid === 'fang_heng' || cid === 'lin_xiaoman') return false;
+        return Game.prophetReceivedInfo('lin_xiaoman', cid) !== null;
+      });
+      for (var fi = 0; fi < fangChecked.length; fi++) {
+        var info = Game.prophetReceivedInfo('lin_xiaoman', fangChecked[fi]);
+        if (info && info.result === 'hostile') {
+          // She distrusts Fang Heng personally, but a cop calling someone
+          // "hostile" is serious professional intel. Set a floor of 45 so
+          // it can compete with Tang's hints (+50) and accumulated events.
+          // It won't override a stronger read, but it won't be ignored either.
+          var cur = k.suspicion[fangChecked[fi]] || 0;
+          if (cur < 45) k.suspicion[fangChecked[fi]] = 45;
+        }
+        // If Fang Heng checked Tang Xiaotang and shared it -> Lin Xiaoman gets
+        // MORE suspicious of FANG HENG (he's investigating her best friend!)
+        if (info && fangChecked[fi] === 'tang_xiaotang') {
+          k.suspicion['fang_heng'] = (k.suspicion['fang_heng'] || 0) + 10;
+        }
+      }
+    }
+
+    // Rule 6: If Fang Heng shot someone today, Lin Xiaoman is FURIOUS.
+    // She sees him as the most dangerous person — gun + killing = maximum threat.
+    var gunEvents = todayEvents.filter(function (e) {
+      return e.a === 'fang_heng' && e.observer === 'public' && e.weight >= 50;
+    });
+    if (gunEvents.length > 0) {
+      k.suspicion['fang_heng'] = (k.suspicion['fang_heng'] || 0) + 80;
+    }
+
+    // Cap suspicion at 100
+    var keys = Object.keys(k.suspicion);
+    for (var j = 0; j < keys.length; j++) {
+      if (k.suspicion[keys[j]] > 100) k.suspicion[keys[j]] = 100;
+      // Never be suspicious of Tang Xiaotang or Chen Mo
+      if (keys[j] === 'tang_xiaotang' || keys[j] === 'chen_mo') {
+        k.suspicion[keys[j]] = 0;
+      }
+    }
+  };
+
+  Game.knightGetSuspicion = function (charId) {
+    var k = ensureState().godSkills.knight;
+    return (k.suspicion || {})[charId] || 0;
+  };
+
+  Game.knightGetAllSuspicion = function () {
+    var k = ensureState().godSkills.knight;
+    return k.suspicion || {};
+  };
+
+  // ---- AI: Decide who to guard ----
+  // Lin Xiaoman guards people she trusts (protagonist group).
+  // She's not a detective — she protects the people she cares about.
+  // Suspicion is for dueling, not guarding.
+
   Game.knightAIGetGuardTarget = function () {
     var g = ensureState();
     if (!g.alive['lin_xiaoman']) return null;
-    if (Game.knightWeakened()) return null;
+    if (Game.knightGuardOnCooldown()) return null;
 
-    // Prioritize protecting key good guys
-    var candidates = [];
-    var priority = ['su_wan', 'chen_mo', 'fang_heng', 'ye_zhiqiu'];
-    for (var i = 0; i < priority.length; i++) {
-      if (g.alive[priority[i]] && priority[i] !== g.godSkills.knight.lastGuardTarget) {
-        candidates.push(priority[i]);
+    // The people Lin Xiaoman cares about and would protect
+    // Tang Xiaotang > Su Wan > Chen Mo > Jiang Bai
+    // NOTE: Fang Heng is NEVER on this list. If he has been exposed (shot someone),
+    // Lin Xiaoman actively refuses to guard him — "You have a gun, protect yourself."
+    var protectList = ['su_wan', 'chen_mo', 'jiang_bai'];
+
+    // Score each based on: is Tang uneasy today? Has this person been in danger?
+    var scores = {};
+    for (var i = 0; i < protectList.length; i++) {
+      var charId = protectList[i];
+      if (!g.alive[charId]) continue;
+      var score = 10; // base: she cares about them
+
+// If this person was targeted in a conflict today, they might be in danger
+      var events = Game.getEventsInvolving(charId, g.day);
+      for (var j = 0; j < events.length; j++) {
+        if (events[j].target === charId || events[j].b === charId) {
+          score += events[j].weight;
+        }
+      }
+
+      scores[charId] = score;
+    }
+
+    // Pick highest scoring
+    var best = null;
+    var bestScore = -1;
+    for (var key in scores) {
+      if (scores[key] > bestScore) {
+        bestScore = scores[key];
+        best = key;
       }
     }
-    return candidates[0] || null;
+
+    return best || null;
   };
 
-})();
+  // ---- AI: Decide who to duel ----
 
- /*
- * magician.js
- * Magician (Shen Shen) skill: illusion swap
- */
+  Game.knightAIGetDuelTarget = function () {
+    var g = ensureState();
+    if (!g.alive['lin_xiaoman']) return null;
+    if (Game.knightDuelOnCooldown()) return null;
 
-(function () {
-  'use strict';
+    var k = g.godSkills.knight;
+    k.suspicion = k.suspicion || {};
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
+    var alive = Game.aliveList().filter(function (c) {
+      return c !== 'lin_xiaoman' &&
+             c !== 'tang_xiaotang' && // never duel Tang (bias)
+             c !== 'chen_mo';         // never duel Chen Mo (protagonist)
+    });
+    // [v9.3.3 FIX] Cannot duel someone who is already exiled (locked in cellar).
+    if (typeof Game.isExiled === 'function') {
+      alive = alive.filter(function (c) { return !Game.isExiled(c); });
     }
-    return State.variables.game;
-  }
 
-  var Game = window.Game;
+    if (!alive.length) return null;
 
-Game.wasInLastSwap = function (charId) {
+    // [v9.4] Cross-validation: Lin Xiaoman doesn't trust Fang Heng, but
+    // if he points at someone AND she personally has some unease about that
+    // same person (suspicion >= 10), the two independent signals align and
+    // she acts. This isn't trust — it's "two different sources saying the
+    // same thing is harder to ignore than one."
+    // If her own suspicion is 0 (she saw nothing), she ignores Fang entirely.
+    if (typeof Game.prophetReceivedInfo === 'function') {
+      for (var gwi = 0; gwi < alive.length; gwi++) {
+        var gwInfo = Game.prophetReceivedInfo('lin_xiaoman', alive[gwi]);
+        if (gwInfo && gwInfo.result === 'hostile') {
+          var ownSusp = k.suspicion[alive[gwi]] || 0;
+          if (ownSusp >= 10) {
+            // Cross-validated: her gut + cop's intel agree. She acts.
+            return alive[gwi];
+          }
+          break;  // only check the first hostile target
+        }
+      }
+    }
 
-    var g = ensureState();
+    // Find the most suspicious person
+    var best = null;
+    var bestSusp = 0;
 
-    var history = g.godSkills.magician.swapHistory;
+    // [v9.4] Before relying on her own emotional suspicion, check if Fang
+    // Heng shared a "hostile" gold-water read about someone. The cop's
+    // professional assessment gets +30 in the duel decision — she won't
+    // fully trust him, but if he specifically warned about someone, that
+    // person jumps to the front of the line for a duel.
+    var goldWaterBonus = {};
+    if (typeof Game.prophetReceivedInfo === 'function') {
+      for (var gi = 0; gi < alive.length; gi++) {
+        var info = Game.prophetReceivedInfo('lin_xiaoman', alive[gi]);
+        if (info && info.result === 'hostile') {
+          goldWaterBonus[alive[gi]] = 30;
+        }
+      }
+    }
 
-    if (history.length === 0) return false;
+    for (var i = 0; i < alive.length; i++) {
+      var susp = (k.suspicion[alive[i]] || 0) + (goldWaterBonus[alive[i]] || 0);
+      if (susp > bestSusp) {
+        bestSusp = susp;
+        best = alive[i];
+      }
+    }
 
-    var last = history[history.length - 1];
+    // Only duel if suspicion is high enough (threshold)
+    // Lin Xiaoman is impulsive but not stupid — she needs to feel strongly
+    // If the target is Fang Heng and he has been exposed (has a gun, refuses to surrender),
+    // Lin Xiaoman will NEVER duel him. She does not know if her ability or a bullet is faster.
+    if (best === 'fang_heng') {
+      var pr = g.godSkills.prophet;
+      if (pr && pr.exposed) {
+        return null;  // she won't risk it against a gun
+      }
+    }
 
-    return last.a === charId || last.b === charId;
+    if (bestSusp >= 65 || (g.day >= 5 && bestSusp >= 50)) {
+      // [v9.4] Hesitation: if the target is actually a good person (not a wolf),
+      // Lin Xiaoman has a 50% chance to hesitate at the last moment. She's
+      // impulsive, not cold-blooded — the voice in her head says "what if
+      // you're wrong?" and she pulls back. This does NOT apply when she has
+      // Fang's cross-validated intel (that returns earlier in the function).
+      var targetRole = Game.roleOf(best);
+      var isWolf = ['wolf', 'wolf_king', 'mechanical_wolf', 'hidden_wolf'].indexOf(targetRole) !== -1;
+      if (!isWolf && Math.random() < 0.75) {
+        return null;  // she hesitates, cools down, doesn't duel today
+      }
+      return best;
+    }
 
-  }
+    return null;
+  };
 
-Game.magicianSwap = function (charA, charB) {
-
-    var g = ensureState();
-
-    var m = g.godSkills.magician;
-
-    if (m.swapsUsed >= m.maxSwaps) return { ok: false, reason: 'max_reached' };
-
-    if (charA === charB) return { ok: false, reason: 'same_person' };
-
-    if (!Game.isAlive(charA) || !Game.isAlive(charB)) return { ok: false, reason: 'dead' };
-
-    if (Game.wasInLastSwap(charA)) return { ok: false, reason: 'repeated_' + charA };
-
-    if (Game.wasInLastSwap(charB)) return { ok: false, reason: 'repeated_' + charB };
-
-    m.swapsUsed += 1;
-
-    m.currentSwap = { a: charA, b: charB };
-
-    m.swapHistory.push({ day: g.day, a: charA, b: charB });
-
-    return { ok: true, swap: m.currentSwap };
-
-  }
-
-Game.getMagicianSwap = function () {
-
-    return ensureState().godSkills.magician.currentSwap;
-
-  }
-
-Game.resolveSwapTarget = function (charId) {
-
-    var swap = Game.getMagicianSwap();
-
-    if (!swap) return charId;
-
-    if (swap.a === charId) return swap.b;
-
-    if (swap.b === charId) return swap.a;
-
-    return charId;
-
-  }
-
-Game.magicianSwapsRemaining = function () {
-
-    var m = ensureState().godSkills.magician;
-
-    return m.maxSwaps - m.swapsUsed;
-
-  }
-
-Game.magicianResetDaily = function () {
-
-    var g = ensureState();
-
-    g.godSkills.magician.currentSwap = null;
-
-  }
 })();
 
 
 /*
- * prophet.js - Prophet (Fang Heng) AI: check + aura + share info + AI strategy
+ * magician.js
+ * Magician (Shen Shen) skill: illusion swap + AI
+ *
+ * v9 design (final):
+ *   - MUST swap every night (gambler paranoia: always feels watched)
+ *   - Can swap ANY two people, INCLUDING himself
+ *   - Cannot swap the same person two nights in a row (lastSwapPair check)
+ *
+ *   Self-preservation mode (feels threatened):
+ *     Swap himself with a "safe-looking" person.
+ *       - If wolves target Shen Shen tonight -> that decoy dies, Shen Shen lives (lucky)
+ *       - If wolves target the decoy tonight -> Shen Shen dies (he gambled wrong)
+ *
+ *   Gambling mode (feels safe):
+ *     Swap "likely wolf target" <-> "suspected wolf".
+ *       - Right guess -> wolves kill their own teammate (dramatic)
+ *       - Wrong guess -> an innocent dies in place of the suspected wolf
  */
 
 (function () {
@@ -1177,24 +2614,385 @@ Game.magicianResetDaily = function () {
 
   var Game = window.Game;
 
-  // Prophet perception text pools by alignment/role
-  Game.PROPHET_TEXTS = {
-    memory_user: ["你感知到一股不属于这个时空的气息，像是时间本身的回响。"],
-    broken_witch: ["你感到一阵虚弱的、几近枯竭的温柔气息，那是某种力量的残余。"],
-    villager_guilty: ["你感到对方身上有一层薄薄的阴霾，像是愧疚或隐秘的罪。"],
-    villager_calm: ["你感到一股平静的气息，像是普通的、无所隐瞒的人。"],
-    prophet: ["你感到一股澄澈的、探寻的气息，和你的能力同源。"],
-    witch: ["你感到一股温柔的、治愈的气息，像是草药与月光。"],
-    knight: ["你感到一股刚烈的、守护的气息，像是刀锋背后的温度。"],
-    magician: ["你感到一股迷离的、虚实难辨的气息，像是雾中的影子。"],
-    wolf_king: ["你感到一股浓烈的杀意，那是被诅咒的、嗜血的气息。"],
-    hidden_wolf: ["你感到一股平静的气息，像是普通的、无所隐瞒的人。"],
-    wolf: ["你感到一股阴冷的、掠食者的气息。"],
-    mechanical_wolf: ["你感到一股冰冷的、机械的恶意，像是某种人造的杀意。"]
+  // ── Core skill functions ──
+
+  Game.wasInLastSwap = function (charId) {
+    var g = ensureState();
+    var history = g.godSkills.magician.swapHistory;
+    if (!history || history.length === 0) return false;
+    var last = history[history.length - 1];
+    return last.a === charId || last.b === charId;
   };
 
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
-  var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
+  Game.magicianSwap = function (charA, charB) {
+    var g = ensureState();
+    if (charA === charB) return { ok: false, reason: 'same_person' };
+    if (!Game.isAlive(charA) || !Game.isAlive(charB)) return { ok: false, reason: 'dead' };
+    if (typeof Game.isExiled === 'function' && (Game.isExiled(charA) || Game.isExiled(charB))) return { ok: false, reason: 'exiled' };
+    // Cannot reuse anyone from last night's swap pair
+    if (Game.wasInLastSwap(charA)) return { ok: false, reason: 'repeated_' + charA };
+    if (Game.wasInLastSwap(charB)) return { ok: false, reason: 'repeated_' + charB };
+
+    g.godSkills.magician.swapsUsed += 1;
+    g.godSkills.magician.currentSwap = { a: charA, b: charB };
+    g.godSkills.magician.swapHistory.push({ day: g.day, a: charA, b: charB });
+    return { ok: true, swap: { a: charA, b: charB } };
+  };
+
+  Game.getMagicianSwap = function () {
+    return ensureState().godSkills.magician.currentSwap;
+  };
+
+  Game.resolveSwapTarget = function (charId) {
+    var swap = Game.getMagicianSwap();
+    if (!swap) return charId;
+    var target = charId;
+    if (swap.a === charId) target = swap.b;
+    else if (swap.b === charId) target = swap.a;
+    // Do not redirect to an exiled person
+    if (target !== charId && typeof Game.isExiled === 'function' && Game.isExiled(target)) return charId;
+    return target;
+  };
+
+  Game.magicianSwapsRemaining = function () {
+    // v9: unlimited nights. Always returns >=1 so sim keeps swapping.
+    return 1;
+  };
+
+  Game.magicianResetDaily = function () {
+    ensureState().godSkills.magician.currentSwap = null;
+  };
+
+  // ── AI helpers ──
+
+  // Shen Shen's cold-reading: who does he suspect is a wolf?
+  Game.magicianSuspectScore = function (charId) {
+    var g = ensureState();
+    var score = 0;
+
+    var events = Game.getEventsInvolving(charId, g.day);
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      if (e.target === charId && (e.type === 'observation' || e.type === 'suspicion')) {
+        score += e.weight;
+      }
+    }
+
+    // Personal instinct (gambler reads people)
+    var instinct = {
+      zhou_yang: 5,
+      zhao_mingcheng: 8,
+      gu_yan: 5,
+      fang_heng: 2,
+      chen_mo: 0,
+      su_wan: 0,
+      jiang_bai: 0,
+      zheng_shoushan: 3,
+      tang_xiaotang: 0,
+      lin_xiaoman: 2,
+      ye_zhiqiu: 2,
+      shen_shen: 0
+    };
+    score += (instinct[charId] || 0);
+    return score;
+  };
+
+  // Who does Shen Shen think is in danger tonight (likely wolf target)?
+  Game.magicianProtectScore = function (charId) {
+    var g = ensureState();
+    var score = 0;
+    var events = Game.getEventsInvolving(charId, g.day);
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      if (e.target === charId || e.b === charId) {
+        score += Math.floor(e.weight / 2);
+      }
+      if (e.a === charId && e.type === 'conflict') {
+        score += Math.floor(e.weight / 3);
+      }
+    }
+    return score;
+  };
+
+  // How threatened does Shen Shen feel tonight? (gambler paranoia)
+  Game.magicianSelfDanger = function () {
+    var g = ensureState();
+    var danger = 0;
+
+    var events = Game.getEventsInvolving('shen_shen', g.day);
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      if (e.target === 'shen_shen' || e.b === 'shen_shen') {
+        danger += e.weight;
+      }
+    }
+
+    // If Fang Heng checked him tonight, big danger signal
+    var checks = g.godSkills.prophet.checks || [];
+    for (var j = 0; j < checks.length; j++) {
+      if (checks[j].target === 'shen_shen' && checks[j].day === g.day) {
+        danger += 20;
+      }
+    }
+
+    // Gambler paranoia: base anxiety + random spike.
+    // Even with no events he feels ~40% chance of being watched.
+    danger += 8;                       // baseline paranoia
+    danger += Math.floor(Math.random() * 20);  // mood swing
+    return danger;
+  };
+
+  // Pick a "safe-looking" person to use as decoy in self-preservation mode.
+  // Prefers people he doesn't suspect and who weren't in conflicts today.
+  Game.magicianPickDecoy = function (candidates) {
+    var scored = candidates.map(function (c) {
+      return { id: c, score: Game.magicianSuspectScore(c) + Game.magicianProtectScore(c) };
+    }).sort(function (a, b) { return a.score - b.score; });
+    // Take the least-suspect, least-in-danger person
+    return scored.length > 0 ? scored[0].id : null;
+  };
+
+  // ── AI: decide tonight's swap ──
+  Game.magicianAIDecideSwap = function () {
+    var g = ensureState();
+    if (!g.alive['shen_shen']) return null;
+
+    var selfDanger = Game.magicianSelfDanger();
+
+    // Candidates excluding anyone in last night's swap pair
+    var alive = Game.aliveList().filter(function (c) {
+      return c !== 'shen_shen' && !Game.wasInLastSwap(c) &&
+             !(typeof Game.isExiled === 'function' && Game.isExiled(c));
+    });
+    var selfLocked = Game.wasInLastSwap('shen_shen');
+
+    // ── Self-preservation mode ──
+    // Feels threatened (paranoia threshold) OR random panic (gambler tilt)
+    var panic = Math.random() < 0.3;  // 30% chance of pure panic even if calm
+    if ((selfDanger >= 18 || panic) && !selfLocked && alive.length > 0) {
+      // Swap himself with a "safe" decoy.
+      var decoy = Game.magicianPickDecoy(alive);
+      if (decoy) {
+        return { a: 'shen_shen', b: decoy, reason: 'self_preservation' };
+      }
+    }
+
+    // ── Gambling mode ──
+    // Swap "likely target" <-> "suspected wolf". Even if it backfires, he's a gambler.
+    if (alive.length < 2) return null;
+
+    // Who might get killed tonight?
+    var protectCandidates = alive.map(function (c) {
+      return { id: c, p: Game.magicianProtectScore(c) };
+    }).filter(function (x) { return !Game.wasInLastSwap(x.id); })
+      .sort(function (a, b) { return b.p - a.p; });
+
+    // Who might be a wolf?
+    var wolfCandidates = alive.map(function (c) {
+      return { id: c, s: Game.magicianSuspectScore(c) };
+    }).filter(function (x) { return !Game.wasInLastSwap(x.id); })
+      .sort(function (a, b) { return b.s - a.s; });
+
+    var target = protectCandidates.length > 0 ? protectCandidates[0].id : null;
+    var wolf = wolfCandidates.length > 0 ? wolfCandidates[0].id : null;
+
+    if (target && wolf && target !== wolf) {
+      return { a: target, b: wolf, reason: 'gamble_swap' };
+    }
+
+    // Fallback: swap two random alive people (pure gamble)
+    var a = alive[Math.floor(Math.random() * alive.length)];
+    var rest = alive.filter(function (c) { return c !== a; });
+    if (rest.length > 0) {
+      var b = rest[Math.floor(Math.random() * rest.length)];
+      return { a: a, b: b, reason: 'gamble_random' };
+    }
+
+    return null;
+  };
+})();
+
+
+/*
+ * medic.js
+ * Su Wan's observation skill (现实技能，非神力)
+ *
+ * Su Wan is a top medical student (clinical medicine). She can observe
+ * physiological signs in living people — elevated heart rate, hand tremors,
+ * pupil dilation — that reveal stress from recent violence.
+ *
+ * Key design: her intel is shared ONLY with Chen Mo (the player).
+ * She's his girlfriend; she whispers her observations to him privately.
+ * No other character receives her intel. This makes her the player's
+ * exclusive information source.
+ *
+ * Mechanism:
+ *   - Each day (Day 2+), Su Wan observes ONE alive person.
+ *   - If that person killed someone last night (wolf kill), adrenaline
+ *     residue gives a 60% chance of detection (medical observation isn't
+ *     perfect, and some people are good at hiding stress).
+ *   - If detected, she tells Chen Mo: "That person's pulse was racing,
+ *     their hands were shaking — they did something terrible last night."
+ *   - This gives the player a direct clue about who the killer is.
+ *   - Does NOT work through walls/exile — she must be near them.
+ *   - She NEVER observes Chen Mo (she trusts him completely).
+ */
+
+(function () {
+  "use strict";
+
+  function ensureState() {
+    if (!State.variables.game) State.variables.game = GameState.create();
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+
+  // ── Initialize observation state ──
+  Game.medicInit = function () {
+    var g = ensureState();
+    g.medic = {
+      observations: [],      // history: { day, target, detected, killerId }
+      lastObserved: null,     // today's observation target
+      lastResult: null        // today's result for Chen Mo UI
+    };
+  };
+
+  // ── Su Wan observes one person each day ──
+  // AI: pick someone to observe. Priority: people who seem agitated today
+  // (involved in conflicts, acting suspicious). She's smart — she doesn't
+  // waste her observation on people who seem calm.
+  Game.medicAIObserve = function () {
+    var g = ensureState();
+    if (!g.alive['su_wan']) return null;
+    if (typeof Game.isExiled === 'function' && Game.isExiled('su_wan')) return null;
+    if (!g.medic) Game.medicInit();
+
+    // Candidates: alive, not Su Wan, not Chen Mo (she trusts him)
+    var candidates = Game.activeList().filter(function (c) {
+      if (c === 'su_wan' || c === 'chen_mo') return false;
+      return true;
+    });
+    if (!candidates.length) return null;
+
+    // Score: prefer people involved in today's events (they're on her mind)
+    var events = Game.getDayEvents(g.day);
+    var scored = candidates.map(function (cid) {
+      var score = Math.random() * 10; // base randomness
+      for (var i = 0; i < events.length; i++) {
+        if (events[i].a === cid || events[i].b === cid || events[i].target === cid) {
+          score += events[i].weight * 0.3;
+        }
+      }
+      return { id: cid, score: score };
+    });
+    scored.sort(function (a, b) { return b.score - a.score; });
+
+    return scored[0].id;
+  };
+
+  // ── Perform observation: check if target killed last night ──
+  // Returns { target, detected, isKiller } for Chen Mo's UI.
+  Game.medicObserve = function (targetId) {
+    var g = ensureState();
+    if (!g.alive['su_wan']) return { ok: false, reason: 'su_wan_dead' };
+    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+    if (!g.medic) Game.medicInit();
+
+    // Check if this person was the killer last night
+    var lastKill = g.lastWolfKill;
+    var isKiller = lastKill && lastKill.killer === targetId && lastKill.killed;
+
+    // 60% detection rate if they actually killed
+    var detected = false;
+    if (isKiller) {
+      detected = Math.random() < 0.6;
+    }
+
+    var result = {
+      ok: true,
+      day: g.day,
+      target: targetId,
+      detected: detected,
+      isKiller: isKiller
+    };
+
+    g.medic.observations.push(result);
+    g.medic.lastObserved = targetId;
+    g.medic.lastResult = result;
+
+    return result;
+  };
+
+  // ── AI: run the full observation for today ──
+  Game.medicAIRun = function () {
+    var target = Game.medicAIObserve();
+    if (!target) return null;
+    return Game.medicObserve(target);
+  };
+
+  // ── Get today's observation result for Chen Mo ──
+  Game.medicGetResult = function () {
+    var g = ensureState();
+    if (!g.medic) return null;
+    return g.medic.lastResult;
+  };
+
+  // ── Reset on loop reset ──
+  Game.medicReset = function () {
+    Game.medicInit();
+  };
+
+})();
+
+
+/*
+ * prophet.js - Prophet (Fang Heng) AI
+ *
+ * v9 design:
+ *   - Check target: driven by day events (who behaves abnormally)
+ *   - Check result: gold-water 3-tier (friendly / neutral / hostile)
+ *   - Hidden wolf always reads friendly/neutral. Chen Mo always neutral.
+ *   - Share info: based on trust from daytime interactions (NOT aura sensing)
+ *   - Fang Heng doesn't know who has powers — he shares with people he trusts
+ *   - Hunter ability: 2 bullets, passive counter-kill + active shoot
+ */
+
+(function () {
+  "use strict";
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+
+  Game.PROPHET_TEXTS = {
+    friendly_pool: [
+      "气息像春日暖阳晒过的棉被，柔软而安心。",
+      "气息像山涧溪水，清澈见底。",
+      "气息像篝火余烬，温和平静。",
+      "气息像雨后泥土，干净而熟悉。"
+    ],
+    neutral_pool: [
+      "气息像雾中湖面，看不真切。",
+      "气息像深秋落叶，随风而走，没有方向。",
+      "气息像旧书灰尘，掩着不愿示人的字。",
+      "气息像将雨未雨的天空，沉闷而难测。"
+    ],
+    hostile_pool: [
+      "气息像深潭暗流，冰冷刺骨。",
+      "气息像锈蚀的铁器，带着血的腥味。",
+      "气息像冬夜里的刀锋，寒意逼人。",
+      "气息像腐木下的蛆虫，藏不住的恶。"
+    ]
+  };
+
+  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
 
   function ensureProphet(g) {
     var p = g.godSkills.prophet;
@@ -1203,329 +3001,701 @@ Game.magicianResetDaily = function () {
     return p;
   }
 
-  Game.prophetAICheckNight = function () {
-    var g = ensureState();
-    var pr = ensureProphet(g);
-
-    var enemyChecks = pr.checks.filter(function (c) {
-      return c.alignment === 'enemy';
-    });
-
-    if (enemyChecks.length === 0) return null;
-
-    var candidates = [];
-    Object.keys(g.alive).forEach(function (charId) {
-      if (!g.alive[charId]) return;
-      if (charId === 'fang_heng') return;
-      if (WOLF_ROLES.indexOf(Game.roleOf(charId)) !== -1) return;
-      candidates.push(charId);
-    });
-
-    if (candidates.length === 0) return null;
-
-    var auraHolders = candidates.filter(function (c) { return Game.prophetSenseAura(c); });
-    if (auraHolders.length > 0) {
-      return auraHolders[Math.floor(Math.random() * auraHolders.length)];
-    }
-
-    var silverWater = candidates.filter(function (c) {
-      var w = g.godSkills.witch;
-      return w && w.revivedTargets && w.revivedTargets.indexOf(c) !== -1;
-    });
-
-    if (silverWater.length > 0) {
-      return silverWater[Math.floor(Math.random() * silverWater.length)];
-    }
-
-    return null;
-  };
-
-  Game.prophetAIShareEnemyInfo = function () {
-    var g = ensureState();
-    if (!g.alive['fang_heng']) return null;
-    if (!Game.prophetShouldShare()) return null;
-
-    var pr = ensureProphet(g);
-    var enemyChecks = pr.checks.filter(function (c) {
-      return c.alignment === 'enemy';
-    });
-
-    if (enemyChecks.length === 0) return null;
-
-    var results = [];
-    Object.keys(g.alive).forEach(function (charId) {
-      if (!g.alive[charId]) return;
-      if (charId === 'fang_heng') return;
-      // Only share with aura-bearing allies
-      if (!Game.prophetSenseAura(charId)) return;
-
-      for (var i = 0; i < enemyChecks.length; i++) {
-        var infoTarget = enemyChecks[i].target;
-        if (g.alive[infoTarget] && !Game.prophetReceivedInfo(charId, infoTarget)) {
-          var result = Game.prophetShareInfo(charId, infoTarget);
-          results.push({ target: charId, infoTarget: infoTarget, result: result });
-          break; // one piece of info per recipient
-        }
-      }
-    });
-
-    return results.length > 0 ? results : null;
-  };
-
-  Game.prophetAIShareAllyInfo = function () {
-    var g = ensureState();
-    if (!g.alive['fang_heng']) return null;
-    if (!Game.prophetShouldShare()) return null;
-
-    var pr = ensureProphet(g);
-    var allyChecks = pr.checks.filter(function (c) {
-      return c.alignment === 'ally';
-    });
-
-    if (allyChecks.length === 0) return null;
-
-    var results = [];
-    Object.keys(g.alive).forEach(function (charId) {
-      if (!g.alive[charId]) return;
-      if (charId === 'fang_heng') return;
-      if (!Game.prophetSenseAura(charId)) return;
-
-      for (var i = 0; i < allyChecks.length; i++) {
-        var infoTarget = allyChecks[i].target;
-        if (g.alive[infoTarget] && !Game.prophetReceivedInfo(charId, infoTarget)) {
-          var result = Game.prophetShareInfo(charId, infoTarget);
-          results.push({ target: charId, infoTarget: infoTarget, alignment: 'ally', result: result });
-          break;
-        }
-      }
-    });
-
-    return results.length > 0 ? results : null;
-  };
-
-  Game.isGoldWater = function (charId) {
-    var g = ensureState();
-    var shared = g.godSkills.prophet.sharedWith;
-    if (!shared || !shared['ye_zhiqiu']) return false;
-
-    for (var i = 0; i < shared['ye_zhiqiu'].length; i++) {
-      if (shared['ye_zhiqiu'][i].infoTarget === charId && shared['ye_zhiqiu'][i].alignment === 'ally') {
-        return true;
-      }
-    }
-    return false;
-  };
-
+  // ── Core check: resolve three-tier result ──
   Game.prophetCheck = function (targetId) {
     var g = ensureState();
     var pr = ensureProphet(g);
 
-    var targetRole = Game.roleOf(targetId);
-    var pool;
+    if (!g.alive[targetId]) return null;
+    if (targetId === "fang_heng") return null;
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return null;
 
-    if (targetId === 'chen_mo' && Game.hasFlag('loop_awakened')) {
-      pool = Game.PROPHET_TEXTS.memory_user;
-    } else if (targetId === 'ye_zhiqiu' && Game.witchBroken()) {
-      pool = Game.PROPHET_TEXTS.broken_witch;
-    } else if (targetId === 'chen_mo' || targetId === 'zheng_shoushan') {
-      pool = Game.PROPHET_TEXTS.villager_guilty;
-    } else {
-      pool = Game.PROPHET_TEXTS[targetRole] || Game.PROPHET_TEXTS.villager_calm;
+    var role = Game.roleOf(targetId);
+    var result;
+
+    // Chen Mo is always neutral
+    if (targetId === "chen_mo") {
+      result = "neutral";
+    }
+    // Hidden wolf: always friendly or neutral
+    else if (role === "hidden_wolf") {
+      result = Math.random() < 0.7 ? "friendly" : "neutral";
+    }
+    // Other wolves: biased toward hostile
+    else if (WOLF_ROLES.indexOf(role) !== -1) {
+      var recentKill = g.lastWolfKill;
+      if (recentKill && recentKill.killed && recentKill.day === g.day) {
+        result = "hostile";
+      } else if (Math.random() < 0.6) {
+        result = "hostile";
+      } else {
+        result = "neutral";
+      }
+    }
+    // Gods: usually friendly or neutral
+    else if (GOD_ROLES.indexOf(role) !== -1) {
+      if (Game.hasFlag("god_aggressive_" + targetId)) {
+        result = Math.random() < 0.5 ? "hostile" : "neutral";
+      } else {
+        result = Math.random() < 0.6 ? "friendly" : "neutral";
+      }
+    }
+    // Villagers: usually friendly
+    else {
+      if (Game.hasBackstory(targetId)) {
+        result = Math.random() < 0.5 ? "neutral" : "friendly";
+      } else {
+        result = Math.random() < 0.7 ? "friendly" : "neutral";
+      }
     }
 
-    if (!pool) pool = ['You sense something faint.'];
-    var text = pool[Math.floor(Math.random() * pool.length)];
-
-    var hiddenWolf = targetRole === 'hidden_wolf';
-    var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
-    var alignment = (isWolf && !hiddenWolf) ? 'enemy' : 'ally';
-
-    var record = {
+    pr.checks.push({
       target: targetId,
-      text: text,
-      alignment: alignment,
+      result: result,
       day: g.day,
       loop: g.loop
-    };
+    });
 
-    pr.checks.push(record);
-
-    return { ok: true, perception: text, alignment: alignment, target: targetId };
+    return { target: targetId, result: result, alignment: result };
   };
 
-  Game.prophetResults = function () {
-    return ensureProphet(ensureState()).checks;
-  };
-
-  Game.prophetLastResult = function (targetId) {
-    var checks = ensureProphet(ensureState()).checks;
-    for (var i = checks.length - 1; i >= 0; i--) {
-      if (checks[i].target === targetId) return checks[i];
-    }
-    return null;
-  };
-
-  // Aura: gods (and hidden wolf hiding among gods) carry a perceptible aura
-  Game.prophetSenseAura = function (targetId) {
+  Game.prophetCheckText = function (targetId) {
     var g = ensureState();
-    if (!g.alive[targetId]) return false;
-    var role = Game.roleOf(targetId);
-    if (GOD_ROLES.indexOf(role) !== -1) return true;
-    // Hidden wolf masquerades with an aura to blend in with gods
-    if (role === 'hidden_wolf') return true;
-    return false;
-  };
-
-  Game.prophetAuraText = function (targetId) {
-    var role = Game.roleOf(targetId);
-    var pool;
-
-    if (Game.prophetSenseAura(targetId)) {
-      pool = Game.AURA_TEXTS ? Game.AURA_TEXTS.has_aura : null;
-    } else if (role === 'hidden_wolf') {
-      pool = Game.AURA_TEXTS ? Game.AURA_TEXTS.hidden_wolf_aura : null;
-    } else {
-      pool = Game.AURA_TEXTS ? Game.AURA_TEXTS.no_aura : null;
-    }
-
-    if (!pool) pool = ['You sense nothing in particular.'];
-    return pool[Math.floor(Math.random() * pool.length)];
-  };
-
-  Game.prophetShouldHide = function () {
-    var g = ensureState();
-    if (!g.alive['fang_heng']) return false;
-
-    var lastKill = g.lastWolfKill;
-    if (!lastKill || !lastKill.killed) return false;
-
-    var actualDead = lastKill.actualTarget;
-    if (!actualDead) return false;
-
-    // If a god role was just killed, the prophet should lay low
-    if (!g.alive[actualDead]) {
-      var deadRole = Game.roleOf(actualDead);
-      if (GOD_ROLES.indexOf(deadRole) !== -1) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  Game.prophetShouldShare = function () {
-    return !Game.prophetShouldHide();
-  };
-
-  Game.prophetAIGetCheckTarget = function () {
-    var g = ensureState();
-    if (!g.alive['fang_heng']) return null;
-
     var pr = ensureProphet(g);
-    var candidates = [];
+    var check = null;
+    for (var i = pr.checks.length - 1; i >= 0; i--) {
+      if (pr.checks[i].target === targetId) { check = pr.checks[i]; break; }
+    }
+    if (!check) return "你还没有查验过此人。";
 
-    Object.keys(g.alive).forEach(function (charId) {
-      if (!g.alive[charId]) return;
-      if (charId === 'fang_heng') return;
+    var pool;
+    if (check.result === "friendly") pool = Game.PROPHET_TEXTS.friendly_pool;
+    else if (check.result === "neutral") pool = Game.PROPHET_TEXTS.neutral_pool;
+    else pool = Game.PROPHET_TEXTS.hostile_pool;
 
-      var alreadyChecked = pr.checks.some(function (c) {
-        return c.target === charId;
-      });
-      if (alreadyChecked) return;
-
-      candidates.push(charId);
-    });
-
-    if (candidates.length === 0) return null;
-
-    // Prefer targets without an aura (possible wolves)
-    var noAura = candidates.filter(function (c) { return !Game.prophetSenseAura(c); });
-    var pool = noAura.length > 0 ? noAura : candidates;
-
-    // First, anyone already flagged as suspicious
-    var suspects = pool.filter(function (c) { return Game.hasFlag('suspect_' + c); });
-    if (suspects.length > 0) return suspects[Math.floor(Math.random() * suspects.length)];
-
-    // Then, anyone showing suspicious behavior
-    var behaviorSus = pool.filter(function (c) {
-      return Game.hasFlag('suspicious_behavior_' + c);
-    });
-    if (behaviorSus.length > 0) return behaviorSus[Math.floor(Math.random() * behaviorSus.length)];
-
-    // Otherwise pick from the untested pool, weighting toward fewest ally-results so far
-    var allyCount = pr.checks.filter(function (c) { return c.alignment === 'ally'; }).length;
-
-    // Default: random from pool (ally count recorded for future weighting)
-    void allyCount;
-    return pool[Math.floor(Math.random() * pool.length)];
+    return pool[Math.floor(Math.random() * pool.length)] +
+      "\n\n（金水·" + (check.result === "friendly" ? "澄澈" : check.result === "neutral" ? "浊" : "暗涌") + "）";
   };
 
+  // ── Share info ──
   Game.prophetShareInfo = function (targetId, infoTargetId) {
     var g = ensureState();
-    if (!g.alive['fang_heng']) return { ok: false, reason: 'prophet_dead' };
-    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+    if (!g.alive["fang_heng"]) return { ok: false, reason: "prophet_dead" };
+    if (!g.alive[targetId]) return { ok: false, reason: "target_dead" };
 
     var pr = ensureProphet(g);
-
     var record = null;
     for (var i = pr.checks.length - 1; i >= 0; i--) {
-      if (pr.checks[i].target === infoTargetId) {
-        record = pr.checks[i];
-        break;
-      }
+      if (pr.checks[i].target === infoTargetId) { record = pr.checks[i]; break; }
     }
-
-    if (!record) return { ok: false, reason: 'no_info' };
+    if (!record) return { ok: false, reason: "no_info" };
 
     if (!pr.sharedWith[targetId]) pr.sharedWith[targetId] = [];
     pr.sharedWith[targetId].push({
       infoTarget: infoTargetId,
-      alignment: record.alignment,
+      result: record.result,
       day: g.day,
       loop: g.loop
     });
 
     var targetRole = Game.roleOf(targetId);
     if (WOLF_ROLES.indexOf(targetRole) !== -1) {
-      return { ok: true, reason: 'leaked', leaked: true };
+      return { ok: true, reason: "leaked", leaked: true };
     }
-
-    // When the prophet shares an "enemy" result with a good-aligned recipient,
-    // that recipient now treats the info target as a suspect. This lets the
-    // witch (who trusts the prophet) act on the intelligence via her curse AI.
-    if (record.alignment === 'enemy') {
-      if (WOLF_ROLES.indexOf(targetRole) === -1) {
-        Game.setFlag('suspect_' + infoTargetId);
-      }
-    }
-    // Ally results become "silver water" (verified good) for trust logic
-    if (record.alignment === 'ally') {
-      Game.setFlag('silver_water_' + infoTargetId);
-    }
-
-    return { ok: true, reason: 'shared', leaked: false };
+    return { ok: true, reason: "shared", leaked: false };
   };
 
   Game.prophetReceivedInfo = function (targetId, infoTargetId) {
     var g = ensureState();
     var shared = g.godSkills.prophet.sharedWith;
     if (!shared || !shared[targetId]) return null;
-
     for (var i = shared[targetId].length - 1; i >= 0; i--) {
-      if (shared[targetId][i].infoTarget === infoTargetId) {
-        return shared[targetId][i];
-      }
+      if (shared[targetId][i].infoTarget === infoTargetId) return shared[targetId][i];
     }
     return null;
   };
+
+  // ── Should Fang Heng hide? (if a god just died) ──
+  Game.prophetShouldHide = function () {
+    var g = ensureState();
+    if (!g.alive["fang_heng"]) return false;
+    var lastKill = g.lastWolfKill;
+    if (!lastKill || !lastKill.killed) return false;
+    var actualDead = lastKill.actualTarget;
+    if (!actualDead) return false;
+    if (!g.alive[actualDead]) {
+      var deadRole = Game.roleOf(actualDead);
+      if (GOD_ROLES.indexOf(deadRole) !== -1) return true;
+    }
+    return false;
+  };
+
+  Game.prophetShouldShare = function () {
+    var g = ensureState();
+    var pr = ensureProphet(g);
+    if (pr.exposed) return false;
+    return !Game.prophetShouldHide();
+  };
+
+  // ── AI: who to check tonight? ──
+  // Driven by day events: check people who behaved abnormally today
+  Game.prophetAIGetCheckTarget = function () {
+    var g = ensureState();
+    if (!g.alive["fang_heng"]) return null;
+    var pr = ensureProphet(g);
+
+    // Candidates: alive, not Fang Heng, not already checked
+    var candidates = [];
+    Object.keys(g.alive).forEach(function (charId) {
+      if (!g.alive[charId]) return;
+      if (charId === "fang_heng") return;
+      var alreadyChecked = pr.checks.some(function (c) { return c.target === charId; });
+      if (alreadyChecked) return;
+      candidates.push(charId);
+    });
+
+    if (candidates.length === 0) return null;
+
+    // Score candidates based on today's day events
+    // Fang Heng is a cop — he notices abnormal behavior
+    var scored = candidates.map(function (cid) {
+      var score = 5; // base
+      var events = Game.getEventsInvolving(cid, g.day);
+
+      for (var i = 0; i < events.length; i++) {
+        var e = events[i];
+        // B-type wolf tell: Fang Heng notices these strongly
+        if (e.target === cid && (e.type === 'observation' || e.type === 'suspicion')) {
+          score += e.weight;
+        }
+        // Conflict starter: who initiated conflict today?
+        if (e.a === cid && e.type === 'conflict') {
+          score += Math.floor(e.weight / 2);
+        }
+        // Tang hint targeting this person: Fang Heng picks up on social tension
+        if (e.type === 'tang_hint' && e.target === cid) {
+          score += 15;
+        }
+      }
+
+      // Fang Heng's cop instinct: he notices people who are too quiet or too intense
+      // Simulated via day events
+      score += Math.floor(Math.random() * 5);
+
+      return { id: cid, score: score };
+    });
+
+    scored.sort(function (a, b) { return b.score - a.score; });
+    var top = scored[0];
+
+    // If someone has a notably high unease score, check them
+    if (top.score >= 20) return top.id;
+
+    // Otherwise pick randomly among unchecked (he wants to cover everyone eventually)
+    return candidates[Math.floor(Math.random() * candidates.length)];
+  };
+
+  // ── AI: share check results with someone Fang Heng trusts ──
+  // Fang Heng doesn't know who has powers. He shares based on trust.
+  Game.prophetAIShareTarget = function () {
+    var g = ensureState();
+    if (!g.alive["fang_heng"]) return null;
+    if (!Game.prophetShouldShare()) return null;
+
+    var pr = ensureProphet(g);
+
+    // Must have at least one check to share
+    if (!pr.checks.length) return null;
+
+    // Prioritize sharing "hostile" results — that's actionable intel.
+    // If no hostile check exists, share the most recent check (friendly/neutral
+    // is still useful for building trust networks).
+    var lastCheck = pr.checks[pr.checks.length - 1];
+    for (var ci = pr.checks.length - 1; ci >= 0; ci--) {
+      if (pr.checks[ci].result === 'hostile') {
+        lastCheck = pr.checks[ci];
+        break;
+      }
+    }
+
+    // Who does Fang Heng trust? Based on daytime interactions.
+    // He trusts people who: are calm, helped resolve conflicts, agreed with him.
+    // He distrusts people who: were aggressive, evasive, or too calculating.
+    var candidates = Game.activeList().filter(function (c) {
+      return c !== "fang_heng";
+    });
+
+    if (!candidates.length) return null;
+
+    // Score trust based on day events
+    var scored = candidates.map(function (cid) {
+      var trust = 10; // base
+      var events = Game.getEventsInvolving(cid, g.day);
+
+      for (var i = 0; i < events.length; i++) {
+        var e = events[i];
+        // If this person helped resolve a conflict (was the peacemaker)
+        if (e.b === cid && e.type === 'conflict') {
+          trust += 8; // they were involved in a conflict — could go either way
+        }
+        // If this person was observed doing something suspicious — less trust
+        if (e.target === cid && (e.type === 'observation' || e.type === 'suspicion')) {
+          trust -= e.weight;
+        }
+      }
+
+      // Fang Heng trusts people with a stable demeanor
+      // Simple heuristic: villagers and gods get a small trust bonus
+      var role = Game.roleOf(cid);
+      if (WOLF_ROLES.indexOf(role) !== -1) {
+        trust -= 10; // he doesn't know this, but their behavior is subtly off
+      }
+
+      trust += Math.floor(Math.random() * 10);
+      return { id: cid, trust: trust };
+    });
+
+    scored.sort(function (a, b) { return b.trust - a.trust; });
+
+    // Only share if the most trusted person has trust > 15
+    if (scored[0] && scored[0].trust > 15) {
+      var shareTo = scored[0].id;
+      // [v9.4] When Fang has a "hostile" result, he doesn't just share with
+      // whoever he trusts most — he shares with someone who can ACT on it.
+      // Lin Xiaoman is impulsive, physical, and not afraid of confrontation.
+      // Fang doesn't like her, but he's pragmatic: she's the kind of person
+      // who'll actually DO something about a threat, not just nod politely.
+      // He's using her as a weapon, not befriending her.
+      var hasHostile = pr.checks.some(function(c) { return c.result === 'hostile'; });
+      if (hasHostile && g.alive['lin_xiaoman']) {
+        // He doesn't need to trust her deeply — just needs her to be alive
+        // and not openly hostile toward him. Even a low trust score is fine:
+        // he's not sharing a secret, he's pointing her at a target.
+        shareTo = 'lin_xiaoman';
+      }
+      // [v9.4] Return ALL accumulated checks — Fang gives the full picture.
+      return { shareTarget: shareTo, allChecks: pr.checks.slice() };
+    }
+
+    return null;
+  };
+
+  // Legacy compatibility: wrapper for old share functions
+  Game.prophetAIShareHostileInfo = function () {
+    var result = Game.prophetAIShareTarget();
+    if (!result || !result.allChecks) return null;
+    var hostile = result.allChecks.filter(function(c) { return c.result === 'hostile'; });
+    if (!hostile.length) return null;
+    for (var i = 0; i < hostile.length; i++) {
+      Game.prophetShareInfo(result.shareTarget, hostile[i].target);
+    }
+    return { shareTarget: result.shareTarget, count: hostile.length };
+  };
+
+  Game.prophetAIShareFriendlyInfo = function () {
+    var result = Game.prophetAIShareTarget();
+    if (!result || !result.allChecks) return null;
+    var friendly = result.allChecks.filter(function(c) { return c.result === 'friendly'; });
+    if (!friendly.length) return null;
+    for (var i = 0; i < friendly.length; i++) {
+      Game.prophetShareInfo(result.shareTarget, friendly[i].target);
+    }
+    return { shareTarget: result.shareTarget, count: friendly.length };
+  };
+
+  // ── Hunter ability: shoot ──
+  // 2 bullets total. Passive counter-kill when killed + active shoot.
+
+  Game.prophetShoot = function (targetId) {
+    var g = ensureState();
+    var p = ensureProphet(g);
+    if (!p.bullets) p.bullets = 2;
+    if (p.bullets <= 0) return { ok: false, reason: "no_bullets" };
+    if (!g.alive["fang_heng"]) return { ok: false, reason: "fang_heng_dead" };
+    if (!g.alive[targetId]) return { ok: false, reason: "target_dead" };
+    if (targetId === "fang_heng") return { ok: false, reason: "cannot_shoot_self" };
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: "target_exiled" };
+
+    p.bullets--;
+    Game.kill(targetId);
+
+    var targetRole = Game.roleOf(targetId);
+
+    // Shooting exposes Fang Heng — gunshots are loud, everyone notices.
+    // This generates a day event so all suspicion systems pick it up.
+    var g2 = ensureState();
+    if (!g2.dayEvents) g2.dayEvents = [];
+    g2.dayEvents.push({
+      day: g2.day,
+      type: 'suspicion',
+      a: 'fang_heng',
+      b: targetId,
+      target: 'fang_heng',
+      observer: 'public',
+      weight: 50,
+      desc: 'fang_heng shot someone — everyone heard the gunshot'
+    });
+    p.exposed = true;  // mark: Fang Heng is exposed, future sharing is weakened
+    p.refusedSurrender = true;  // Fang Heng refuses to hand over his gun
+
+    // Refusing to surrender the gun escalates everyone's fear further.
+    // This is a separate event from the gunshot — it shows Fang Heng is UNWILLING to disarm.
+    g2.dayEvents.push({
+      day: g2.day,
+      type: 'suspicion',
+      a: 'fang_heng',
+      b: 'public',
+      target: 'fang_heng',
+      observer: 'public',
+      weight: 30,
+      desc: 'fang_heng refused to hand over his gun after shooting someone'
+    });
+
+    // Wolf king mutual kill: Zhou Yang takes Fang Heng with him
+    if (targetRole === "wolf_king") {
+      Game.kill("fang_heng");
+      return {
+        ok: true,
+        reason: "wolf_king_mutual",
+        target: targetId,
+        role: targetRole,
+        bulletsLeft: p.bullets,
+        mutualKill: true
+      };
+    }
+
+    return {
+      ok: true,
+      reason: "shot",
+      target: targetId,
+      role: targetRole,
+      bulletsLeft: p.bullets
+    };
+  };
+
+  // Passive: when Fang Heng is killed, he can counter-shoot
+  Game.prophetCounterShoot = function (suspectId) {
+    var g = ensureState();
+    var p = ensureProphet(g);
+    if (!p.bullets) p.bullets = 2;
+    if (p.bullets <= 0) return { ok: false, reason: "no_bullets" };
+    if (!suspectId || !g.alive[suspectId]) return { ok: false, reason: "no_target" };
+
+    p.bullets--;
+    Game.kill(suspectId);
+
+    var suspectRole = Game.roleOf(suspectId);
+
+    // Wolf king mutual kill: counter-shooting Zhou Yang triggers mutual death
+    if (suspectRole === "wolf_king") {
+      // Fang Heng is already dead (that is why he counter-shoots), so only mark it
+      return {
+        ok: true,
+        reason: "counter_shot_mutual",
+        target: suspectId,
+        role: suspectRole,
+        bulletsLeft: p.bullets,
+        mutualKill: true
+      };
+    }
+
+    return {
+      ok: true,
+      reason: "counter_shot",
+      target: suspectId,
+      bulletsLeft: p.bullets
+    };
+  };
+
+  // Spend a bullet without killing anyone (for missed counter-shots)
+  Game.prophetSpendBullet = function () {
+    var g = ensureState();
+    var p = ensureProphet(g);
+    if (p.bullets === undefined) p.bullets = 2;
+    if (p.bullets > 0) p.bullets--;
+  };
+
+  Game.prophetBulletsLeft = function () {
+    var g = ensureState();
+    var p = ensureProphet(g);
+    if (p.bullets === undefined) p.bullets = 2;
+    return p.bullets;
+  };
+
+  // ── AI: Fang Heng's shoot decisions ──
+
+  // Active shoot (daytime): Fang Heng is a shrewd dirty cop.
+  // He only shoots when he has STRONG evidence — a confirmed "hostile" check
+  // AND the target showed wolf tells today. He won't waste bullets on hunches.
+  Game.prophetAIShoot = function () {
+    var g = ensureState();
+    if (!g.alive["fang_heng"]) return null;
+    var p = ensureProphet(g);
+    if (p.bullets === undefined) p.bullets = 2;
+    if (p.bullets <= 0) return null;
+
+    // Requirement: at least one check result of "hostile" for someone still alive
+    var hostileChecked = p.checks.filter(function (c) {
+      if (c.result !== "hostile") return false;
+      if (!g.alive[c.target]) return false;
+      // [v9.3.3 FIX] Cannot shoot someone already exiled (locked in cellar).
+      if (typeof Game.isExiled === 'function' && Game.isExiled(c.target)) return false;
+      return true;
+    });
+    if (hostileChecked.length === 0) return null;
+
+    // Score each hostile-checked person by today's wolf tells
+    var best = null;
+    var bestScore = 0;
+    hostileChecked.forEach(function (chk) {
+      var score = 10; // base: already confirmed hostile
+      var events = Game.getEventsInvolving(chk.target, g.day);
+      for (var i = 0; i < events.length; i++) {
+        var e = events[i];
+        if (e.target === chk.target && (e.type === "observation" || e.type === "suspicion")) {
+          score += e.weight;
+        }
+        if (e.a === chk.target && e.type === "conflict") {
+          score += Math.floor(e.weight / 2);
+        }
+      }
+      // Tang hint about this person = strong signal
+      if (events.some(function (e) { return e.type === "tang_hint" && e.target === chk.target; })) {
+        score += 20;
+      }
+      if (score > bestScore) { bestScore = score; best = chk.target; }
+    });
+
+    // Threshold: Fang Heng is cautious. Needs strong evidence (score >= 25).
+    // Also a small chance he decides it's too risky (exposure) and holds fire.
+    if (best && bestScore >= 25 && Math.random() < 0.6) {
+      return { target: best, score: bestScore };
+    }
+    return null;
+  };
+
+  // Passive counter-shoot: when Fang Heng is killed at night, he fires back.
+  // He shoots the person he most suspects (highest hostile check + day tells).
+  // If no hostile checks, he shoots based on today's suspicious behavior.
+  // Fang Heng must GUESS who killed him. Guess right = take killer down.
+  // Guess wrong = shoot an innocent (bullet wasted, Fang Heng still dead).
+  // He never "sees" the killer — only daytime evidence guides him.
+  Game.prophetAICounterShoot = function () {
+    var g = ensureState();
+    var p = ensureProphet(g);
+    if (p.bullets === undefined) p.bullets = 2;
+    if (p.bullets <= 0) return null;
+
+    // He must name a suspect. Refusing to shoot is allowed (save the bullet).
+    // He only fires if he has SOME basis for a guess.
+    var candidates = Game.activeList().filter(function (cid) {
+      if (!g.alive[cid]) return false;
+      if (cid === "fang_heng") return false;
+      // [v9.3.3 FIX] Cannot suspect someone already exiled (locked in cellar).
+      // Fang Heng is a cop — he knows an exiled person physically cannot
+      // have killed him tonight. They're behind a locked door.
+      if (typeof Game.isExiled === 'function' && Game.isExiled(cid)) return false;
+      return true;
+    });
+    if (candidates.length === 0) return null;
+
+    // Build suspicion scores from all available intel
+    var scored = candidates.map(function (cid) {
+      var score = 0;
+
+      // Strongest signal: his own hostile checks
+      var chk = p.checks.filter(function (c) { return c.target === cid; });
+      if (chk.length > 0) {
+        if (chk[chk.length - 1].result === "hostile") score += 30;
+        else if (chk[chk.length - 1].result === "neutral") score += 5;
+        else score -= 10; // friendly checked — he trusts them
+      }
+
+      // Day events: wolf tells today
+      var events = Game.getEventsInvolving(cid, g.day);
+      for (var i = 0; i < events.length; i++) {
+        var e = events[i];
+        if (e.target === cid && (e.type === "observation" || e.type === "suspicion")) {
+          score += e.weight;
+        }
+        if (e.type === "tang_hint" && e.target === cid) score += 15;
+      }
+
+      // Cop instinct baseline per person
+      var instinct = { zhou_yang: 6, zhao_mingcheng: 8, gu_yan: 4, zheng_shoushan: 2 };
+      score += (instinct[cid] || 0);
+
+      return { id: cid, score: score };
+    }).sort(function (a, b) { return b.score - a.score; });
+
+    // Fang Heng is shrewd. He won't fire on a hunch.
+    // Needs at least moderate suspicion (score >= 12) to risk a shot.
+    if (scored.length > 0 && scored[0].score >= 12) {
+      return { target: scored[0].id, score: scored[0].score };
+    }
+    // Not confident enough — hold fire, save the bullet for another night.
+    return null;
+  };
+
 })();
 
+
 /*
- * witch.js - Witch (Ye Zhiqiu) AI: sense death + save/curse + potions + AI
+ * traps.js
+ * Jiang Bai's trap system (现实技能，非神力)
+ *
+ * Design:
+ *   - Jiang Bai sets a simple trap each night (electrical engineering skill).
+ *   - If wolves execute a kill that night, the wolf who did the killing has a
+ *     50% chance of triggering the trap and getting injured.
+ *   - The trap does NOT prevent the kill — it only leaves evidence.
+ *   - Next morning, Jiang Bai checks the trap. If triggered, he knows someone
+ *     was active at night. If he can connect the injury to a specific person
+ *     (daytime observation), he gains suspicion toward them.
+ *   - Jiang Bai becomes the 5th exile accuser, but ONLY when he has trap
+ *     evidence. His accusation threshold is 55 (moderate — he has physical
+ *     proof, not just gut feeling).
  */
 
 (function () {
-  'use strict';
+  "use strict";
+
+  function ensureState() {
+    if (!State.variables.game) State.variables.game = GameState.create();
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+
+  // ── Initialize trap state ──
+  Game.trapInit = function () {
+    var g = ensureState();
+    g.traps = {
+      armed: false,         // is a trap set tonight?
+      triggered: false,     // was it triggered this night?
+      injuredWolf: null,    // which wolf triggered it (for day observation)
+      lastTriggerDay: 0,    // last day a trap was triggered
+      detected: false,      // has Jiang Bai checked it this morning?
+      totalTriggers: 0      // across the whole loop
+    };
+  };
+
+  // ── Jiang Bai arms a trap at the start of each night (Day 2+) ──
+  Game.trapArm = function () {
+    var g = ensureState();
+    if (!g.alive['jiang_bai']) return false;
+    if (typeof Game.isExiled === 'function' && Game.isExiled('jiang_bai')) return false;
+    if (!g.traps) Game.trapInit();
+    g.traps.armed = true;
+    g.traps.triggered = false;
+    g.traps.injuredWolf = null;
+    g.traps.detected = false;
+    return true;
+  };
+
+  // ── Called during night kill: check if the killer triggers the trap ──
+  // Returns true if triggered, false otherwise.
+  Game.trapCheckTrigger = function (killer) {
+    var g = ensureState();
+    if (!g.traps || !g.traps.armed) return false;
+    if (!killer) return false;
+
+    // 50% trigger chance — simple electrical trap, not always effective.
+    var triggered = Math.random() < 0.5;
+    if (triggered) {
+      g.traps.triggered = true;
+      g.traps.injuredWolf = killer;
+      g.traps.lastTriggerDay = g.day;
+      g.traps.totalTriggers++;
+      g.traps.armed = false;  // trap is consumed
+    }
+    return triggered;
+  };
+
+  // ── Morning: Jiang Bai checks the trap and gains intelligence ──
+  // Called during day phase. Returns intelligence object.
+  Game.trapMorningCheck = function () {
+    var g = ensureState();
+    if (!g.traps) Game.trapInit();
+    var result = { checked: false, triggered: false, injuredWolfId: null, observed: false };
+
+    if (!g.alive['jiang_bai']) return result;
+
+    g.traps.detected = true;
+    result.checked = true;
+
+    if (g.traps.triggered) {
+      result.triggered = true;
+      // Jiang Bai has a chance to observe WHO is injured during the day.
+      // The injured wolf may show signs: limp, bandaged hand, etc.
+      // 60% chance to connect the injury to a specific person (he's observant
+      // with electronics, but reading people is harder).
+      if (g.traps.injuredWolf && g.alive[g.traps.injuredWolf]) {
+        if (Math.random() < 0.6) {
+          result.observed = true;
+          result.injuredWolfId = g.traps.injuredWolf;
+        }
+      }
+    }
+
+    // Reset for next night
+    g.traps.armed = false;
+    g.traps.triggered = false;
+
+    return result;
+  };
+
+  // ── AI: Should Jiang Bai accuse based on trap evidence? ──
+  // This is called by exile.js when Jiang Bai is in the accuser order.
+  // Returns target id or null.
+  Game.trapGetAccusationTarget = function () {
+    var g = ensureState();
+    if (!g.alive['jiang_bai']) return null;
+    if (!g.traps) Game.trapInit();
+
+    // Jiang Bai can ONLY accuse when he has trap evidence from last night
+    // AND he successfully observed who was injured.
+    // We store the last observed injury for the day phase.
+    var lastObserved = g.traps.lastObservedInjury;
+    if (lastObserved && g.alive[lastObserved]) {
+      // Don't accuse teammates/protected people
+      if (lastObserved === 'chen_mo' || lastObserved === 'su_wan' || lastObserved === 'jiang_bai') return null;
+      return lastObserved;
+    }
+    return null;
+  };
+
+  // ── Store observation result from morning check for the exile phase ──
+  Game.trapStoreObservation = function (checkResult) {
+    var g = ensureState();
+    if (!g.traps) Game.trapInit();
+    if (checkResult.observed && checkResult.injuredWolfId) {
+      g.traps.lastObservedInjury = checkResult.injuredWolfId;
+    } else {
+      g.traps.lastObservedInjury = null;
+    }
+  };
+
+  // ── Reset on loop reset ──
+  Game.trapReset = function () {
+    Game.trapInit();
+  };
+
+})();
+
+/*
+ * witch.js - Witch (Ye Zhiqiu) AI
+ *
+ * v9 design:
+ *   - 还魂 (revive): 2 uses total. True scarcity — save who, when?
+ *   - 缚魂 (bind soul): FREE, no cooldown, 1 per night. Defensive tool.
+ *   - One action per night: bind OR revive (not both)
+ *   - Gentle: revives almost anyone. Bind only with a signal.
+ *   - Bind is decided BEFORE wolf kill. Revive is decided AFTER.
+ */
+
+(function () {
+  "use strict";
 
   function ensureState() {
     if (!State.variables.game) {
@@ -1535,28 +3705,21 @@ Game.magicianResetDaily = function () {
   }
 
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
-  var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
-
-  // AI scoring weights for save decisions
-  Game.WITCH_AI_WEIGHTS = {
-    chenmo_proximity: 1.0,
-    role_value: 1.0,
-    threat: 1.2,
-    isolation: 1.0
-  };
+  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
 
   function ensureWitch(g) {
     var w = g.godSkills.witch;
     if (!w.curses) w.curses = [];
     if (!w.materials) w.materials = {};
     if (!w.potions) w.potions = {};
-    if (typeof w.uses !== 'number') w.uses = 0;
-    if (typeof w.maxUses !== 'number') w.maxUses = 3;
-    if (typeof w.broken !== 'boolean') w.broken = false;
+    if (typeof w.uses !== "number") w.uses = 0;
+    if (typeof w.maxUses !== "number") w.maxUses = 2; // revive only: 2 uses
+    if (typeof w.broken !== "boolean") w.broken = false;
     return w;
   }
 
+  // ── Sense death (passive) ──
   Game.witchSenseDeath = function () {
     var g = ensureState();
     var w = ensureWitch(g);
@@ -1564,211 +3727,125 @@ Game.magicianResetDaily = function () {
 
     var lastKill = g.lastWolfKill;
     if (!lastKill || !lastKill.killed) return null;
-    if (lastKill.special === 'body_removed') return null;
+    if (lastKill.special === "body_removed") return null;
 
     w.sensedDeath = lastKill.actualTarget;
     return lastKill.actualTarget;
   };
 
   Game.witchGetSensedDeath = function () {
-    var w = ensureState().godSkills.witch;
-    return w.sensedDeath || null;
+    return ensureState().godSkills.witch.sensedDeath || null;
   };
 
   Game.witchClearSensedDeath = function () {
     var w = ensureWitch(ensureState());
     w.sensedDeath = null;
+    // NOTE: silverWater is NOT cleared here. It must survive the morning
+    // so the exile phase (later today) can trigger her intervention.
     w.actedTonight = false;
   };
 
-  Game.witchScoreSave = function (targetId) {
-    var g = ensureState();
-    var score = 0;
-    var w = Game.WITCH_AI_WEIGHTS;
-
-    // Proximity to Chen Mo (protagonist) makes a target worth saving
-    var proximityMap = {
-      su_wan: 10, jiang_bai: 8, zheng_shoushan: 6,
-      lin_xiaoman: 5, fang_heng: 5, shen_shen: 4,
-      ye_zhiqiu: 3, gu_yan: 3, zhou_yang: 1,
-      tang_xiaotang: 1, zhao_mingcheng: 1
-    };
-    score += (proximityMap[targetId] || 3) * w.chenmo_proximity;
-
-    var role = Game.roleOf(targetId);
-    if (GOD_ROLES.indexOf(role) !== -1) {
-      score += 9 * w.role_value;
-    } else if (targetId === 'zheng_shoushan' || targetId === 'chen_mo') {
-      score += 5 * w.role_value;
-    } else {
-      score += 3 * w.role_value;
-    }
-
-    // Exposed/known threats are more valuable to keep alive
-    if (Game.hasRevealed(targetId, 'identity_exposed')) {
-      score += 4 * w.threat;
-    }
-
-    // Random variance
-    score *= (0.85 + Math.random() * 0.3);
-    return Math.round(score);
+  // Clear silverWater AFTER the exile phase resolves (next night begins).
+  Game.witchClearSilverWater = function () {
+    var w = ensureWitch(ensureState());
+    w.silverWater = null;
   };
 
-  Game.witchScoreCurse = function (targetId) {
-    var g = ensureState();
-    var score = 0;
-    var w = Game.WITCH_AI_WEIGHTS;
-
-    // Never curse someone the prophet verified as good (silver water)
-    if (Game.hasFlag('silver_water_' + targetId)) return -100;
-
-    var role = Game.roleOf(targetId);
-    if (WOLF_ROLES.indexOf(role) !== -1) {
-      // Wolves radiate killing intent the witch can sense; base score clears
-      // the curse threshold on its own (see witchAIGetCurseTarget).
-      score += 20 * w.threat;
-    } else {
-      score += 3;
-    }
-
-    // Suspect-flagged characters are prime curse targets
-    if (Game.hasFlag('suspect_' + targetId)) {
-      score += 8 * w.threat;
-    }
-    if (Game.hasFlag('suspicious_behavior_' + targetId)) {
-      score += 5 * w.threat;
-    }
-
-    // Isolated characters are safer curse targets (less fallout)
-    if (Game.hasRevealed(targetId, 'identity_exposed')) {
-      score += 4 * w.isolation;
-    }
-
-    score *= (0.85 + Math.random() * 0.3);
-    return Math.round(score);
-  };
-
-  // For saving, the target is the sensed death and may already be "dead" in the
-  // alive table (just killed this night). We score them by who they are, not by
-  // current alive status. Validity (revivable) is checked in witchRevive.
-  Game.witchAIShouldSave = function (targetId) {
-    if (!targetId) return false;
-    var score = Game.witchScoreSave(targetId);
-    // Score range is roughly 2-28; save gods and close allies (>=12)
-    return score >= 12;
-  };
-
-  Game.witchAIGetCurseTarget = function () {
-    var g = ensureState();
-    var candidates = [];
-
-    Object.keys(g.alive).forEach(function (charId) {
-      if (!g.alive[charId]) return;
-      if (charId === 'ye_zhiqiu') return;
-      candidates.push(charId);
-    });
-
-    if (candidates.length === 0) return null;
-
-    var best = null;
-    var bestScore = 0;
-    candidates.forEach(function (c) {
-      var s = Game.witchScoreCurse(c);
-      if (s > bestScore) { bestScore = s; best = c; }
-    });
-
-    // The witch is gentle: she only curses someone the prophet confirmed as
-    // an enemy (suspect flag), not merely anyone radiating killing intent.
-    // Threshold 30: a bare wolf scores ~24 (not enough), but a suspect-flagged
-    // wolf scores ~34 (clears it). Keeps curses rare and evidence-driven.
-    return bestScore >= 30 ? best : null;
-  };
-
-  // Main witch AI: decide between save, curse, or pass for the night
-  Game.witchAIDecide = function () {
-    if (Game.witchRemaining() <= 0) return { action: 'pass' };
-
-    var g = ensureState();
-
-    var saveTarget = null;
-    var saveScore = 0;
-    var curseTarget = null;
-    var curseScore = 0;
-
-    // Consider saving the sensed death
-    var sensed = Game.witchSenseDeath();
-    if (sensed && Game.witchAIShouldSave(sensed)) {
-      saveTarget = sensed;
-      saveScore = Game.witchScoreSave(sensed);
-    }
-
-    curseTarget = Game.witchAIGetCurseTarget();
-    if (curseTarget) {
-      curseScore = Game.witchScoreCurse(curseTarget);
-    }
-
-    var saveMargin = saveTarget ? (saveScore - 12) / 12 : -1;
-    var curseMargin = curseTarget ? (curseScore - 30) / 30 : -1;
-
-    if (saveMargin < 0 && curseMargin < 0) {
-      return { action: 'pass' };
-    }
-
-    if (saveMargin >= curseMargin) {
-      return { action: 'save', target: saveTarget, score: saveScore };
-    } else {
-      return { action: 'curse', target: curseTarget, score: curseScore };
-    }
-  };
-
-  Game.witchUses = function () {
-    return ensureState().godSkills.witch.uses;
-  };
-
-  Game.witchRemaining = function () {
+  // Silver-water: the person Ye Zhiqiu revived this round.
+  Game.witchGetSilverWater = function () {
     var w = ensureState().godSkills.witch;
-    return w.broken ? 0 : (w.maxUses - w.uses);
+    return w ? (w.silverWater || null) : null;
   };
 
-  Game.witchBroken = function () {
-    return !!ensureState().godSkills.witch.broken;
+  // ---- Exile intervention AI ----
+  // Should Ye Zhiqiu publicly protect a silver-water target about to be exiled?
+  // Standing up = exposing herself as the witch.
+  Game.witchShouldProtect = function (target, voteResult) {
+    var g = ensureState();
+    if (!g.alive["ye_zhiqiu"]) return false;
+    if (!target) return false;
+    var w = ensureWitch(g);
+    if (w.silverWater !== target) return false;
+    if (Game.witchIsExposed()) return true;
+
+    // She already invested a revive in this person — she values their life.
+    // Base willingness to protect (then modified by situation).
+    var chance = 0.30;
+    var KEY_ROLES = ["fang_heng", "lin_xiaoman", "chen_mo"];
+    if (KEY_ROLES.indexOf(target) !== -1) chance += 0.35;
+    else if (target === "su_wan" || target === "jiang_bai" || target === "shen_shen") chance += 0.20;
+
+    // Her veto only matters if the vote is close (her 3 votes can flip it).
+    var margin = voteResult.votesFor - voteResult.votesAgainst;
+    if (margin <= 2) chance += 0.25;
+    else chance -= 0.15;  // landslide — no point exposing herself
+
+    // Self-preservation: exposure makes her a wolf priority tonight.
+    var wolvesLeft = 0;
+    Game.activeList().forEach(function (cid) {
+      if (WOLF_ROLES.indexOf(Game.roleOf(cid)) !== -1) wolvesLeft += 1;
+    });
+    if (wolvesLeft >= 3) chance -= 0.20;
+    if (wolvesLeft <= 1) chance += 0.15;
+
+    chance = Math.max(0.10, Math.min(0.90, chance));
+    return Math.random() < chance;
   };
 
-  Game.witchCurse = function (targetId) {
+  // Her opposition carries moral weight (3 votes when she stands up).
+  Game.witchProtectVoteWeight = function () { return 3; };
+
+  // Clear all soul_bound flags (called at morning transition, daily reset)
+  Game.clearSoulBounds = function () {
+    var g = ensureState();
+    if (!g.flags) return;
+    var keys = Object.keys(g.flags);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].indexOf("soul_bound_") === 0) {
+        delete g.flags[keys[i]];
+      }
+    }
+  };
+
+  // ── Bind Soul (缚魂) – FREE, 1 per night, blocks target's night action ──
+  Game.witchBindSoul = function (targetId) {
     var g = ensureState();
     var w = ensureWitch(g);
 
-    if (w.broken || w.uses >= w.maxUses) return { ok: false, reason: 'broken' };
-    if (w.actedTonight) return { ok: false, reason: 'already_acted' };
+    if (!g.alive[targetId]) return { ok: false, reason: "target_dead" };
+    if (targetId === "ye_zhiqiu") return { ok: false, reason: "cannot_bind_self" };
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: "target_exiled" };
+    if (w.actedTonight) return { ok: false, reason: "already_acted" };
+    // NOTE: bind does NOT consume revive uses (w.uses)
 
     w.actedTonight = true;
-    w.uses += 1;
-    w.curses.push({ target: targetId, type: 'curse' });
-    Game.kill(targetId);
+    w.curses.push({ target: targetId, type: "bind_soul", day: g.day });
+    g.flags["soul_bound_" + targetId] = true;
 
-    if (w.uses >= w.maxUses) {
-      w.broken = true;
-      return { ok: true, reason: 'broken' };
-    }
-
-    return { ok: true, reason: 'ok' };
+    return { ok: true, reason: "bound", target: targetId };
   };
 
+  Game.isSoulBound = function (charId) {
+    return !!ensureState().flags["soul_bound_" + charId];
+  };
+
+  // ── Revive (还魂) – 2 uses total ──
   Game.witchRevive = function (targetId, witnessed) {
     var g = ensureState();
     var w = ensureWitch(g);
 
-    if (w.broken || w.uses >= w.maxUses) return { ok: false, reason: 'broken' };
-    if (g.alive[targetId]) return { ok: false, reason: 'alive' };
+    if (w.broken || w.uses >= w.maxUses) return { ok: false, reason: "no_uses" };
+    if (g.alive[targetId]) return { ok: false, reason: "alive" };
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: "target_exiled" };
 
-    // Guard collision: if the knight is guarding the target, the revive fizzles
-    if (typeof Game.knightIsGuarding === 'function' && Game.knightIsGuarding(targetId)) {
+    // Guard collision: knight guard + witch revive = target dies anyway
+    if (typeof Game.knightIsGuarding === "function" && Game.knightIsGuarding(targetId)) {
       w.actedTonight = true;
       w.uses += 1;
-      return { ok: false, reason: 'guarded' };
+      return { ok: false, reason: "guarded_collision" };
     }
 
-    if (w.actedTonight) return { ok: false, reason: 'already_acted' };
+    if (w.actedTonight) return { ok: false, reason: "already_acted" };
 
     w.actedTonight = true;
     w.uses += 1;
@@ -1777,41 +3854,165 @@ Game.magicianResetDaily = function () {
     if (!w.revivedTargets) w.revivedTargets = [];
     w.revivedTargets.push(targetId);
     w.sensedDeath = null;
+    w.silverWater = targetId;
 
-    if (witnessed) {
-      Game.revealInfo('ye_zhiqiu', 'witch_exposed');
+    if (witnessed) Game.revealInfo("ye_zhiqiu", "witch_exposed");
+
+    return { ok: true, reason: "ok", usesLeft: w.maxUses - w.uses };
+  };
+
+  // ── Scoring: who to bind tonight (decided BEFORE wolf kill) ──
+  // Ye Zhiqiu binds based on daytime observations — who felt "dangerous"
+  Game.witchScoreBind = function (targetId) {
+    var g = ensureState();
+    var score = 0;
+
+    // Check if Fang Heng shared hostile info about this person (gold-water)
+    var shared = g.godSkills.prophet.sharedWith;
+    if (shared && shared["ye_zhiqiu"]) {
+      for (var i = 0; i < shared["ye_zhiqiu"].length; i++) {
+        if (shared["ye_zhiqiu"][i].infoTarget === targetId && shared["ye_zhiqiu"][i].result === "hostile") {
+          score += 30; // prophet confirmed hostile — strong signal
+        }
+      }
     }
 
-    if (w.uses >= w.maxUses) {
-      w.broken = true;
-      return { ok: true, reason: 'broken' };
+    // Day events: who behaved dangerously today?
+    var events = Game.getEventsInvolving(targetId, g.day);
+    for (var j = 0; j < events.length; j++) {
+      var e = events[j];
+      // Wolf tell observed by Ye Zhiqiu
+      if (e.target === targetId && (e.type === 'observation' || e.type === 'suspicion')) {
+        score += Math.floor(e.weight / 2);
+      }
     }
 
-    return { ok: true, reason: 'ok' };
+    // Her personal unease map (from character interactions)
+    var uneaseMap = {
+      zhou_yang: 5,
+      zhao_mingcheng: 8,   // she has bad feeling about him
+      gu_yan: 5,
+      shen_shen: 3,
+      fang_heng: 2,        // slight unease but not much
+      chen_mo: 0,
+      su_wan: 0,
+      jiang_bai: 0,
+      zheng_shoushan: 0,
+      tang_xiaotang: 0,
+      lin_xiaoman: 0
+    };
+    score += (uneaseMap[targetId] || 0);
+
+    score += Math.floor(Math.random() * 5);
+    return score;
   };
 
-  Game.witchIsExposed = function () {
-    return Game.hasRevealed('ye_zhiqiu', 'witch_exposed');
-  };
-
-  Game.witchHeal = function (targetId) {
+  // ── AI: get bind target (decided before wolf kill) ──
+  Game.witchAIGetBindTarget = function () {
     var g = ensureState();
-    if (!g.pursuit || !g.pursuit.playerInjured) return { ok: false, reason: 'not_injured' };
+    if (!g.alive["ye_zhiqiu"]) return null;
 
-    g.pursuit.playerInjured = false;
-    Game.revealInfo('ye_zhiqiu', 'witch_exposed');
-    return { ok: true, reason: 'exposed' };
+    var candidates = Game.activeList().filter(function (c) {
+      return c !== "ye_zhiqiu" && c !== "chen_mo"; // never bind Chen Mo
+    });
+    if (!candidates.length) return null;
+
+    var best = null, bestScore = 0;
+    candidates.forEach(function (c) {
+      var s = Game.witchScoreBind(c);
+      if (s > bestScore) { bestScore = s; best = c; }
+    });
+
+    // Bind threshold: 20 (needs prophet confirmation or strong day events)
+    if (best && bestScore >= 20) return best;
+    return null;
   };
 
-  Game.witchAddMaterial = function (materialId) {
+  // ── AI: decide bind BEFORE wolf kill ──
+  // Returns { action: "bind", target } or null (save action for revive)
+  Game.witchAIDecidePreKill = function () {
     var g = ensureState();
+    if (!g.alive["ye_zhiqiu"]) return null;
+
     var w = ensureWitch(g);
+    if (w.actedTonight) return null;
+
+    var bindTarget = Game.witchAIGetBindTarget();
+    if (bindTarget) {
+      // She feels strongly enough to bind tonight
+      // But: if she has 0 revive uses left, she's more willing to bind
+      // If she has revive uses, she might prefer to save action for revive
+      var reviveUses = w.maxUses - w.uses;
+
+      // 60% chance to bind if she has a target (she can't just wait and hope)
+      // Higher if she's out of revive uses
+      var bindChance = reviveUses > 0 ? 0.6 : 0.9;
+      if (Math.random() < bindChance) {
+        return { action: "bind", target: bindTarget };
+      }
+    }
+
+    return null;
+  };
+
+  // ── AI: decide revive AFTER wolf kill ──
+  Game.witchAIDecideRevive = function () {
+    var g = ensureState();
+    if (!g.alive["ye_zhiqiu"]) return null;
+
+    var w = ensureWitch(g);
+    if (w.broken || w.uses >= w.maxUses) return null;
+    if (w.actedTonight) return null;
+
+    var sensed = Game.witchGetSensedDeath();
+    if (!sensed) return null;
+
+    // Ye Zhiqiu is gentle — she saves almost everyone
+    // Only hesitates if: only 1 use left AND the dead person is someone she distrusts
+    var reviveUses = w.maxUses - w.uses;
+    if (reviveUses === 1) {
+      // Last revive — 70% chance to save (she might hold it)
+      if (Math.random() < 0.3) return null;
+    }
+
+    // She saves. She doesn't judge.
+    return { action: "revive", target: sensed };
+  };
+
+  // ── Legacy: unified night action (for compatibility) ──
+  // Tries bind first, then revive
+  Game.witchAIDecideNightAction = function () {
+    var g = ensureState();
+    if (!g.alive["ye_zhiqiu"]) return null;
+
+    var w = ensureWitch(g);
+    if (w.actedTonight) return null;
+
+    // Try bind first
+    var preKill = Game.witchAIDecidePreKill();
+    if (preKill) return preKill;
+
+    // Then revive
+    return Game.witchAIDecideRevive();
+  };
+
+  // ── Utility ──
+  Game.witchUses = function () { return ensureState().godSkills.witch.uses; };
+  Game.witchRemaining = function () {
+    var w = ensureState().godSkills.witch;
+    return w.broken ? 0 : (w.maxUses - w.uses);
+  };
+  Game.witchBroken = function () { return !!ensureState().godSkills.witch.broken; };
+  Game.witchIsExposed = function () { return Game.hasRevealed("ye_zhiqiu", "witch_exposed"); };
+
+  // ── Materials & potions (mortal skills) ──
+  Game.witchAddMaterial = function (materialId) {
+    var w = ensureWitch(ensureState());
     w.materials[materialId] = (w.materials[materialId] || 0) + 1;
   };
 
   Game.witchHasMaterial = function (materialId) {
-    var w = ensureState().godSkills.witch;
-    return !!(w.materials && w.materials[materialId]);
+    return !!(ensureState().godSkills.witch.materials || {})[materialId];
   };
 
   Game.witchCanCraft = function (potionId) {
@@ -1828,9 +4029,7 @@ Game.magicianResetDaily = function () {
   Game.witchCraftPotion = function (potionId) {
     var g = ensureState();
     var w = ensureWitch(g);
-
-    if (!Game.witchCanCraft(potionId)) return { ok: false, reason: 'no_materials' };
-
+    if (!Game.witchCanCraft(potionId)) return { ok: false, reason: "no_materials" };
     var recipe = GameState.WITCH_POTIONS[potionId].recipe;
     for (var mat in recipe) {
       if (recipe.hasOwnProperty(mat)) {
@@ -1838,31 +4037,26 @@ Game.magicianResetDaily = function () {
         if (w.materials[mat] <= 0) delete w.materials[mat];
       }
     }
-
     w.potions[potionId] = (w.potions[potionId] || 0) + 1;
     return { ok: true, potion: potionId };
   };
 
   Game.witchHasPotion = function (potionId) {
-    var w = ensureState().godSkills.witch;
-    return !!(w.potions && w.potions[potionId]);
+    return !!(ensureState().godSkills.witch.potions || {})[potionId];
   };
 
   Game.witchUsePotion = function (potionId, targetId) {
     var g = ensureState();
     var w = ensureWitch(g);
-
-    if (!w.potions || !w.potions[potionId]) return { ok: false, reason: 'no_potion' };
-    if (!GameState.WITCH_POTIONS || !GameState.WITCH_POTIONS[potionId]) return { ok: false, reason: 'unknown_potion' };
+    if (!w.potions || !w.potions[potionId]) return { ok: false, reason: "no_potion" };
+    if (!GameState.WITCH_POTIONS || !GameState.WITCH_POTIONS[potionId]) return { ok: false, reason: "unknown_potion" };
 
     var potion = GameState.WITCH_POTIONS[potionId];
     w.potions[potionId] -= 1;
     if (w.potions[potionId] <= 0) delete w.potions[potionId];
 
-    // Record the active effect on the target for later resolution
     if (!g.flags) g.flags = {};
-    var effectKey = 'potion_effect_' + targetId;
-    g.flags[effectKey] = potion.effect;
+    g.flags["potion_effect_" + targetId] = potion.effect;
 
     return { ok: true, target: targetId, effect: potion.effect, name: potion.name };
   };
@@ -1870,10 +4064,10 @@ Game.magicianResetDaily = function () {
   Game.witchPotionEffect = function (targetId) {
     var g = ensureState();
     if (!g.flags) return null;
-    var effectKey = 'potion_effect_' + targetId;
-    return g.flags[effectKey] || null;
+    return g.flags["potion_effect_" + targetId] || null;
   };
 })();
+
 
 /*
  * state.js
@@ -1917,11 +4111,38 @@ Game.magicianResetDaily = function () {
   };
 
   // Display labels for roles (v8 terminology)
-  GameState.ROLE_LABELS = {
+  
+  // Room assignments (v9.5)
+  // 3 floors, 4 rooms each, stairs at both ends (east/west)
+  GameState.ROOMS = {
+    // Floor 1 (lobby level) - 101(W) 102 103 104(E)
+    '101': { floor: 1, pos: 'W', char: 'zhou_yang' },
+    '102': { floor: 1, pos: 'W-M', char: 'shen_shen' },
+    '103': { floor: 1, pos: 'M-E', char: 'fang_heng' },
+    '104': { floor: 1, pos: 'E', char: 'zhao_mingcheng' },
+    // Floor 2 (protagonist level) - 201(W) 202 203 204(E)
+    '201': { floor: 2, pos: 'W', char: 'chen_mo' },
+    '202': { floor: 2, pos: 'W-M', char: 'jiang_bai' },
+    '203': { floor: 2, pos: 'M-E', char: 'gu_yan' },
+    '204': { floor: 2, pos: 'E', char: 'zheng_shoushan' },
+    // Floor 3 (girls' level) - 301(W) 302 303 304(E)
+    '301': { floor: 3, pos: 'W', char: 'su_wan' },
+    '302': { floor: 3, pos: 'W-M', char: 'lin_xiaoman' },
+    '303': { floor: 3, pos: 'M-E', char: 'tang_xiaotang' },
+    '304': { floor: 3, pos: 'E', char: 'ye_zhiqiu' }
+  };
+
+  // Reverse lookup: charId -> room number
+  GameState.CHAR_ROOMS = {};
+  Object.keys(GameState.ROOMS).forEach(function (rn) {
+    GameState.CHAR_ROOMS[GameState.ROOMS[rn].char] = rn;
+  });
+
+GameState.ROLE_LABELS = {
     memory: '劫主',
     prophet: '昭判',
     witch: '渡君',
-    knight: '镇煚',
+    knight: '镇煞',
     magician: '幻真',
     villager: '凡人',
     wolf_king: '幽主',
@@ -1930,12 +4151,11 @@ Game.magicianResetDaily = function () {
     mechanical_wolf: '噬道'
   };
 
-  // Ending IDs
+  // Ending IDs (v8 three-tier system)
   GameState.ENDINGS = {
+    BAD: 'bad',
     GOOD: 'good',
-    BAD_STARVATION: 'starvation',
-    HIDDEN_GOD: 'god_of_gods',
-    REFUSE_GOD: 'refuse_god'
+    TRUE: 'true'
   };
   // ITEMS: Chinese names + descriptions
   GameState.ITEMS = {
@@ -1973,7 +4193,6 @@ Game.magicianResetDaily = function () {
     ritual_tablet: { name: "祭祀铭文", desc: "祭坛上的铭文：第七日，祭品满，门开。存者出，亡者留。", breaking: true },
     recruitment_tablet: { name: "招募铭文", desc: "铭文后半部分：掌祭者即掌生死，存者若取祭者之位，则轮回终，新神立。", breaking: true },
     shenshen_identity: { name: "沈慎暗示", desc: "沈慎说看所有人都是双重曝光的——他也能感知到轮回的痕迹。", breaking: true },
-    laozheng_survivor: { name: "老郑幸存者身份", desc: "老郑是上一轮轮回的幸存者，他知道部分真相。", breaking: true },
     god_kill_method: { name: "弑神方法", desc: "取代祭坛的守护者就能终结轮回，但需要等价交换。", breaking: true },
     fang_heng_theory: { name: "方衡的推测", desc: "狼的杀戮可能有特定目标顺序，而不是随机。" },
     tang_saw_3f: { name: "唐小棠目击证词", desc: "唐小棠声称昨晚23:00后看到有人上三楼。" },
@@ -2080,7 +4299,7 @@ Game.magicianResetDaily = function () {
     fang_heng: 'fang_corruption',
     shen_shen: 'shenshen_debt',
     ye_zhiqiu: 'yezhiqiu_malpractice',
-    zheng_shoushan: 'laozheng_knowledge',
+    zheng_shoushan: 'villager',
     lin_xiaoman: 'linxiaoman_devotion',
     zhou_yang: 'zhouyang_arrogance',
     tang_xiaotang: 'tangxiaotang_trauma',
@@ -2109,26 +4328,20 @@ Game.magicianResetDaily = function () {
     chen_mo: { name: "陈默", firstImpression: "你自己。白衫衫皱巴巴的，袖口还有血迹。", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，寡言，习惯用笔记与逻辑拆解问题", talent: "逻辑分析、记笔记、观察系统漏洞", secret: "你是劫主，唯一保留轮回记忆的人。" },
     su_wan: { name: "苏晚", firstImpression: "穿白大褂的女生，气质温和，一直随身带着急救箱。", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔坚定，医者仁心", talent: "急救、诊断中毒/伤势、安抚他人", secret: "凡人·青囊。她没有超自然能力，但凡人的存在决定伪神力量的强弱。" },
     jiang_bai: { name: "江白", firstImpression: "戴耳机的男生，话不多，总坐在靠窗的位置。", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具", secret: "凡人·雷工。他右手腕的旧瘤不是玻璃划的，来源他一直含糊带过。" },
-    fang_heng: { name: "方衡", firstImpression: "三十多岁的男人，穿着深色夹克，话不多，总在观察四周。", age: 35, job: "市刑警支队副队长", personality: "沉稳敏锐，表面温和", talent: "观察微表情、布局审讯、焦点孤立目标", secret: "昭判。他是黑警，收钱封口，与赵明城来山庄前就有私下来往。" },
+    fang_heng: { name: "方衡", firstImpression: "四十出头的男人，穿着深色夹克，第一天主动亮明身份：我是警察，在市局工作。话不多，总在观察四周。", age: 41, job: "警察（自称）", personality: "沉稳敏锐，表面温和", talent: "观察微表情、布局审讯、焦点孤立目标", secret: "昭判。实际是市刑警支队副队长（副处级）、黑警。对外只说在市局工作，不提级别和部门。收钱封口，与赵明城做过交易、互知底牌。" },
     shen_shen: { name: "沈慎", firstImpression: "沉默的中年男人，手指修长，动作很轻，几乎不发出声音。", age: 38, job: "网吧网管", personality: "沉默寡言，动作利落", talent: "手速快、操控感知、观察人心", secret: "伪神·幻真。他曾是地下赌场荷官兼老千，出千害得别人家破人亡。" },
     ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，不爱说话。", age: 32, job: "止仪馆入殓师", personality: "沉静温柔，不爱多言", talent: "医疗护理、急救包扎、配制药剂", secret: "渡君。她能感知生命流逝，还魂夺命，但超过3次就会崩溃。" },
     zheng_shoushan: { name: "郑守山", firstImpression: "年纪最大的男人，自称老郑，说自己是这次旅行的导游。", age: 58, job: "大巴司机", personality: "热情能说会道，熟悉山路", talent: "野外生存、认路、讲故事", secret: "引路人。他开了20年这条山路，有模糊的既视感，似乎知道山庄的某些真相。" },
-    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "伪神·镇煚。她有太妹背景，为了保护唐小棠可以不择手段。" },
+    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "伪神·镇煞。她有太妹背景，为了保护唐小棠可以不择手段。" },
     zhou_yang: { name: "周阳", firstImpression: "高个子体育生，笑容阳光，喜欢和人打招呼。", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好", talent: "奔跑、体能好、带动气氛", secret: "堕仙·幽主。他好胜心极强，享受在竞争中把对手压垮。被杀时可以同归于尽。" },
     tang_xiaotang: { name: "唐小棠", firstImpression: "爱笑的女生，紧紧挝着林小满的手臂，看起来有点怕生。", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强", talent: "读文字、察言观色、写作", secret: "堕仙·匿魂。她幼年被养父虐待猝㷴，精神状态长期不稳定，暗恋陈默。领言家查验为盟友。" },
-    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，自称做外贸生意。", age: 45, job: "外贸公司老板", personality: "圆滑世故，擅长旋旦", talent: "谈判、资源调配、心理施压", secret: "堕仙·无常。他是政治掌客、黑手套，与方衡一起来山庄各取所需。能抹除尸体。" },
+    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，自称做外贸生意。", age: 45, job: "外贸公司老板", personality: "圆滑世故，擅长旋旦", talent: "谈判、资源调配、心理施压", secret: "堕仙·无常。他是政治掮客、白手套，与方衡做过交易、互知对方真实身份（方衡知道他是白手套，他知道方衡是黑警）。来山庄是为收购度假村。能抹除尸体。" },
     gu_yan: { name: "顾言", firstImpression: "戴眼镜的年轻人，手里拿着笔记本，不时低头记录什么。", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强", talent: "物理推理、拆解机关、实验验证", secret: "堕仙·噬道。他曾强夺同门师兄弟的学术成果，引掌能力后只能用一次。" },
   };
 
 GameState.getProfile = function (charId) {
   return GameState.PROFILES[charId] || null;
 };
-
-// GOD_KILLERS: only chen_mo and lao_zheng can slay a god
-    GameState.GOD_KILLERS = {
-      CHEN_MO: 'chen_mo',
-      LAO_ZHENG: 'zheng_shoushan'
-  };
 
   // GameState.create: fresh game state
   GameState.create = function () {
@@ -2213,7 +4426,7 @@ GameState.getProfile = function (charId) {
       godSkills: {
         witch: {
           uses: 0,
-          maxUses: 3,
+          maxUses: 2,
           broken: false,
           curses: [],
           materials: {},
@@ -2226,12 +4439,17 @@ GameState.getProfile = function (charId) {
           // Independent cooldowns: duel (day) and guard (night) no longer share.
           duelCooldown: 0,
           guardCooldown: 0,
-          lastTarget: null,
-          guarding: null
+          // Guard can be consecutive (night apart), so no lastGuardTarget lock.
+          guarding: null,
+          // Lin Xiaoman's personal suspicion toward each character (0-100).
+          // Driven by day events: who targets Tang Xiaotang gets big spikes.
+          suspicion: {}
         },
         prophet: {
           checks: [],
-          exposed: false
+          exposed: false,
+          // Hunter ability: 2 bullets (passive counter-kill + active shoot)
+          bullets: 2
         },
         magician: {
           swapsUsed: 0,
@@ -2245,8 +4463,36 @@ GameState.getProfile = function (charId) {
       // last wolf kill result
       lastWolfKill: null,
 
+      // day events generated each morning (conflicts, suspicions, observations)
+      // Drives all god-role AI decisions. See day-events.js
+      dayEvents: [],
+
       // memory fragments (persist across loops)
-      memories: []
+      memories: [],
+
+      // Jiang Bai trap system (resets each loop)
+      traps: {
+        armed: false,
+        triggered: false,
+        injuredWolf: null,
+        lastTriggerDay: 0,
+        detected: false,
+        totalTriggers: 0,
+        lastObservedInjury: null
+      },
+
+      // Su Wan medic system (resets each loop)
+      medic: {
+        observations: [],
+        lastObserved: null,
+        lastResult: null
+      },
+
+      // Lao Zheng night hearing system (resets each loop)
+      hearer: {
+        lastResult: null,
+        history: []
+      }
     };
   };
 
@@ -2255,10 +4501,15 @@ GameState.getProfile = function (charId) {
 
 /*
  * fake-jump.js - Fake-jump wolf: pretends to be the prophet to mislead good guys
+ *
+ * Only Zhao Mingcheng (calculated, high-intelligence) or Gu Yan (ambitious)
+ * can initiate a fake-prophet jump.
+ * Tang Xiaotang (emotional) never fakes – she can''t maintain the lie.
+ * Zhou Yang (wolf king) doesn''t fake either – he leads openly.
  */
 
 (function () {
-  'use strict';
+  "use strict";
 
   function ensureState() {
     if (!State.variables.game) {
@@ -2268,8 +4519,8 @@ GameState.getProfile = function (charId) {
   }
 
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
-  var GOD_ROLES = ['prophet', 'witch', 'knight', 'magician'];
+  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
 
   function ensureFakeProphet(g) {
     if (!g.godSkills) g.godSkills = {};
@@ -2287,23 +4538,23 @@ GameState.getProfile = function (charId) {
     var g = ensureState();
 
     // Only Zhao Mingcheng or Gu Yan can fake-jump as prophet
-    var validJumpers = ['zhao_mingcheng', 'gu_yan'];
+    var validJumpers = ["zhao_mingcheng", "gu_yan"];
 
-    // If the last wolf kill produced a deep-water (hidden-wolf friendly fire)
-    // situation, sometimes hold off on the jump to keep cover
+    if (validJumpers.indexOf(wolfId) === -1) return { ok: false, reason: "cannot_jump" };
+    if (!g.alive[wolfId]) return { ok: false, reason: "dead" };
+
+    // If the pack is in a deep-water situation (recent kill drew attention),
+    // the fake jumper may hold off
     var lastKill = g.lastWolfKill;
     if (lastKill && lastKill.killed && lastKill.actualTarget && !g.alive[lastKill.actualTarget]) {
-      if (Math.random() < 0.5) return { ok: false, reason: 'deep_water' };
+      if (Math.random() < 0.4) return { ok: false, reason: "deep_water" };
     }
-
-    if (validJumpers.indexOf(wolfId) === -1) return { ok: false, reason: 'cannot_jump' };
-    if (!g.alive[wolfId]) return { ok: false, reason: 'dead' };
 
     g.godSkills.fakeProphet = {
       wolfId: wolfId,
       day: g.day,
-      reports: [],     // list of {target, alignment, faked}
-      exposed: true    // a fake-jumper is effectively "out" once declared
+      reports: [],
+      exposed: true
     };
 
     return { ok: true };
@@ -2312,28 +4563,28 @@ GameState.getProfile = function (charId) {
   Game.fakeProphetReport = function (targetId, alignment) {
     var g = ensureState();
     var fp = g.godSkills.fakeProphet;
-    if (!fp) return { ok: false, reason: 'no_jump' };
-    if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
+    if (!fp) return { ok: false, reason: "no_jump" };
+    if (!g.alive[targetId]) return { ok: false, reason: "target_dead" };
 
     for (var i = 0; i < fp.reports.length; i++) {
-      if (fp.reports[i].target === targetId) return { ok: false, reason: 'already_reported' };
+      if (fp.reports[i].target === targetId) return { ok: false, reason: "already_reported" };
     }
 
     var report = {
       target: targetId,
-      alignment: alignment,  // 'ally' or 'enemy', as faked by the wolf
+      alignment: alignment,
       day: g.day,
       faked: true
     };
 
     fp.reports.push(report);
 
-    // Distribute the faked info to god-role holders, mimicking real prophet sharing
+    // Distribute the faked info to god-role holders
     ensureFakeProphet(g);
     Object.keys(g.alive).forEach(function (charId) {
       if (!g.alive[charId]) return;
-      if (charId === fp.wolfId) return; // do not inform the faker itself
-      if (GOD_ROLES.indexOf(g.roles[charId]) === -1) return; // only gods receive prophet info
+      if (charId === fp.wolfId) return;
+      if (GOD_ROLES.indexOf(g.roles[charId]) === -1) return;
 
       if (!g.godSkills.prophet.sharedWith[charId]) g.godSkills.prophet.sharedWith[charId] = [];
       g.godSkills.prophet.sharedWith[charId].push({
@@ -2349,49 +4600,45 @@ GameState.getProfile = function (charId) {
     return { ok: true, report: report };
   };
 
+  // AI: fake prophet makes a report
   Game.fakeProphetAIReport = function () {
     var g = ensureState();
     var fp = g.godSkills.fakeProphet;
     if (!fp) return null;
     if (!g.alive[fp.wolfId]) return null;
 
-    var aliveList = Object.keys(g.alive).filter(function (k) { return g.alive[k]; });
-
+    var aliveList = Game.activeList();
     var unreported = aliveList.filter(function (k) {
       if (k === fp.wolfId) return false;
       return !fp.reports.some(function (r) { return r.target === k; });
     });
-
     if (unreported.length === 0) return null;
 
     var target = unreported[Math.floor(Math.random() * unreported.length)];
     var targetRole = g.roles[target];
     var isWolf = WOLF_ROLES.indexOf(targetRole) !== -1;
 
-    var reportTrue = Math.random() < 0.5;
-
+    // The fake jumper strategically lies or tells truth
     var alignment;
-    if (reportTrue) {
-      // Report the real alignment
-      alignment = isWolf ? 'enemy' : 'ally';
+    if (isWolf) {
+      // 70% chance to claim a wolf is "ally" (protect packmate)
+      alignment = Math.random() < 0.7 ? "ally" : "enemy";
     } else {
-      // Lie: frame a good guy as enemy, or vouch for a fellow wolf
-      alignment = isWolf ? 'ally' : 'enemy';
+      // 60% chance to frame a good guy as "enemy"
+      alignment = Math.random() < 0.6 ? "enemy" : "ally";
     }
 
     return Game.fakeProphetReport(target, alignment);
   };
 
+  // Real prophet can detect the fake
   Game.prophetCheckFakeJump = function () {
     var g = ensureState();
     var fp = g.godSkills.fakeProphet;
     if (!fp) return null;
-
-    // The real prophet (Fang Heng) can sense whether the fake-jumper has an aura
-    if (!Game.isAlive('fang_heng')) return null;
+    if (!Game.isAlive("fang_heng")) return null;
 
     var hasAura = Game.prophetSenseAura(fp.wolfId);
-
     return {
       wolfId: fp.wolfId,
       hasAura: hasAura
@@ -2399,13 +4646,20 @@ GameState.getProfile = function (charId) {
   };
 })();
 
+
 /*
- * hidden-wolf.js - Hidden wolf (Tang Xiaotang) deep-water misleading AI
- * Injects fake prophet info to protect herself and misdirect good guys
+ * hidden-wolf.js - Hidden wolf (Tang Xiaotang) behavior AI
+ *
+ * v9 design:
+ *   - Does NOT attend wolf pack meeting (other 3 wolves don't know she's a wolf)
+ *   - Other wolves won't target her (she looks harmless, AI naturally avoids her)
+ *   - When all 3 other wolves are dead, she AWAKENS and kills alone
+ *   - Prophet always reads her as friendly/neutral (even after awakening)
+ *   - Emotion-driven: jealous of Su Wan, protective of Lin Xiaoman
  */
 
 (function () {
-  'use strict';
+  "use strict";
 
   function ensureState() {
     if (!State.variables.game) {
@@ -2415,102 +4669,116 @@ GameState.getProfile = function (charId) {
   }
 
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+  // The 3 wolves that Tang Xiaotang is hidden from
+  var KNOWN_WOLVES = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
 
+  // ── Check if Tang Xiaotang has awakened (all other wolves dead) ──
+  Game.hiddenWolfAwakened = function () {
+    var g = ensureState();
+    if (!g.alive["tang_xiaotang"]) return false;
+
+    // Awakened when all 3 known wolves are dead OR exiled (locked in cellar).
+    // Being exiled removes a wolf from play just like death.
+    var activeKnown = KNOWN_WOLVES.filter(function (w) {
+      if (!g.alive[w]) return false;
+      if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
+      return true;
+    });
+    return activeKnown.length === 0;
+  };
+
+  // ── Tang Xiaotang's emotional state ──
+  Game.tangEmotionState = function () {
+    var g = ensureState();
+    var baseState = Math.random();
+
+    if (g.alive["su_wan"]) baseState += 0.3;
+    if (!g.alive["lin_xiaoman"]) baseState += 0.4;
+    if (Game.hasFlag("chen_mo_kind_to_tang")) baseState -= 0.2;
+    if (g.lastWolfKill && g.lastWolfKill.killed) baseState += 0.1;
+
+    return Math.max(0, Math.min(1, baseState));
+  };
+
+  // ── Tang Xiaotang's kill target when awakened ──
+  // She kills alone, emotion-driven
+  Game.hiddenWolfAIGetKillTarget = function () {
+    var g = ensureState();
+    if (!Game.hiddenWolfAwakened()) return null;
+
+    var emotion = Game.tangEmotionState();
+    var candidates = Game.activeList().filter(function (c) {
+      return c !== "tang_xiaotang";
+    });
+    if (candidates.length === 0) return null;
+
+    // High emotion: prioritize Su Wan (jealousy)
+    if (emotion > 0.6 && candidates.indexOf("su_wan") !== -1) {
+      if (Math.random() < 0.5) return "su_wan";
+    }
+
+    // Never kill Chen Mo (obsessive love) unless desperate
+    if (candidates.length <= 2 && candidates.indexOf("chen_mo") !== -1) {
+      // Only if literally no other choice
+      var others = candidates.filter(function(c) { return c !== "chen_mo"; });
+      if (others.length === 0) return "chen_mo";
+    }
+
+    // Filter out Chen Mo from normal targets
+    var normalTargets = candidates.filter(function(c) { return c !== "chen_mo"; });
+    if (normalTargets.length === 0) return null;
+
+    return normalTargets[Math.floor(Math.random() * normalTargets.length)];
+  };
+
+  // ── Tang's vote preference (kept for compatibility, but she doesn't participate in wolf votes) ──
+  Game.tangVotePreference = function () {
+    var g = ensureState();
+    if (!g.alive["tang_xiaotang"]) return {};
+    // Tang does NOT vote. She is completely isolated from the wolf pack.
+    return { __passive: true, __veto: ["lin_xiaoman", "chen_mo"] };
+  };
+
+  // ── Tang's emotional hint to Lin Xiaoman (from original design) ──
+  // She might accidentally mislead Lin Xiaoman when emotionally unstable
   Game.hiddenWolfAIMislead = function () {
     var g = ensureState();
-    if (!g.alive['tang_xiaotang']) return null;
-    if (!g.alive['fang_heng']) return null; // needs prophet alive
-    if (!Game.isGoldWater('tang_xiaotang')) return null;
+    if (!g.alive["tang_xiaotang"]) return null;
+    if (!g.alive["lin_xiaoman"]) return null;
 
-    var aliveWolves = [];
-    var aliveGoodNonWolf = [];
+    var emotion = Game.tangEmotionState();
+    if (emotion < 0.7) return null;
 
-    Object.keys(g.alive).forEach(function (cid) {
-      if (!g.alive[cid]) return;
-      if (cid === 'tang_xiaotang') return;
-      var role = Game.roleOf(cid);
-      if (WOLF_ROLES.indexOf(role) !== -1) {
-        aliveWolves.push(cid);
-      } else {
-        aliveGoodNonWolf.push(cid);
-      }
-    });
-
-    var result = null;
-
-    // Strategy 1: protect a fellow wolf by faking them as "ally" (gold water)
-    if (aliveWolves.length > 0) {
-      var protectTarget = aliveWolves[Math.floor(Math.random() * aliveWolves.length)];
-
-      if (!g.godSkills.prophet.sharedWith) g.godSkills.prophet.sharedWith = {};
-      if (!g.godSkills.prophet.sharedWith['tang_xiaotang']) g.godSkills.prophet.sharedWith['tang_xiaotang'] = [];
-
-      // Check not already faked
-      var alreadyFaked = g.godSkills.prophet.sharedWith['tang_xiaotang'].some(function (s) {
-        return s.infoTarget === protectTarget && s.alignment === 'ally';
+    var target = null;
+    if (g.alive["su_wan"] && Math.random() < 0.4) {
+      target = "su_wan";
+    } else {
+      var candidates = Game.activeList().filter(function (c) {
+        return c !== "tang_xiaotang" && c !== "lin_xiaoman" && c !== "chen_mo";
       });
-
-      if (!alreadyFaked) {
-        g.godSkills.prophet.sharedWith['tang_xiaotang'].push({
-          infoTarget: protectTarget,
-          alignment: 'ally',
-          day: g.day,
-          loop: g.loop,
-          faked: true
-        });
-
-        // Also mislead Lin Xiaoman (knight) to trust the wolf
-        if (g.alive['lin_xiaoman']) {
-          if (!g.godSkills.prophet.sharedWith['lin_xiaoman']) g.godSkills.prophet.sharedWith['lin_xiaoman'] = [];
-          g.godSkills.prophet.sharedWith['lin_xiaoman'].push({
-            infoTarget: protectTarget,
-            alignment: 'ally',
-            day: g.day,
-            loop: g.loop,
-            faked: true
-          });
-        }
-        result = { type: 'protect', target: protectTarget };
-      }
-    } else if (aliveGoodNonWolf.length > 0) {
-      // Strategy 2: frame a good guy as "enemy" to make knight duel them
-      var misleadTarget = aliveGoodNonWolf[Math.floor(Math.random() * aliveGoodNonWolf.length)];
-
-      if (!g.godSkills.prophet.sharedWith) g.godSkills.prophet.sharedWith = {};
-      if (!g.godSkills.prophet.sharedWith['tang_xiaotang']) g.godSkills.prophet.sharedWith['tang_xiaotang'] = [];
-
-      var alreadyFaked2 = g.godSkills.prophet.sharedWith['tang_xiaotang'].some(function (s) {
-        return s.infoTarget === misleadTarget && s.alignment === 'enemy';
-      });
-
-      if (!alreadyFaked2) {
-        g.godSkills.prophet.sharedWith['tang_xiaotang'].push({
-          infoTarget: misleadTarget,
-          alignment: 'enemy',
-          day: g.day,
-          loop: g.loop,
-          faked: true
-        });
-
-        if (g.alive['lin_xiaoman']) {
-          if (!g.godSkills.prophet.sharedWith['lin_xiaoman']) g.godSkills.prophet.sharedWith['lin_xiaoman'] = [];
-          g.godSkills.prophet.sharedWith['lin_xiaoman'].push({
-            infoTarget: misleadTarget,
-            alignment: 'enemy',
-            day: g.day,
-            loop: g.loop,
-            faked: true
-          });
-        }
-        result = { type: 'mislead', target: misleadTarget };
+      if (candidates.length > 0) {
+        target = candidates[Math.floor(Math.random() * candidates.length)];
       }
     }
 
-    return result;
-  };
+    if (!target) return null;
 
+    if (!g.godSkills.prophet.sharedWith) g.godSkills.prophet.sharedWith = {};
+    if (!g.godSkills.prophet.sharedWith["lin_xiaoman"]) g.godSkills.prophet.sharedWith["lin_xiaoman"] = [];
+
+    g.godSkills.prophet.sharedWith["lin_xiaoman"].push({
+      infoTarget: target,
+      alignment: "enemy",
+      day: g.day,
+      loop: g.loop,
+      faked: true,
+      source: "tang_xiaotang_emotion"
+    });
+
+    return { type: "emotional_outburst", target: target };
+  };
 })();
+
 
  /*
  * mech-wolf.js
@@ -2722,10 +4990,13 @@ Game.mechWolfAIActivatePower = function () {
 /*
  * night-kill.js
  * Night kill resolution + god/wolf action checks
+ *
+ * Gu Yan (mechanical wolf) only gets power-steal when HE personally kills
+ * a god. If another wolf makes the kill, no power-steal triggers.
  */
 
 (function () {
-  'use strict';
+  "use strict";
 
   function ensureState() {
     if (!State.variables.game) {
@@ -2736,331 +5007,514 @@ Game.mechWolfAIActivatePower = function () {
 
   var Game = window.Game;
 
-  // Resolve the wolf pack's night kill. Handles knight guard, magician swap
-  // (including friendly fire / wolf king mutual kill), and mech-wolf power steal.
+  // Known wolves (Tang Xiaotang is hidden — not part of pack kills)
+  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+
+  // Resolve the wolf pack's night kill.
+  // Returns { target, killed, actualTarget, killer, special }
   Game.executeWolfKill = function () {
     var g = ensureState();
 
-    var wolves = ['zhou_yang', 'tang_xiaotang', 'zhao_mingcheng', 'gu_yan'];
-    var godRoles = ['prophet', 'witch', 'knight', 'magician'];
-
     var wolfTarget = Game.getWolfTarget();
-    if (!wolfTarget) return { target: null, killed: false, special: 'no_target' };
+    if (!wolfTarget) return { target: null, killed: false, special: "no_target" };
 
-    var aliveWolves = wolves.filter(function (w) { return g.alive[w]; });
-
-    // Determine the actual killer. Mech wolf (gu_yan) prioritises known gods to
-    // steal their power; otherwise prefer a regular wolf; zhao_mingcheng (cleaner)
-    // sometimes takes the kill so the body can be removed.
-    var killer = null;
-    var targetRole = Game.roleOf(wolfTarget);
-    var isKnownGod = godRoles.indexOf(targetRole) !== -1;
-
-    var availableKillers = aliveWolves.filter(function (w) {
-      var swap = Game.getMagicianSwap();
-      if (swap) {
-        var resolved = Game.resolveSwapTarget(w);
-        if (resolved === wolfTarget) return false;
-      }
+    var aliveWolves = WOLF_IDS.filter(function (w) {
+      if (!g.alive[w]) return false;
+      if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
       return true;
     });
-    if (availableKillers.length === 0) availableKillers = aliveWolves;
+    if (aliveWolves.length === 0) return { target: wolfTarget, killed: false, special: "no_wolves" };
 
-    // Mech wolf prioritises known gods to steal their power.
-    if (isKnownGod && availableKillers.indexOf('gu_yan') !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
-      killer = 'gu_yan';
-    } else {
-      // Cleaner wolf acts as a normal wolf here; body removal is decided
-      // AFTER the kill based on the victim's actual role.
-      var regulars = availableKillers.filter(function (w) { return w !== 'gu_yan'; });
-      if (regulars.length > 0) { killer = regulars[Math.floor(Math.random() * regulars.length)]; }
-      else { killer = availableKillers[Math.floor(Math.random() * availableKillers.length)]; }
+    // Check if target is magician-swapped
+    var resolvedTarget = wolfTarget;
+    var swap = Game.getMagicianSwap();
+    if (swap) {
+      var mapped = Game.resolveSwapTarget(wolfTarget);
+      if (mapped && mapped !== wolfTarget) resolvedTarget = mapped;
     }
 
-    var result = {
+    // Check if target is soul-bound (witch's 缚魂)
+    if (Game.isSoulBound(resolvedTarget)) {
+      return { target: wolfTarget, killed: false, actualTarget: resolvedTarget, special: "soul_bound" };
+    }
+
+    // Determine the killer for this kill
+    var killer = Game.selectWolfKiller(resolvedTarget, aliveWolves, g);
+
+    // Check knight guard: if the knight is guarding the target, kill fails
+    if (typeof Game.knightIsGuarding === "function" && Game.knightIsGuarding(resolvedTarget)) {
+      return {
+        target: wolfTarget,
+        killed: false,
+        actualTarget: resolvedTarget,
+        killer: killer,
+        special: "guarded"
+      };
+    }
+
+    // Detect friendly fire: magician swap redirected the kill onto a wolf
+    var resolvedIsWolf = WOLF_IDS.indexOf(resolvedTarget) !== -1;
+    var friendlyFire = resolvedTarget !== wolfTarget && resolvedIsWolf;
+
+    // Execute the kill
+    Game.kill(resolvedTarget);
+    var isGod = GOD_ROLES.indexOf(Game.roleOf(resolvedTarget)) !== -1;
+
+    // Track the kill result
+    g.lastWolfKill = {
       target: wolfTarget,
-      targetName: GameState.PROFILES[wolfTarget] ? GameState.PROFILES[wolfTarget].name : wolfTarget,
-      actualTarget: wolfTarget,
-      actualTargetName: GameState.PROFILES[wolfTarget] ? GameState.PROFILES[wolfTarget].name : wolfTarget,
+      actualTarget: resolvedTarget,
       killed: true,
+      day: g.day,
+      loop: g.loop,
       killer: killer,
-      killerName: killer ? (GameState.PROFILES[killer] ? GameState.PROFILES[killer].name : killer) : null,
-      special: null,
-      swapped: false,
-      friendlyFire: false,
-      mutualKill: false
+      isGod: isGod,
+      friendlyFire: friendlyFire
     };
 
-    // Knight guard cancels the kill
-    if (typeof Game.knightIsGuarding === 'function' && Game.knightIsGuarding(wolfTarget)) {
-      result.killed = false;
-      result.special = 'protected_by_knight';
-      Game.magicianResetDaily();
-      return result;
+    // Jiang Bai's trap: if the killer triggers a trap, record the injury.
+    // Does NOT prevent the kill — only leaves evidence for the day phase.
+    if (typeof Game.trapCheckTrigger === 'function' && killer) {
+      Game.trapCheckTrigger(killer);
     }
 
-    // Magician swap: the wolves think they killed A, but actually killed B
-    var actualVictim = wolfTarget;
+    var special = null;
+
+    // ── Friendly fire (magician swap caused wolves to kill their own) ──
+    if (friendlyFire) {
+      special = "friendly_fire";
+      g.lastWolfKill.special = "friendly_fire";
+    }
+
+    // ── Mech wolf power steal ──
+    // ONLY triggers if Gu Yan personally made the kill
+    if (killer === "gu_yan" && isGod && !Game.hasFlag("gu_yan_stole_god_power")) {
+      var stolenRole = Game.roleOf(resolvedTarget);
+      Game.mechWolfStealPower(resolvedTarget);
+      special = "mech_steal_" + stolenRole;
+      g.lastWolfKill.special = special;
+    }
+
+    // ── Body removal (cleaner wolf) ──
+    if (killer === "zhao_mingcheng" && isGod) {
+      special = "body_removed";
+      g.lastWolfKill.special = "body_removed";
+    }
+
+    // ── Wolf king mutual kill (被动同归) ──
+    // When Zhou Yang (wolf king) is KILLED by a wolf teammate due to
+    // magician swap (致幻自杀), his death reflex triggers and takes
+    // the killer down with him.
+    if (friendlyFire && resolvedTarget === "zhou_yang" && killer !== "zhou_yang") {
+      // Zhou Yang is dead (just killed), now kill the killer too
+      Game.kill(killer);
+      special = "wolf_king_mutual_swap";
+      g.lastWolfKill.special = special;
+      g.lastWolfKill.mutualKillTarget = killer;
+    }
+
+    // Record the killer preference for narrative
+    g.lastWolfKill.killer = killer;
+    if (special) g.lastWolfKill.special = special;
+
+    return {
+      target: wolfTarget,
+      killed: true,
+      actualTarget: resolvedTarget,
+      killer: killer,
+      special: special,
+      friendlyFire: friendlyFire
+    };
+  };
+
+  // ── Hidden wolf awakening kill ──
+  // When all 3 known wolves are dead, Tang Xiaotang awakens and kills alone.
+  // She is invisible to the prophet (always reads friendly/neutral).
+  // Her kills happen AFTER the main wolf kill check returns no_target (no wolves alive).
+  Game.hiddenWolfKill = function () {
+    var g = ensureState();
+    if (!g.alive["tang_xiaotang"]) return { target: null, killed: false, special: "hw_dead" };
+    if (typeof Game.hiddenWolfAwakened !== "function" || !Game.hiddenWolfAwakened()) {
+      return { target: null, killed: false, special: "hw_not_awakened" };
+    }
+
+    var target = Game.hiddenWolfAIGetKillTarget();
+    if (!target) return { target: null, killed: false, special: "hw_no_target" };
+
+    // Check knight guard
+    if (typeof Game.knightIsGuarding === "function" && Game.knightIsGuarding(target)) {
+      return { target: target, killed: false, actualTarget: target, killer: "tang_xiaotang", special: "hw_guarded" };
+    }
+
+    // Check soul bind
+    if (Game.isSoulBound(target)) {
+      return { target: target, killed: false, actualTarget: target, killer: "tang_xiaotang", special: "hw_soul_bound" };
+    }
+
+    // Check magician swap
+    var resolvedTarget = target;
     var swap = Game.getMagicianSwap();
-    if (swap && Game.isAlive('shen_shen')) {
-      var resolved = Game.resolveSwapTarget(wolfTarget);
-      if (resolved !== wolfTarget) {
-        actualVictim = resolved;
-        result.swapped = true;
-        result.actualTarget = resolved;
-        result.actualTargetName = GameState.PROFILES[resolved] ? GameState.PROFILES[resolved].name : resolved;
-
-        // Hitting another wolf = friendly fire
-        if (aliveWolves.indexOf(resolved) !== -1) {
-          result.friendlyFire = true;
-          result.special = 'friendly_fire';
-          if (resolved === 'zhou_yang') {
-            // Wolf king mutual kill: dies and takes the killer with them
-            result.mutualKill = true;
-            result.special = 'wolf_king_mutual';
-            Game.kill('zhou_yang');
-            if (killer) Game.kill(killer);
-          } else {
-            Game.kill(resolved);
-          }
-          Game.magicianResetDaily();
-          return result;
-        }
-      }
+    if (swap) {
+      var mapped = Game.resolveSwapTarget(target);
+      if (mapped && mapped !== target) resolvedTarget = mapped;
     }
 
-    Game.kill(actualVictim);
+    // Execute kill
+    Game.kill(resolvedTarget);
 
-    // Mech wolf steals the god's power on a god kill
-    if (killer === 'gu_yan' && godRoles.indexOf(Game.roleOf(actualVictim)) !== -1 && !Game.hasFlag('gu_yan_stole_god_power')) {
-      Game.mechWolfStealPower(actualVictim);
-    }
+    g.lastWolfKill = {
+      target: target,
+      actualTarget: resolvedTarget,
+      killed: true,
+      day: g.day,
+      loop: g.loop,
+      killer: "tang_xiaotang",
+      isGod: GOD_ROLES.indexOf(Game.roleOf(resolvedTarget)) !== -1,
+      special: "hidden_wolf_kill"
+    };
 
-    // Cleaner removes the body ONLY if the victim is a god, so the witch
-    // cannot sense/revive a dead god. Villager corpses are left normally.
-    if (killer === 'zhao_mingcheng' && godRoles.indexOf(Game.roleOf(actualVictim)) !== -1) {
-      result.special = 'body_removed';
-    }
-
-    Game.magicianResetDaily();
-    return result;
+    return {
+      target: target,
+      killed: true,
+      actualTarget: resolvedTarget,
+      killer: "tang_xiaotang",
+      special: "hidden_wolf_kill"
+    };
   };
 
-  Game.getLastWolfKill = function () {
-    var g = ensureState();
-    return g.lastWolfKill || null;
-  };
+  // ── Select which wolf makes the kill ──
+  // Gu Yan (mech wolf) actively volunteers if target is a known god
+  // Zhao Mingcheng (cleaner) steps up if he wants the body gone
+  // Zhou Yang (wolf king) takes charge by default
+  Game.selectWolfKiller = function (target, aliveWolves, g) {
+    var targetRole = Game.roleOf(target);
+    var isGod = GOD_ROLES.indexOf(targetRole) !== -1;
 
-  Game.setLastWolfKill = function (result) {
-    var g = ensureState();
-    g.lastWolfKill = result;
-  };
-
-  // Gods draw power from the villagers' belief, so they may act at any time.
-  Game.canGodAct = function () {
-    return true;
-  };
-
-  Game.canWolfAct = function (charId) {
-    if (Game.isNight()) return true;
-    var role = Game.roleOf(charId);
-    // Mech wolf may use a stolen god power during the day
-    if (role === 'mechanical_wolf') {
-      return !!Game.hasFlag('gu_yan_stole_god_power');
+    // ── God targets: special motives ──
+    // Gu Yan (mech wolf) wants to kill gods to steal their power
+    if (isGod && aliveWolves.indexOf("gu_yan") !== -1 && !Game.hasFlag("gu_yan_stole_god_power")) {
+      if (Math.random() < 0.6) return "gu_yan";
     }
-    return false;
-  };
-
-  // Wolf king retaliation: triggered when killed by a villager/god, but NOT by curse.
-  Game.canWolfKingRetaliate = function (causeOfDeath) {
-    if (causeOfDeath === 'curse') return false;
-    return true;
-  };
-
-  Game.resetGodSkillsDaily = function () {
-    var g = ensureState();
-    g.godSkills.knight.weakened = false;
-  };
-
-  Game.resetGodSkillsLoop = function () {
-    var g = ensureState();
-    g.godSkills.witch = { uses: 0, maxUses: 3, broken: false, hasReviveTarget: null, curses: [], actedTonight: false };
-    g.godSkills.knight = { duelsUsed: 0, weakened: false, lastTarget: null };
-    g.godSkills.prophet = { checks: [], exposed: false, sharedWith: {} };
-  };
-})();
-
-/*
- * vote.js - Wolf team voting system: score targets + decide night kill
- */
-
-(function () {
-  'use strict';
-
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
+    // Zhao Mingcheng (cleaner) wants to kill gods to remove the body
+    if (isGod && aliveWolves.indexOf("zhao_mingcheng") !== -1) {
+      if (Math.random() < 0.45) return "zhao_mingcheng";
     }
-    return State.variables.game;
-  }
 
-  var Game = window.Game;
-
-  var WOLF_IDS = ['zhou_yang', 'tang_xiaotang', 'zhao_mingcheng', 'gu_yan'];
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
-
-  // Scoring weights for wolf target selection
-  var WEIGHTS = {
-    threat: 2.0,
-    isolation: 1.5,
-    trust_chenmo: -1.0,
-    ability: 1.0,
-    info: 1.2
-  };
-
-  // Score a potential target for a wolf (higher = more likely to kill)
-  Game.scoreTarget = function (charId) {
-    var g = ensureState();
-    if (!g.alive[charId]) return -1;
-    if (WOLF_IDS.indexOf(charId) !== -1) return -1;
-    if (charId === 'chen_mo') return -1; // protagonist protected
-
-    var role = Game.roleOf(charId);
-    var profile = GameState.PROFILES[charId] || {};
-
-    var score = 10;
-
-    // Threat score: gods are high threat
-    var threatScore = 3;
-    if (['prophet', 'witch', 'knight', 'magician'].indexOf(role) !== -1) {
-      threatScore = 7;
-    }
-    // Chen Mo with loop memory is dangerous
-    if (charId === 'chen_mo' && Game.hasFlag('loop_awakened')) {
-      threatScore = 8;
-    }
-    // Exposed roles are known threats
-    if (Game.hasRevealed(charId, 'witch_exposed') || Game.hasRevealed(charId, 'identity_exposed')) {
-      threatScore += 3;
-    }
-    score += threatScore * WEIGHTS.threat;
-
-    // Isolation score: targets that are isolated are easier kills
-    var isolationScore = 0;
-    if (charId === 'fang_heng' && Game.hasRevealed(charId, 'identity_exposed')) {
-      isolationScore += 4;
-    }
-    if (charId === 'lin_xiaoman' && Game.knightWeakened()) {
-      isolationScore += 4;
-    }
-    if (charId === 'ye_zhiqiu' && Game.witchBroken()) {
-      isolationScore += 3;
-    }
-    score += isolationScore * WEIGHTS.isolation;
-
-    // Trust score: if Chen Mo trusts someone, wolves want them dead
-    var trustKey = 'trust_' + charId;
-    var trustVal = g.stats[trustKey] || 0;
-    var trustScore = trustVal / 10;
-    if (charId === 'su_wan' || charId === 'jiang_bai') {
-      trustScore = 7;
-    }
-    score += trustScore * WEIGHTS.trust_chenmo;
-
-    score += (profile.ability || 3) * WEIGHTS.ability;
-
-    // Info score: characters with backstory clues are info-rich targets
-    var infoScore = 3;
-    var backstoryClue = GameState.BACKSTORY_KEYS[charId];
-    if (backstoryClue && Game.hasClue(backstoryClue)) {
-      infoScore += 2;
-    }
-    score += infoScore * WEIGHTS.info;
-
-    // Random variance
-    score *= (0.85 + Math.random() * 0.3);
-
-    return Math.round(score);
-  };
-
-  // Team-level wolf target selection.
-  // Wolves cannot communicate at night (per design), so instead of requiring
-  // independent votes to reach consensus, the pack acts as one: each alive wolf
-  // contributes its personal preference weights, we aggregate them into a single
-  // weighted distribution, and pick one target. This keeps per-wolf personality
-  // (protecting friends, targeting rivals) while guaranteeing a kill happens.
-  Game.getWolfTarget = function () {
-    var g = ensureState();
-
-    var candidates = [];
-
-    Object.keys(g.alive).forEach(function (charId) {
-      if (!g.alive[charId]) return;
-      if (WOLF_IDS.indexOf(charId) !== -1) return;
-      if (charId === 'chen_mo') return; // protagonist protected
-      candidates.push(charId);
+    // ── Non-god targets or god kill fell through: rotate fairly ──
+    // All three wolves share the risk. No one defaults to always killing.
+    // Weighted random: Zhou Yang slightly lower (he's the most valuable piece).
+    var candidates = aliveWolves.filter(function (w) { return w !== "tang_xiaotang"; });
+    var weights = candidates.map(function (w) {
+      if (w === "zhou_yang") return 2;      // wolf king: valuable, less risky assignments
+      if (w === "zhao_mingcheng") return 3; // cleaner: willing
+      if (w === "gu_yan") return 3;         // mech wolf: willing
+      return 1;
     });
-
-    if (candidates.length === 0) return null;
-
-    // Day 1: wolves don't know identities, random kill
-    if (g.day === 1) {
-      return candidates[Math.floor(Math.random() * candidates.length)];
-    }
-
-    var aliveWolves = WOLF_IDS.filter(function (w) { return g.alive[w]; });
-
-    // Aggregate each wolf's preference weights across all candidates
-    var teamWeights = {};
-    candidates.forEach(function (c) { teamWeights[c] = 1; }); // baseline
-
-    aliveWolves.forEach(function (wolfId) {
-      var preferences = {};
-      if (wolfId === 'tang_xiaotang') {
-        preferences['su_wan'] = 4;       // jealous of the female lead
-        preferences['ye_zhiqiu'] = 2;
-      } else if (wolfId === 'gu_yan') {
-        preferences['zheng_shoushan'] = 3; // old zheng knows too much
-        preferences['jiang_bai'] = 2;
-        preferences['su_wan'] = 1;
-      } else if (wolfId === 'zhao_mingcheng') {
-        preferences['zheng_shoushan'] = 4; // old zheng knows too much
-        preferences['fang_heng'] = 3;
-      } else if (wolfId === 'zhou_yang') {
-        preferences['lin_xiaoman'] = 3;   // knight is dangerous
-        preferences['fang_heng'] = 2;     // prophet is dangerous
-        preferences['shen_shen'] = 1;
-      }
-
-      // Boost preference for exposed roles (pack-wide signal)
-      candidates.forEach(function (cid) {
-        if (Game.hasRevealed(cid, 'witch_exposed') || Game.hasRevealed(cid, 'identity_exposed')) {
-          preferences[cid] = (preferences[cid] || 0) + 4;
-        }
-      });
-
-      // Some wolves refuse to target certain characters (personal bonds)
-      var veto = [];
-      if (wolfId === 'tang_xiaotang') veto = ['lin_xiaoman', 'chen_mo'];
-
-      candidates.forEach(function (cid) {
-        if (veto.indexOf(cid) !== -1) return;
-        teamWeights[cid] += (preferences[cid] || 0);
-      });
-    });
-
-    // Weighted random selection from the aggregated distribution
-    var total = 0;
-    candidates.forEach(function (c) { total += teamWeights[c]; });
-    var r = Math.random() * total;
-    var accum = 0;
+    var total = weights.reduce(function (a, b) { return a + b; }, 0);
+    var roll = Math.random() * total;
+    var acc = 0;
     for (var i = 0; i < candidates.length; i++) {
-      accum += teamWeights[candidates[i]];
-      if (r <= accum) return candidates[i];
+      acc += weights[i];
+      if (roll < acc) return candidates[i];
     }
     return candidates[candidates.length - 1];
   };
 })();
+
+
+/*
+ * vote-beta.js - Wolf pack discussion flow (BETA)
+ *
+ * Key change from vote.js:
+ *   - Soul-bound (缚魂) wolves CANNOT attend the nightly meeting
+ *   - Remaining wolves need UNANIMOUS consent to kill
+ *   - If even 1 attending wolf disagrees -> safe night (no kill)
+ *   - Single wolf alone: 50% chance too scared to act alone
+ */
+
+(function () {
+  "use strict";
+
+  function ensureState() {
+    if (!State.variables.game) {
+      State.variables.game = GameState.create();
+    }
+    return State.variables.game;
+  }
+
+  var Game = window.Game;
+  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+
+  var REASONS = {
+    aggressive: ["他白天太活跃了。", "他看我的眼神不对劲。", "留着他迟早出事。"],
+    calculated: ["他知道得太多了。", "他是最大的变数。", "他活着对我们不利。"],
+    mech: ["他身上有我想要的东西。", "杀了他我能获得能力。"],
+    wolf_king: ["他是最硬的骨头。", "杀了他其他人就不敢动了。"]
+  };
+
+  function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  Game.wolfName = function (wolfId) {
+    var names = { zhou_yang: "周阳", tang_xiaotang: "唐小棠", zhao_mingcheng: "赵明城", gu_yan: "顾言" };
+    return names[wolfId] || wolfId;
+  };
+
+  // ── Get attending wolves (alive AND not soul-bound) ──
+  // Kill-heart threshold: probability each wolf will attend tonight's hunt.
+  // Early days = high hesitation. Each wolf has different psychology.
+  // Root cause: system psychological erosion intensifies over days.
+  var KILL_HEART = {
+    // zhou_yang: killed before as a child, violence closest to surface
+    zhou_yang:       { d2: 0.60, d3: 0.85, d4plus: 0.98 },
+    // zhao_mingcheng: white glove, used to dirty business but first-hand kill is a threshold
+    zhao_mingcheng:  { d2: 0.30, d3: 0.70, d4plus: 0.95 },
+    // gu_yan: physicist, scholar, hardest to cross the line
+    gu_yan:          { d2: 0.10, d3: 0.40, d4plus: 0.85 }
+  };
+
+  Game.wolfKillHeart = function (wolfId) {
+    var g = ensureState();
+    var kh = KILL_HEART[wolfId];
+    if (!kh) return 1.0;
+    var day = g.day || 2;
+    var threshold;
+    if (day <= 2) threshold = kh.d2;
+    else if (day === 3) threshold = kh.d3;
+    else threshold = kh.d4plus;
+    return threshold;
+  };
+
+  Game.getAttendingWolves = function () {
+    var g = ensureState();
+    return WOLF_IDS.filter(function (w) {
+      if (!g.alive[w]) return false;
+      // [v9.3.3 FIX] Exiled wolves are locked in the cellar — cannot attend
+      // the nightly kill meeting or participate in any wolf action.
+      if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
+      if (Game.isSoulBound(w)) return false;
+      // Kill-heart check: wolf may hesitate (not attend) early on
+      var heart = Game.wolfKillHeart(w);
+      return Math.random() < heart;
+    });
+  };
+
+  Game.selectWolfLeader = function (exclude) {
+    exclude = exclude || [];
+    var attending = Game.getAttendingWolves();
+    if (attending.length === 0) return null;
+    var priority = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+    for (var i = 0; i < priority.length; i++) {
+      if (attending.indexOf(priority[i]) !== -1 && exclude.indexOf(priority[i]) === -1) {
+        return priority[i];
+      }
+    }
+    return attending[attending.length - 1];
+  };
+
+  Game.leaderProposal = function (leaderId) {
+    var g = ensureState();
+    var candidates = Game.activeList().filter(function (cid) {
+      return cid !== "chen_mo" && cid !== "tang_xiaotang" &&
+           WOLF_IDS.indexOf(cid) === -1 &&
+           Game.roleOf(cid) !== "hidden_wolf";
+    });
+    if (candidates.length === 0) return null;
+
+    // Global: if Fang Heng has been exposed (shot someone), ALL wolves prioritize him.
+    // In China, a man with a gun is terrifying — he must be eliminated first.
+    var pr = g.godSkills.prophet;
+    if (pr && pr.exposed && candidates.indexOf("fang_heng") !== -1 && g.alive["fang_heng"]) {
+      return { target: "fang_heng", reason: "He has a gun. He already killed someone. Eliminate him now." };
+
+    // If Lao Zheng publicly spoke about hearing footsteps at night,
+    // ALL wolves prioritize killing him — he's a surveillance threat.
+    if (Game.hasFlag("zheng_spoke_hearing") && candidates.indexOf("zheng_shoushan") !== -1 && g.alive["zheng_shoushan"]) {
+      return { target: "zheng_shoushan", reason: "他能听见我们夜里的动静。必须处理掉。" };
+    }
+
+    // [v9.5] If the witch (Ye Zhiqiu) exposed herself to veto an exile,
+    // wolves prioritize her — she can revive anyone they kill.
+    if (Game.hasFlag("ye_zhiqiu_exposed") && candidates.indexOf("ye_zhiqiu") !== -1 && g.alive["ye_zhiqiu"]) {
+      return { target: "ye_zhiqiu", reason: "She just revealed she can bring the dead back. She dies tonight." };
+    }
+
+    }
+
+    if (g.day <= 1) {
+      return { target: candidates[Math.floor(Math.random() * candidates.length)], reason: "先随便解决一个。" };
+    }
+
+    var target = null, reason = "";
+
+    if (leaderId === "zhou_yang") {
+      var aggressive = candidates.filter(function (c) {
+        return Game.hasFlag("confronted_wolf_" + c) || GOD_ROLES.indexOf(Game.roleOf(c)) !== -1;
+      });
+      target = aggressive.length > 0 ? aggressive[Math.floor(Math.random() * aggressive.length)] : candidates[Math.floor(Math.random() * candidates.length)];
+      reason = randomFrom(REASONS.aggressive);
+    } else if (leaderId === "zhao_mingcheng") {
+      // If Fang Heng has been exposed (shot someone), he is top priority —
+      // a man with a gun who is not afraid to use it is the biggest threat.
+      var exposed = false;
+      var pr = g.godSkills.prophet;
+      if (pr && pr.exposed) exposed = true;
+      if (exposed && candidates.indexOf("fang_heng") !== -1) {
+        return { target: "fang_heng", reason: "He has a gun. He already killed someone. We are next." };
+      }
+      var infoRisks = candidates.filter(function (c) {
+        return c === "zheng_shoushan" || c === "fang_heng" || Game.hasRevealed(c, "backstory");
+      });
+      target = infoRisks.length > 0 ? infoRisks[Math.floor(Math.random() * infoRisks.length)] : candidates[Math.floor(Math.random() * candidates.length)];
+      reason = randomFrom(REASONS.calculated);
+    } else if (leaderId === "gu_yan") {
+      var gods = candidates.filter(function (c) {
+        return GOD_ROLES.indexOf(Game.roleOf(c)) !== -1 && !Game.hasFlag("gu_yan_stole_god_power");
+      });
+      if (gods.length > 0) {
+        target = gods[Math.floor(Math.random() * gods.length)];
+        reason = randomFrom(REASONS.mech);
+      } else {
+        target = candidates[Math.floor(Math.random() * candidates.length)];
+        reason = "没有更好的目标了。";
+      }
+    }
+
+    return { target: target, reason: reason };
+  };
+
+  Game.wolfResponse = function (wolfId, proposedTarget, leaderId) {
+    var g = ensureState();
+    var resp = { wolf: wolfId, vote: null, narrative: "" };
+
+    if (wolfId === "zhao_mingcheng") {
+      if (proposedTarget === "chen_mo") {
+        resp.vote = "oppose";
+      } else if (proposedTarget === "zheng_shoushan" || proposedTarget === "fang_heng") {
+        resp.vote = "approve";
+      } else if (Math.random() < 0.2 && leaderId !== "zhao_mingcheng") {
+        resp.vote = "oppose";
+      } else {
+        resp.vote = "approve";
+      }
+    } else if (wolfId === "gu_yan") {
+      var targetRole = Game.roleOf(proposedTarget);
+      if (GOD_ROLES.indexOf(targetRole) !== -1) {
+        resp.vote = "approve";
+      } else if (Math.random() < 0.4) {
+        resp.vote = "oppose";
+      } else {
+        resp.vote = "approve";
+      }
+    } else if (wolfId === "zhou_yang") {
+      if (wolfId === leaderId) {
+        resp.vote = "leader";
+      } else {
+        if (proposedTarget === "tang_xiaotang" || proposedTarget === "chen_mo") {
+          resp.vote = "oppose";
+        } else {
+          resp.vote = "approve";
+        }
+      }
+    }
+    return resp;
+  };
+
+  // ── Resolve discussion: UNANIMOUS consent required ──
+  Game.resolveWolfDiscussion = function () {
+    var g = ensureState();
+    var attending = Game.getAttendingWolves();
+
+    // No wolves attending -> safe night
+    if (attending.length === 0) {
+      return { leader: null, finalTarget: null, resolution: "no_attendance", absent: "all_bound" };
+    }
+
+    // Single wolf alone: 50% chance too scared to act
+    if (attending.length === 1) {
+      if (Math.random() < 0.5) {
+        return { leader: attending[0], finalTarget: null, resolution: "lone_wolf_hesitated", absent: "alone" };
+      }
+    }
+
+    var maxRounds = 3;
+    var usedLeaders = [];
+
+    for (var round = 1; round <= maxRounds; round++) {
+      var leader = Game.selectWolfLeader(usedLeaders);
+      if (!leader) break;
+      usedLeaders.push(leader);
+
+      var proposal = Game.leaderProposal(leader);
+      if (!proposal) return null;
+
+      // Check responses from ALL attending wolves
+      var approve = 0, oppose = 0;
+      attending.forEach(function (wid) {
+        if (wid === leader) { approve++; return; }
+        var r = Game.wolfResponse(wid, proposal.target, leader);
+        if (r.vote === "approve") approve++;
+        else if (r.vote === "oppose") oppose++;
+      });
+
+      // UNANIMOUS: everyone must approve (no opposes)
+      if (oppose === 0) {
+        return {
+          leader: leader,
+          finalTarget: proposal.target,
+          resolution: "unanimous",
+          attendingCount: attending.length
+        };
+      }
+
+      // Someone disagreed — try next round with a different leader
+    }
+
+    // All rounds exhausted, no consensus -> SAFE NIGHT
+    return {
+      leader: null,
+      finalTarget: null,
+      resolution: "no_consensus",
+      attendingCount: attending.length
+    };
+  };
+
+  function makeResult(leader, proposal, responses, resolution, finalTarget) {
+    return {
+      leader: leader,
+      leaderName: leader ? Game.wolfName(leader) : null,
+      proposal: proposal,
+      responses: responses,
+      resolution: resolution,
+      finalTarget: finalTarget
+    };
+  }
+
+  // ── Target selection ──
+  Game.getWolfTarget = function () {
+    var discussion = Game.resolveWolfDiscussion();
+    if (discussion && discussion.finalTarget) return discussion.finalTarget;
+    return null;
+  };
+
+  // ── Expose how many wolves are attending (for stats) ──
+  Game.wolfAttendingCount = function () {
+    return Game.getAttendingWolves().length;
+  };
+
+  // ── Expose last discussion result for stats ──
+  Game.lastDiscussionResult = null;
+  var origGetWolfTarget = Game.getWolfTarget;
+  Game.getWolfTarget = function () {
+    var result = Game.resolveWolfDiscussion();
+    Game.lastDiscussionResult = result;
+    if (result && result.finalTarget) return result.finalTarget;
+    return null;
+  };
+
+})();
+
 
 :: StoryStylesheet
 /* === 无尽雪夜 · 最小样式 === */
