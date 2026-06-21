@@ -345,7 +345,7 @@
       // Fang's cross-validated intel (that returns earlier in the function).
       var targetRole = Game.roleOf(best);
       var isWolf = ['wolf', 'wolf_king', 'mechanical_wolf', 'hidden_wolf'].indexOf(targetRole) !== -1;
-      if (!isWolf && Math.random() < 0.65) {
+      if (!isWolf && Math.random() < 0.5) {
         return null;  // she hesitates, cools down, doesn't duel today
       }
       return best;
