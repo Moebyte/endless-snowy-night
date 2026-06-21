@@ -645,7 +645,10 @@ var protect = {
   };
 
   // ---- AI: run the daytime accusation phase (at most one per day) ----
-  // Priority: Lin Xiaoman -> Fang Heng -> Zhao Mingcheng.
+  // Priority: Jiang Bai (physical trap evidence) > Lin Xiaoman > Fang Heng > Zhao Mingcheng > Gu Yan.
+  // Jiang Bai's trap evidence is a hard physical fact, so it takes precedence
+  // over everyone else's suspicion/intuition/framing. When he has no evidence,
+  // he simply doesn't participate and the normal order runs.
 
   Game.exileAIPhase = function () {
     var g = ensureState();
@@ -653,7 +656,16 @@ var protect = {
 
     Game.exileUpdateSuspicion();
 
-    var order = ['lin_xiaoman', 'fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'];
+    // Jiang Bai goes FIRST if he has trap evidence today.
+    if (g.alive['jiang_bai'] && !(typeof Game.isExiled === 'function' && Game.isExiled('jiang_bai'))) {
+      var jbTarget = Game.exileAIGetAccusationTarget('jiang_bai');
+      if (jbTarget) {
+        return Game.exileAccuse('jiang_bai', jbTarget);
+      }
+    }
+
+    // Normal order for the other four accusers.
+    var order = ['lin_xiaoman', 'fang_heng', 'zhao_mingcheng', 'gu_yan'];
     for (var i = 0; i < order.length; i++) {
       var acc = order[i];
       if (!g.alive[acc]) continue;
