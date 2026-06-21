@@ -44,17 +44,17 @@
   // Room assignments (v9.5)
   // 3 floors, 4 rooms each, stairs at both ends (east/west)
   GameState.ROOMS = {
-    // Floor 1 (lobby level)
+    // Floor 1 (lobby level) - 101(W) 102 103 104(E)
     '101': { floor: 1, pos: 'W', char: 'zhou_yang' },
-    '102': { floor: 1, pos: 'W-M', char: 'zhao_mingcheng' },
+    '102': { floor: 1, pos: 'W-M', char: 'shen_shen' },
     '103': { floor: 1, pos: 'M-E', char: 'fang_heng' },
-    '104': { floor: 1, pos: 'E', char: 'shen_shen' },
-    // Floor 2 (protagonist level)
+    '104': { floor: 1, pos: 'E', char: 'zhao_mingcheng' },
+    // Floor 2 (protagonist level) - 201(W) 202 203 204(E)
     '201': { floor: 2, pos: 'W', char: 'chen_mo' },
     '202': { floor: 2, pos: 'W-M', char: 'jiang_bai' },
-    '203': { floor: 2, pos: 'M-E', char: 'zheng_shoushan' },
-    '204': { floor: 2, pos: 'E', char: 'gu_yan' },
-    // Floor 3 (girls' level)
+    '203': { floor: 2, pos: 'M-E', char: 'gu_yan' },
+    '204': { floor: 2, pos: 'E', char: 'zheng_shoushan' },
+    // Floor 3 (girls' level) - 301(W) 302 303 304(E)
     '301': { floor: 3, pos: 'W', char: 'su_wan' },
     '302': { floor: 3, pos: 'W-M', char: 'lin_xiaoman' },
     '303': { floor: 3, pos: 'M-E', char: 'tang_xiaotang' },

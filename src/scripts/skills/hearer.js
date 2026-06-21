@@ -30,9 +30,9 @@
   }
 
   // Lao Zheng'''s room and floor
-  var LAO_ZHENG_ROOM = "203";
+  var LAO_ZHENG_ROOM = "204";
   var LAO_ZHENG_FLOOR = 2;
-  var NEIGHBOR_ROOM = "204"; // Gu Yan lives next door
+  var NEIGHBOR_ROOM = "203"; // Gu Yan lives next door (203)
 
   // ── Initialize hearing state ──
   Game.hearerInit = function () {
