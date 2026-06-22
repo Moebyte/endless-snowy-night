@@ -139,7 +139,14 @@ function runOne(seed) {
       }
     }
 
-    let kill = Game.executeWolfKill();
+    // If self-stab feint is active, there is no real wolf kill tonight.
+    let kill;
+    if (selfStabResult) {
+      kill = { target: null, killed: false, actualTarget: null, killer: null, special: 'self_stab_night' };
+      g.lastWolfKill = kill;
+    } else {
+      kill = Game.executeWolfKill();
+    }
     if (typeof Game.hearerNightCheck === 'function') { const hr = Game.hearerNightCheck(kill); if (hr) hearerResult = hr; }
     g.lastWolfKill = kill;
     // If main wolves are dead/inactive, check hidden wolf awakening.
@@ -359,6 +366,7 @@ special.forEach(r => {
     if (l.guardTarget) line += ' | 守' + nm(l.guardTarget);
     if (l.exile && l.exile.ok) line += ' | ' + nm(l.exile.accuser) + '质疑' + nm(l.exile.target) + '(' + l.exile.votesFor + '赞:' + l.exile.votesAgainst + '反:' + (l.exile.abstains||0) + '弃' + (l.exile.exiled?(l.exile.swingTriggered?'→陈默破平流放':'→流放'):'→保留') + ')';
     if (l.witch) line += ' | 渡君' + l.witch.action + nm(l.witch.target) + (l.witch.ok?'✓':'✗');
+    if (l.selfStab) line += ' | 自刀' + nm(l.selfStab.stabber) + (l.selfStab.witchRecognized?'{识破}':l.selfStab.witchRevived?'{被骗复活}':'{未救}');
     console.log(line);
   });
 });
