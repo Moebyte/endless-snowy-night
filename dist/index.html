@@ -2937,7 +2937,15 @@ var protect = {
       }
     }
 
-    if (bestSusp >= 65 || (g.day >= 5 && bestSusp >= 50)) {
+    // [v9.6] Phase aggression: later loops = Lin Xiaoman acts sooner.
+    var _duelThresh = 65;
+    var _duelLateThresh = 50;
+    if (typeof Game.getAggression === 'function') {
+      var _agg = Game.getAggression();
+      _duelThresh = Math.round(65 / _agg);      // 65 -> ~49 late
+      _duelLateThresh = Math.round(50 / _agg);  // 50 -> ~38 late
+    }
+    if (bestSusp >= _duelThresh || (g.day >= 5 && bestSusp >= _duelLateThresh)) {
       // [v9.4] Hesitation: if the target is actually a good person (not a wolf),
       // Lin Xiaoman has a 50% chance to hesitate at the last moment. She's
       // impulsive, not cold-blooded — the voice in her head says "what if
@@ -3500,7 +3508,14 @@ var protect = {
     if (!actualDead) return false;
     if (!g.alive[actualDead]) {
       var deadRole = Game.roleOf(actualDead);
-      if (GOD_ROLES.indexOf(deadRole) !== -1) return true;
+      if (GOD_ROLES.indexOf(deadRole) !== -1) {
+        // [v9.6] Phase aggression: in later loops Fang Heng is bolder.
+        // Early: always hides (safe). Mid: 50/50. Late: shares anyway.
+        if (typeof Game.getAggression === 'function') {
+          return Math.random() > Game.getAggression();
+        }
+        return true;
+      }
     }
     return false;
   };
@@ -4927,7 +4942,12 @@ GameState.getProfile = function (charId) {
     // the fake jumper may hold off
     var lastKill = g.lastWolfKill;
     if (lastKill && lastKill.killed && lastKill.actualTarget && !g.alive[lastKill.actualTarget]) {
-      if (Math.random() < 0.4) return { ok: false, reason: "deep_water" };
+      // [v9.6] Phase aggression: later loops = less likely to hold off.
+      var _holdChance = 0.4;
+      if (typeof Game.getAggression === "function") {
+        _holdChance = 0.4 / Game.getAggression();  // late: 0.4/1.0 = 0.4, early: 0.4/0.5 = 0.8
+      }
+      if (Math.random() < _holdChance) return { ok: false, reason: "deep_water" };
     }
 
     g.godSkills.fakeProphet = {
@@ -5846,6 +5866,10 @@ Game.mechWolfAIActivatePower = function () {
     if (day <= 2) threshold = kh.d2;
     else if (day === 3) threshold = kh.d3;
     else threshold = kh.d4plus;
+    // [v9.6] Phase aggression: later loops = wolves more willing to kill.
+    if (typeof Game.getAggression === 'function') {
+      threshold = Math.min(0.99, threshold * Game.getAggression());
+    }
     return threshold;
   };
 

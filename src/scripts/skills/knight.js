@@ -337,7 +337,15 @@
       }
     }
 
-    if (bestSusp >= 65 || (g.day >= 5 && bestSusp >= 50)) {
+    // [v9.6] Phase aggression: later loops = Lin Xiaoman acts sooner.
+    var _duelThresh = 65;
+    var _duelLateThresh = 50;
+    if (typeof Game.getAggression === 'function') {
+      var _agg = Game.getAggression();
+      _duelThresh = Math.round(65 / _agg);      // 65 -> ~49 late
+      _duelLateThresh = Math.round(50 / _agg);  // 50 -> ~38 late
+    }
+    if (bestSusp >= _duelThresh || (g.day >= 5 && bestSusp >= _duelLateThresh)) {
       // [v9.4] Hesitation: if the target is actually a good person (not a wolf),
       // Lin Xiaoman has a 50% chance to hesitate at the last moment. She's
       // impulsive, not cold-blooded — the voice in her head says "what if

@@ -58,6 +58,10 @@
     if (day <= 2) threshold = kh.d2;
     else if (day === 3) threshold = kh.d3;
     else threshold = kh.d4plus;
+    // [v9.6] Phase aggression: later loops = wolves more willing to kill.
+    if (typeof Game.getAggression === 'function') {
+      threshold = Math.min(0.99, threshold * Game.getAggression());
+    }
     return threshold;
   };
 

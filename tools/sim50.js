@@ -306,7 +306,23 @@ console.log('===== 胜负统计 =====');
 console.log('好人胜: ' + goodWin + '/50 (' + (goodWin/50*100).toFixed(0) + '%) | 堕仙胜: ' + wolfWin + '/50 (' + (wolfWin/50*100).toFixed(0) + '%) | 平局(7天未分): ' + draws + '/50 (' + (draws/50*100).toFixed(0) + '%)');
 console.log('');
 console.log('===== 50轮汇总 =====');
-console.log('平均每轮死亡: ' + (stats.deaths/50).toFixed(1));
+// Per-phase breakdown
+  let earlyDeaths = 0, midDeaths = 0, lateDeaths = 0;
+  let earlyRuns = 0, midRuns = 0, lateRuns = 0;
+  let earlyDuels = 0, midDuels = 0, lateDuels = 0;
+  all.forEach(r => {
+    const phase = r.loop <= 3 ? 'early' : (r.loop <= 7 ? 'mid' : 'late');
+    const deaths = r.log.filter(l=>l.kill.killed).length;
+    const duels = r.log.filter(l=>l.duelTarget).length;
+    if (phase === 'early') { earlyDeaths += deaths; earlyRuns++; earlyDuels += duels; }
+    else if (phase === 'mid') { midDeaths += deaths; midRuns++; midDuels += duels; }
+    else { lateDeaths += deaths; lateRuns++; lateDuels += duels; }
+  });
+  console.log('--- 阶段对比 ---');
+  console.log('初期(loop1-3): 平均死亡' + (earlyDeaths/earlyRuns).toFixed(1) + ' 决斗' + earlyDuels + '次/' + earlyRuns + '轮');
+  console.log('中期(loop4-7): 平均死亡' + (midDeaths/midRuns).toFixed(1) + ' 决斗' + midDuels + '次/' + midRuns + '轮');
+  console.log('后期(loop8+):  平均死亡' + (lateDeaths/lateRuns).toFixed(1) + ' 决斗' + lateDuels + '次/' + lateRuns + '轮');
+  console.log('平均每轮死亡: ' + (stats.deaths/50).toFixed(1));
 console.log('渡君救人: ' + stats.witchSave + ' | 渡君缚魂: ' + stats.witchCurse + ' (其中堕仙: ' + stats.witchCurseWolvesOnly + '/' + stats.witchCurseTotal + ')');
 console.log('幻真交换: ' + stats.swaps + ' | 镇煞守卫: ' + stats.guards + ' | 昭判分享: ' + stats.shares);
 console.log('昭判主动开枪: ' + stats.prophetShots + ' (杀狼:' + stats.prophetShotsKilledWolf + ') | 临死反杀: ' + stats.prophetCounterShots + ' (猜中凶手:' + stats.prophetCounterHit + ' 打偏:' + stats.prophetCounterMiss + ')');

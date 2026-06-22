@@ -46,7 +46,12 @@
     // the fake jumper may hold off
     var lastKill = g.lastWolfKill;
     if (lastKill && lastKill.killed && lastKill.actualTarget && !g.alive[lastKill.actualTarget]) {
-      if (Math.random() < 0.4) return { ok: false, reason: "deep_water" };
+      // [v9.6] Phase aggression: later loops = less likely to hold off.
+      var _holdChance = 0.4;
+      if (typeof Game.getAggression === "function") {
+        _holdChance = 0.4 / Game.getAggression();  // late: 0.4/1.0 = 0.4, early: 0.4/0.5 = 0.8
+      }
+      if (Math.random() < _holdChance) return { ok: false, reason: "deep_water" };
     }
 
     g.godSkills.fakeProphet = {
