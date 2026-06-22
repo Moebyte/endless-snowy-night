@@ -5875,15 +5875,16 @@ Game.mechWolfAIActivatePower = function () {
 
   Game.getAttendingWolves = function () {
     var g = ensureState();
+    // [v9.6.1] All alive, non-exiled, non-bound wolves ATTEND the meeting.
+    // Kill-heart no longer gates attendance — a hesitant wolf still shows up
+    // to discuss, he just may not agree to the specific plan (see wolfResponse).
+    // Previously this filtered by kill-heart, causing ~45% of nights to have
+    // too few attendees -> safe night.
     return WOLF_IDS.filter(function (w) {
       if (!g.alive[w]) return false;
-      // [v9.3.3 FIX] Exiled wolves are locked in the cellar — cannot attend
-      // the nightly kill meeting or participate in any wolf action.
       if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
       if (Game.isSoulBound(w)) return false;
-      // Kill-heart check: wolf may hesitate (not attend) early on
-      var heart = Game.wolfKillHeart(w);
-      return Math.random() < heart;
+      return true;
     });
   };
 
@@ -5975,12 +5976,18 @@ Game.mechWolfAIActivatePower = function () {
     var g = ensureState();
     var resp = { wolf: wolfId, vote: null, narrative: "" };
 
+    // [v9.6.1] Base hesitation from kill-heart: low-heart wolves oppose more.
+    // This makes early phases cautious (hard to reach majority) while late
+    // phases sail through (high heart = rarely opposes).
+    var _heart = Game.wolfKillHeart(wolfId);
+    var _hesitate = 1 - _heart;  // 0.9 early, 0.05 late
+
     if (wolfId === "zhao_mingcheng") {
       if (proposedTarget === "chen_mo") {
         resp.vote = "oppose";
       } else if (proposedTarget === "zheng_shoushan" || proposedTarget === "fang_heng") {
         resp.vote = "approve";
-      } else if (Math.random() < 0.2 && leaderId !== "zhao_mingcheng") {
+      } else if (Math.random() < (_hesitate * 0.3) && leaderId !== "zhao_mingcheng") {
         resp.vote = "oppose";
       } else {
         resp.vote = "approve";
@@ -5989,7 +5996,7 @@ Game.mechWolfAIActivatePower = function () {
       var targetRole = Game.roleOf(proposedTarget);
       if (GOD_ROLES.indexOf(targetRole) !== -1) {
         resp.vote = "approve";
-      } else if (Math.random() < 0.4) {
+      } else if (Math.random() < (_hesitate * 0.5)) {
         resp.vote = "oppose";
       } else {
         resp.vote = "approve";
@@ -6045,17 +6052,19 @@ Game.mechWolfAIActivatePower = function () {
         else if (r.vote === "oppose") oppose++;
       });
 
-      // UNANIMOUS: everyone must approve (no opposes)
-      if (oppose === 0) {
+      // [v9.6.1] MAJORITY rules: approve > oppose is enough.
+      // Wolves are a pack — the majority drags the hesitant one along.
+      // (Previously required unanimous, causing ~45% safe nights.)
+      if (approve > oppose) {
         return {
           leader: leader,
           finalTarget: proposal.target,
-          resolution: "unanimous",
+          resolution: "majority",
           attendingCount: attending.length
         };
       }
 
-      // Someone disagreed — try next round with a different leader
+      // Majority not reached — try next round with a different leader
     }
 
     // All rounds exhausted, no consensus -> SAFE NIGHT

@@ -322,7 +322,23 @@ console.log('===== 50轮汇总 =====');
   console.log('初期(loop1-3): 平均死亡' + (earlyDeaths/earlyRuns).toFixed(1) + ' 决斗' + earlyDuels + '次/' + earlyRuns + '轮');
   console.log('中期(loop4-7): 平均死亡' + (midDeaths/midRuns).toFixed(1) + ' 决斗' + midDuels + '次/' + midRuns + '轮');
   console.log('后期(loop8+):  平均死亡' + (lateDeaths/lateRuns).toFixed(1) + ' 决斗' + lateDuels + '次/' + lateRuns + '轮');
-  console.log('平均每轮死亡: ' + (stats.deaths/50).toFixed(1));
+  
+  // Night kill failure breakdown
+  let killAttempts = 0, killGuarded = 0, killSoulBound = 0, killNoTarget = 0, witchSaves = 0, witchBinds = 0;
+  all.forEach(r => r.log.forEach(l => {
+    if (l.kill) {
+      if (l.kill.special === 'guarded') killGuarded++;
+      if (l.kill.special === 'soul_bound') killSoulBound++;
+      if (l.kill.special === 'no_target' || l.kill.special === 'no_wolves' || (!l.kill.killed && !l.kill.special)) killNoTarget++;
+    }
+    if (l.witch && l.witch.action === 'save' && l.witch.ok) witchSaves++;
+    if (l.witch && l.witch.action === 'bind' && l.witch.ok) witchBinds++;
+  }));
+  console.log('--- 夜杀失败原因 ---');
+  console.log('镇煞守卫挡下: ' + killGuarded + ' | 缚魂阻止: ' + killSoulBound + ' | 无人可杀/安全夜: ' + killNoTarget);
+  console.log('女巫救人成功: ' + witchSaves + ' | 女巫缚魂成功: ' + witchBinds);
+
+console.log('平均每轮死亡: ' + (stats.deaths/50).toFixed(1));
 console.log('渡君救人: ' + stats.witchSave + ' | 渡君缚魂: ' + stats.witchCurse + ' (其中堕仙: ' + stats.witchCurseWolvesOnly + '/' + stats.witchCurseTotal + ')');
 console.log('幻真交换: ' + stats.swaps + ' | 镇煞守卫: ' + stats.guards + ' | 昭判分享: ' + stats.shares);
 console.log('昭判主动开枪: ' + stats.prophetShots + ' (杀狼:' + stats.prophetShotsKilledWolf + ') | 临死反杀: ' + stats.prophetCounterShots + ' (猜中凶手:' + stats.prophetCounterHit + ' 打偏:' + stats.prophetCounterMiss + ')');
