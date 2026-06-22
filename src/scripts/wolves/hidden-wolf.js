@@ -35,14 +35,7 @@
       if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
       return true;
     });
-    // Phase-gated: late phase (loop 8+) awakens when only 2 known wolves remain active.
-    var threshold = (typeof Game.hiddenWolfAwakenThreshold === "function")
-      ? Game.hiddenWolfAwakenThreshold()
-      : 3;
-    // threshold=3 means all 3 must be down (activeKnown.length === 0).
-    // threshold=2 means 2 down (activeKnown.length <= 1).
-    var needed = 3 - threshold;  // how many can remain active
-    return activeKnown.length <= needed;
+    return activeKnown.length === 0;
   };
 
   // ── Tang Xiaotang's emotional state ──

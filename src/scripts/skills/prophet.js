@@ -177,14 +177,7 @@
     if (!actualDead) return false;
     if (!g.alive[actualDead]) {
       var deadRole = Game.roleOf(actualDead);
-      if (GOD_ROLES.indexOf(deadRole) !== -1) {
-        // [v9.6] Phase aggression: in later loops Fang Heng is bolder.
-        // Early: always hides (safe). Mid: 50/50. Late: shares anyway.
-        if (typeof Game.getAggression === 'function') {
-          return Math.random() > Game.getAggression();
-        }
-        return true;
-      }
+      if (GOD_ROLES.indexOf(deadRole) !== -1) return true;
     }
     return false;
   };

@@ -459,10 +459,6 @@ var protect = {
           };
           var will = blocWillingness[v] !== undefined ? blocWillingness[v] : 0.7;
           if (v === 'tang_xiaotang' && g.day <= 3) will = 0.30;
-          // [v9.6] Phase aggression: later loops = bolder framing.
-          if (typeof Game.wolfBlocModifier === 'function') {
-            will = Math.min(0.95, will * Game.wolfBlocModifier());
-          }
 
           var roll = Math.random();
           if (roll < will) {

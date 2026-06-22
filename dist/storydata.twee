@@ -992,103 +992,6 @@ Game.getStatus = function () {
 
 
 /*
- * loop-phase.js - Loop progression system
- *
- * The game evolves as Chen Mo loops more times. Three phases:
- *   early  (loop 1-3):  cautious play, basic interactions, wolves hold back
- *   mid    (loop 4-7):  self-stab, hard-jump, deeper backstories, bolder wolves
- *   late   (loop 8+):   dark reversals, trust collapse, truth fragments
- *
- * AI aggression scales with phase: wolves bind/frame/jump more readily,
- * god-roles share/shoot/duel more aggressively, Tang awakens easier.
- *
- * Daytime event pools are also phase-gated (separate system in day-events).
- */
-
-(function () {
-  "use strict";
-
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
-  var Game = window.Game;
-
-  // ── Phase boundaries ──
-  var EARLY_MAX = 3;   // loop 1-3
-  var MID_MAX = 7;     // loop 4-7
-
-  // Get the current phase name.
-  Game.getLoopPhase = function () {
-    var g = ensureState();
-    var loop = g.loop || 1;
-    if (loop <= EARLY_MAX) return "early";
-    if (loop <= MID_MAX) return "mid";
-    return "late";
-  };
-
-  // Numeric phase index: 0 = early, 1 = mid, 2 = late.
-  Game.getLoopPhaseIndex = function () {
-    var phase = Game.getLoopPhase();
-    if (phase === "early") return 0;
-    if (phase === "mid") return 1;
-    return 2;
-  };
-
-  // Aggression multiplier (0.0 - 1.0+). Scales AI boldness.
-  // early: 0.5 (cautious), mid: 0.75 (normal), late: 1.0+ (aggressive)
-  // Beyond late (loop 11+), keeps climbing slightly.
-  Game.getAggression = function () {
-    var g = ensureState();
-    var loop = g.loop || 1;
-    if (loop <= EARLY_MAX) return 0.5;
-    if (loop <= MID_MAX) return 0.75;
-    // late: ramp from 1.0 to ~1.2 by loop 12
-    var over = loop - MID_MAX;  // 1, 2, 3...
-    return Math.min(1.2, 1.0 + (over - 1) * 0.04);
-  };
-
-  // Convenience booleans for AI logic.
-  Game.isEarlyPhase = function () { return Game.getLoopPhase() === "early"; };
-  Game.isMidPhase = function () { return Game.getLoopPhase() === "mid"; };
-  Game.isLatePhase = function () { return Game.getLoopPhase() === "late"; };
-
-  // ── Phase-gated feature checks ──
-  // Self-stab deception: only mid-phase and later.
-  Game.canSelfStab = function () {
-    var phase = Game.getLoopPhase();
-    return phase === "mid" || phase === "late";
-  };
-
-  // Hard-jump wolf (fake prophet claim): mid and late only.
-  Game.canHardJump = function () {
-    var phase = Game.getLoopPhase();
-    return phase === "mid" || phase === "late";
-  };
-
-  // Tang Xiaotang hidden-wolf: in late phase, awakens when 2 wolves are down
-  // (instead of all 3). Makes late-game more dangerous.
-  Game.hiddenWolfAwakenThreshold = function () {
-    if (Game.isLatePhase()) return 2;  // 2 wolves dead/exiled -> awaken
-    return 3;  // default: all 3 must be down
-  };
-
-  // Wolf bloc-vote willingness modifier. Later phases = bolder framing.
-  Game.wolfBlocModifier = function () {
-    return Game.getAggression();
-  };
-
-  // Prophet sharing willingness modifier.
-  Game.prophetShareModifier = function () {
-    return Game.getAggression();
-  };
-})();
-
-
-/*
  * pursuit.js - Night pursuit system: wolf hunts player across the manor map
  */
 
@@ -1770,10 +1673,6 @@ var protect = {
           };
           var will = blocWillingness[v] !== undefined ? blocWillingness[v] : 0.7;
           if (v === 'tang_xiaotang' && g.day <= 3) will = 0.30;
-          // [v9.6] Phase aggression: later loops = bolder framing.
-          if (typeof Game.wolfBlocModifier === 'function') {
-            will = Math.min(0.95, will * Game.wolfBlocModifier());
-          }
 
           var roll = Math.random();
           if (roll < will) {
@@ -2678,15 +2577,7 @@ var protect = {
       }
     }
 
-    // [v9.6] Phase aggression: later loops = Lin Xiaoman acts sooner.
-    var _duelThresh = 65;
-    var _duelLateThresh = 50;
-    if (typeof Game.getAggression === 'function') {
-      var _agg = Game.getAggression();
-      _duelThresh = Math.round(65 / _agg);      // 65 -> ~49 late
-      _duelLateThresh = Math.round(50 / _agg);  // 50 -> ~38 late
-    }
-    if (bestSusp >= _duelThresh || (g.day >= 5 && bestSusp >= _duelLateThresh)) {
+    if (bestSusp >= 65 || (g.day >= 5 && bestSusp >= 50)) {
       // [v9.4] Hesitation: if the target is actually a good person (not a wolf),
       // Lin Xiaoman has a 50% chance to hesitate at the last moment. She's
       // impulsive, not cold-blooded — the voice in her head says "what if
@@ -3249,14 +3140,7 @@ var protect = {
     if (!actualDead) return false;
     if (!g.alive[actualDead]) {
       var deadRole = Game.roleOf(actualDead);
-      if (GOD_ROLES.indexOf(deadRole) !== -1) {
-        // [v9.6] Phase aggression: in later loops Fang Heng is bolder.
-        // Early: always hides (safe). Mid: 50/50. Late: shares anyway.
-        if (typeof Game.getAggression === 'function') {
-          return Math.random() > Game.getAggression();
-        }
-        return true;
-      }
+      if (GOD_ROLES.indexOf(deadRole) !== -1) return true;
     }
     return false;
   };
@@ -4683,12 +4567,7 @@ GameState.getProfile = function (charId) {
     // the fake jumper may hold off
     var lastKill = g.lastWolfKill;
     if (lastKill && lastKill.killed && lastKill.actualTarget && !g.alive[lastKill.actualTarget]) {
-      // [v9.6] Phase aggression: later loops = less likely to hold off.
-      var _holdChance = 0.4;
-      if (typeof Game.getAggression === "function") {
-        _holdChance = 0.4 / Game.getAggression();  // late: 0.4/1.0 = 0.4, early: 0.4/0.5 = 0.8
-      }
-      if (Math.random() < _holdChance) return { ok: false, reason: "deep_water" };
+      if (Math.random() < 0.4) return { ok: false, reason: "deep_water" };
     }
 
     g.godSkills.fakeProphet = {
@@ -4825,14 +4704,7 @@ GameState.getProfile = function (charId) {
       if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
       return true;
     });
-    // Phase-gated: late phase (loop 8+) awakens when only 2 known wolves remain active.
-    var threshold = (typeof Game.hiddenWolfAwakenThreshold === "function")
-      ? Game.hiddenWolfAwakenThreshold()
-      : 3;
-    // threshold=3 means all 3 must be down (activeKnown.length === 0).
-    // threshold=2 means 2 down (activeKnown.length <= 1).
-    var needed = 3 - threshold;  // how many can remain active
-    return activeKnown.length <= needed;
+    return activeKnown.length === 0;
   };
 
   // ── Tang Xiaotang's emotional state ──
@@ -5407,10 +5279,8 @@ Game.mechWolfAIActivatePower = function () {
   // actually we check g.day === 2 (first playable night), AND no real kill target.
   Game.wolvesConsiderSelfStab = function () {
     var g = ensureState();
-    // Only night 1 (day index 2 = first night)
+    // Only night 1 (day index 2 in the sim = first night)
     if (g.day !== 2) return null;
-    // Phase-gated: only mid (loop 4-7) and late (loop 8+) phases.
-    if (typeof Game.canSelfStab === "function" && !Game.canSelfStab()) return null;
     // Only if there is no real wolf kill target this night (safe night)
     if (Game.getWolfTarget()) return null;
     // Need at least one eligible wolf alive
@@ -5607,25 +5477,20 @@ Game.mechWolfAIActivatePower = function () {
     if (day <= 2) threshold = kh.d2;
     else if (day === 3) threshold = kh.d3;
     else threshold = kh.d4plus;
-    // [v9.6] Phase aggression: later loops = wolves more willing to kill.
-    if (typeof Game.getAggression === 'function') {
-      threshold = Math.min(0.99, threshold * Game.getAggression());
-    }
     return threshold;
   };
 
   Game.getAttendingWolves = function () {
     var g = ensureState();
-    // [v9.6.1] All alive, non-exiled, non-bound wolves ATTEND the meeting.
-    // Kill-heart no longer gates attendance — a hesitant wolf still shows up
-    // to discuss, he just may not agree to the specific plan (see wolfResponse).
-    // Previously this filtered by kill-heart, causing ~45% of nights to have
-    // too few attendees -> safe night.
     return WOLF_IDS.filter(function (w) {
       if (!g.alive[w]) return false;
+      // [v9.3.3 FIX] Exiled wolves are locked in the cellar — cannot attend
+      // the nightly kill meeting or participate in any wolf action.
       if (typeof Game.isExiled === 'function' && Game.isExiled(w)) return false;
       if (Game.isSoulBound(w)) return false;
-      return true;
+      // Kill-heart check: wolf may hesitate (not attend) early on
+      var heart = Game.wolfKillHeart(w);
+      return Math.random() < heart;
     });
   };
 
@@ -5717,18 +5582,12 @@ Game.mechWolfAIActivatePower = function () {
     var g = ensureState();
     var resp = { wolf: wolfId, vote: null, narrative: "" };
 
-    // [v9.6.1] Base hesitation from kill-heart: low-heart wolves oppose more.
-    // This makes early phases cautious (hard to reach majority) while late
-    // phases sail through (high heart = rarely opposes).
-    var _heart = Game.wolfKillHeart(wolfId);
-    var _hesitate = 1 - _heart;  // 0.9 early, 0.05 late
-
     if (wolfId === "zhao_mingcheng") {
       if (proposedTarget === "chen_mo") {
         resp.vote = "oppose";
       } else if (proposedTarget === "zheng_shoushan" || proposedTarget === "fang_heng") {
         resp.vote = "approve";
-      } else if (Math.random() < (_hesitate * 0.3) && leaderId !== "zhao_mingcheng") {
+      } else if (Math.random() < 0.2 && leaderId !== "zhao_mingcheng") {
         resp.vote = "oppose";
       } else {
         resp.vote = "approve";
@@ -5737,7 +5596,7 @@ Game.mechWolfAIActivatePower = function () {
       var targetRole = Game.roleOf(proposedTarget);
       if (GOD_ROLES.indexOf(targetRole) !== -1) {
         resp.vote = "approve";
-      } else if (Math.random() < (_hesitate * 0.5)) {
+      } else if (Math.random() < 0.4) {
         resp.vote = "oppose";
       } else {
         resp.vote = "approve";
@@ -5793,19 +5652,17 @@ Game.mechWolfAIActivatePower = function () {
         else if (r.vote === "oppose") oppose++;
       });
 
-      // [v9.6.1] MAJORITY rules: approve > oppose is enough.
-      // Wolves are a pack — the majority drags the hesitant one along.
-      // (Previously required unanimous, causing ~45% safe nights.)
-      if (approve > oppose) {
+      // UNANIMOUS: everyone must approve (no opposes)
+      if (oppose === 0) {
         return {
           leader: leader,
           finalTarget: proposal.target,
-          resolution: "majority",
+          resolution: "unanimous",
           attendingCount: attending.length
         };
       }
 
-      // Majority not reached — try next round with a different leader
+      // Someone disagreed — try next round with a different leader
     }
 
     // All rounds exhausted, no consensus -> SAFE NIGHT

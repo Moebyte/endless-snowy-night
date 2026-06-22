@@ -34,10 +34,8 @@
   // actually we check g.day === 2 (first playable night), AND no real kill target.
   Game.wolvesConsiderSelfStab = function () {
     var g = ensureState();
-    // Only night 1 (day index 2 = first night)
+    // Only night 1 (day index 2 in the sim = first night)
     if (g.day !== 2) return null;
-    // Phase-gated: only mid (loop 4-7) and late (loop 8+) phases.
-    if (typeof Game.canSelfStab === "function" && !Game.canSelfStab()) return null;
     // Only if there is no real wolf kill target this night (safe night)
     if (Game.getWolfTarget()) return null;
     // Need at least one eligible wolf alive

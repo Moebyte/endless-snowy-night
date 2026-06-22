@@ -7,7 +7,6 @@ sandbox.window = sandbox; sandbox.global = sandbox;
 vm.createContext(sandbox);
 const scripts = [
   'src/scripts/state.js','src/scripts/game.js',
-  'src/scripts/loop-phase.js',
   'src/scripts/skills/prophet.js','src/scripts/skills/witch.js',
   'src/scripts/skills/knight.js','src/scripts/skills/magician.js',
   'src/scripts/wolves/vote.js','src/scripts/wolves/night-kill.js',
@@ -26,11 +25,10 @@ const N = GameState.PROFILES;
 const nm = c => (N[c]||{}).name || c;
 const WOLVES = ['zhou_yang','tang_xiaotang','zhao_mingcheng','gu_yan'];
 
-function runOne(seed, loopNum) {
+function runOne(seed) {
   sandbox.State.variables.game = GameState.create();
   const g = sandbox.State.variables.game;
   g.day = 2;
-  g.loop = loopNum || 1;
   const log = [];
   let hearerResult = null;
   for (let day = 2; day <= 7; day++) {
@@ -227,15 +225,7 @@ function runOne(seed, loopNum) {
 }
 
 const all = [];
-// Run across all three phases to verify phase-gating works.
-  // Loops 1-17 = early (loop 1-3), 18-34 = mid (loop 4-7), 35-50 = late (loop 8+).
-  for (let i = 1; i <= 50; i++) {
-    let loopNum;
-    if (i <= 17) loopNum = ((i - 1) % 3) + 1;       // early: 1,2,3 cycling
-    else if (i <= 34) loopNum = ((i - 18) % 4) + 4;  // mid: 4,5,6,7 cycling
-    else loopNum = ((i - 35) % 3) + 8;                // late: 8,9,10 cycling
-    all.push(runOne(i, loopNum));
-  }
+for (let i = 1; i <= 50; i++) all.push(runOne(i));
 // DEBUG: check exileMeta capture
 let _dbgBackfire = all.filter(r => r.exileMeta && r.exileMeta.backfire).length;
 let _dbgPatterns = all.reduce((s,r) => s + ((r.exileMeta&&r.exileMeta.patterns)||0), 0);
@@ -306,38 +296,6 @@ console.log('===== 胜负统计 =====');
 console.log('好人胜: ' + goodWin + '/50 (' + (goodWin/50*100).toFixed(0) + '%) | 堕仙胜: ' + wolfWin + '/50 (' + (wolfWin/50*100).toFixed(0) + '%) | 平局(7天未分): ' + draws + '/50 (' + (draws/50*100).toFixed(0) + '%)');
 console.log('');
 console.log('===== 50轮汇总 =====');
-// Per-phase breakdown
-  let earlyDeaths = 0, midDeaths = 0, lateDeaths = 0;
-  let earlyRuns = 0, midRuns = 0, lateRuns = 0;
-  let earlyDuels = 0, midDuels = 0, lateDuels = 0;
-  all.forEach(r => {
-    const phase = r.loop <= 3 ? 'early' : (r.loop <= 7 ? 'mid' : 'late');
-    const deaths = r.log.filter(l=>l.kill.killed).length;
-    const duels = r.log.filter(l=>l.duelTarget).length;
-    if (phase === 'early') { earlyDeaths += deaths; earlyRuns++; earlyDuels += duels; }
-    else if (phase === 'mid') { midDeaths += deaths; midRuns++; midDuels += duels; }
-    else { lateDeaths += deaths; lateRuns++; lateDuels += duels; }
-  });
-  console.log('--- 阶段对比 ---');
-  console.log('初期(loop1-3): 平均死亡' + (earlyDeaths/earlyRuns).toFixed(1) + ' 决斗' + earlyDuels + '次/' + earlyRuns + '轮');
-  console.log('中期(loop4-7): 平均死亡' + (midDeaths/midRuns).toFixed(1) + ' 决斗' + midDuels + '次/' + midRuns + '轮');
-  console.log('后期(loop8+):  平均死亡' + (lateDeaths/lateRuns).toFixed(1) + ' 决斗' + lateDuels + '次/' + lateRuns + '轮');
-  
-  // Night kill failure breakdown
-  let killAttempts = 0, killGuarded = 0, killSoulBound = 0, killNoTarget = 0, witchSaves = 0, witchBinds = 0;
-  all.forEach(r => r.log.forEach(l => {
-    if (l.kill) {
-      if (l.kill.special === 'guarded') killGuarded++;
-      if (l.kill.special === 'soul_bound') killSoulBound++;
-      if (l.kill.special === 'no_target' || l.kill.special === 'no_wolves' || (!l.kill.killed && !l.kill.special)) killNoTarget++;
-    }
-    if (l.witch && l.witch.action === 'save' && l.witch.ok) witchSaves++;
-    if (l.witch && l.witch.action === 'bind' && l.witch.ok) witchBinds++;
-  }));
-  console.log('--- 夜杀失败原因 ---');
-  console.log('镇煞守卫挡下: ' + killGuarded + ' | 缚魂阻止: ' + killSoulBound + ' | 无人可杀/安全夜: ' + killNoTarget);
-  console.log('女巫救人成功: ' + witchSaves + ' | 女巫缚魂成功: ' + witchBinds);
-
 console.log('平均每轮死亡: ' + (stats.deaths/50).toFixed(1));
 console.log('渡君救人: ' + stats.witchSave + ' | 渡君缚魂: ' + stats.witchCurse + ' (其中堕仙: ' + stats.witchCurseWolvesOnly + '/' + stats.witchCurseTotal + ')');
 console.log('幻真交换: ' + stats.swaps + ' | 镇煞守卫: ' + stats.guards + ' | 昭判分享: ' + stats.shares);
@@ -347,7 +305,7 @@ console.log('镇煞决斗: ' + stats.duels + ' (杀狼:' + stats.duelsKilledWolf
 console.log('隐狼觉醒击杀: ' + stats.hwKills);
 console.log('流放系统: 质疑' + stats.exileAccusations + '次 (成功:' + stats.exileSuccessful + ' 流放狼:' + stats.exiledWolves + ' 流放好人:' + stats.exiledGood + ' 陈默关键票翻盘:' + stats.swingWins + ' 票型反噬:' + stats.blocBackfires + ' 失败:' + stats.exileFailed + ')');
 console.log('叶知秋银水保护: 介入' + stats.witchProtect + '次 (成功阻断流放:' + stats.witchProtectBlocked + ' 暴露次数:' + stats.witchExposed + ')');
-console.log('自刀骗药: 尝试' + stats.selfStabAttempts + '次 (被骗复活:' + stats.selfStabRevived + ' 识破:' + stats.selfStabDetected + ') [仅mid/late阶段触发]');
+console.log('自刀骗药: 尝试' + stats.selfStabAttempts + '次 (被骗复活:' + stats.selfStabRevived + ' 识破:' + stats.selfStabDetected + ')');
 console.log('江白陷阱: 触发' + stats.trapTriggered + ' 观察' + stats.trapObserved + ' 质疑' + stats.jbAccuse + '(质疑狼:' + stats.jbAccuseWolf + ' 流放狼:' + stats.jbExileWolf + ')');;
 console.log('老郑感知: 醒来' + stats.hearerWoke + '次(听出方向' + stats.hearerDir + ' 隔壁出门' + stats.hearerNeighbor + ')');
 console.log('苏晚体检: 观察' + stats.medicObs + ' 检测' + stats.medicDetect + '(检出杀手:' + stats.medicDetectWolf + ')');
