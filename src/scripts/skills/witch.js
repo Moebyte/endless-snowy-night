@@ -182,6 +182,11 @@
     var g = ensureState();
     var score = 0;
 
+    // [v9.5.1] Self-stab suspect: she recognized the self-inflicted wound.
+    if (typeof Game.witchSelfStabSuspect === "function" && Game.witchSelfStabSuspect(targetId)) {
+      score += 40;  // she knows this wolf faked death
+    }
+
     // Check if Fang Heng shared hostile info about this person (gold-water)
     var shared = g.godSkills.prophet.sharedWith;
     if (shared && shared["ye_zhiqiu"]) {

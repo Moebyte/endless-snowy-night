@@ -121,6 +121,20 @@
       });
     });
 
+    // [v9.5.1] Self-stab aftermath: the feigning wolf looks "weakened" today.
+    // Fang Heng (cop instinct) notices the odd physical state and gains suspicion.
+    if (g.flags) {
+      var weakKeys = ["zhou_yang", "tang_xiaotang", "zhao_mingcheng"];
+      for (var wi = 0; wi < weakKeys.length; wi++) {
+        if (g.flags["weakened_" + weakKeys[wi]] && g.alive[weakKeys[wi]]) {
+          var cur = (e.suspicion.fang_heng || {})[weakKeys[wi]] || 0;
+          if (!e.suspicion.fang_heng) e.suspicion.fang_heng = {};
+          e.suspicion.fang_heng[weakKeys[wi]] = cur + 15;
+          delete g.flags["weakened_" + weakKeys[wi]];  // one-time effect
+        }
+      }
+    }
+
     for (var i = 0; i < events.length; i++) {
       var ev = events[i];
 

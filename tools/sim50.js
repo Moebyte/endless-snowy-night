@@ -12,6 +12,7 @@ const scripts = [
   'src/scripts/wolves/vote.js','src/scripts/wolves/night-kill.js',
   'src/scripts/wolves/mech-wolf.js','src/scripts/wolves/hidden-wolf.js',
   'src/scripts/wolves/fake-jump.js',
+  'src/scripts/wolves/self-stab.js',
   'src/scripts/day-events.js',
   'src/scripts/skills/exile.js',
   'src/scripts/skills/traps.js',
@@ -128,6 +129,16 @@ function runOne(seed) {
     // Jiang Bai arms his trap for tonight (before the kill).
     if (typeof Game.trapArm === 'function') Game.trapArm();
 
+    // [v9.5.1] Self-stab deception (low-frequency night-1 flavor event)
+    let selfStabResult = null;
+    if (typeof Game.wolvesConsiderSelfStab === 'function') {
+      const ssDecision = Game.wolvesConsiderSelfStab();
+      if (ssDecision) {
+        const ssExec = Game.wolvesExecuteSelfStab(ssDecision);
+        selfStabResult = ssExec;
+      }
+    }
+
     let kill = Game.executeWolfKill();
     if (typeof Game.hearerNightCheck === 'function') { const hr = Game.hearerNightCheck(kill); if (hr) hearerResult = hr; }
     g.lastWolfKill = kill;
@@ -146,6 +157,30 @@ function runOne(seed) {
     }
     }
     Game.witchSenseDeath();
+    // [v9.5.1] Self-stab: if a wolf is feigning death, the witch may attempt revive.
+    // Her wound-analysis skill may reveal the self-inflicted wound.
+    if (selfStabResult && typeof Game.selfStabGetStabber === 'function') {
+      const ssStabber = Game.selfStabGetStabber();
+      if (ssStabber && Game.isAlive('ye_zhiqiu') && !Game.witchBroken() && Game.witchRemaining() > 0 && !witchAct) {
+        // The witch sensed "someone dying" - she decides whether to revive.
+        // Her gentle nature means she usually tries. But last-use caution applies.
+        const remaining = Game.witchRemaining();
+        let willAttempt = true;
+        if (remaining === 1) { if (Math.random() < 0.3) willAttempt = false; }
+        if (willAttempt) {
+          const ssRevive = Game.witchAttemptSelfStabRevive(ssStabber);
+          selfStabResult.witchRecognized = ssRevive.recognized;
+          selfStabResult.witchRevived = ssRevive.revived;
+          if (ssRevive.revived) {
+            witchAct = { action: 'save', target: ssStabber, ok: true, selfStab: true };
+          }
+        }
+        // Apply weakened effect for next day (regardless of revive outcome)
+        if (typeof Game.selfStabApplyWeakenedEffect === 'function') {
+          Game.selfStabApplyWeakenedEffect(ssStabber);
+        }
+      }
+    }
     // Witch Phase 2: revive AFTER wolf kill (only if she didn't bind tonight)
     if (Game.isAlive('ye_zhiqiu') && !Game.witchBroken() && Game.witchRemaining() > 0 && !witchAct && !(typeof Game.isExiled === 'function' && Game.isExiled('ye_zhiqiu'))) {
       const rev = Game.witchAIDecideRevive();
@@ -172,7 +207,7 @@ function runOne(seed) {
         prophetCounter = { target: counterDecision.target, realKiller, hit, reason: counterDecision.reason };
       }
     }
-    log.push({ day, kill, swap, duelTarget, guardTarget, trap: trapCheck, exile: exileResult, prophetCheck: prophetCheck ? { target: prophetCheck.target, alignment: prophetCheck.result.result } : null, prophetShared, prophetShot, prophetCounter, witch: witchAct, medic: medicObs, hearer: hearerResult });
+    log.push({ day, kill, swap, duelTarget, guardTarget, trap: trapCheck, exile: exileResult, selfStab: selfStabResult, prophetCheck: prophetCheck ? { target: prophetCheck.target, alignment: prophetCheck.result.result } : null, prophetShared, prophetShot, prophetCounter, witch: witchAct, medic: medicObs, hearer: hearerResult });
     const goodAlive = Game.aliveList().filter(c => WOLVES.indexOf(c) === -1).length;
     const wolvesAlive = Game.aliveList().filter(c => WOLVES.indexOf(c) !== -1).length;
     if (goodAlive === 0 || wolvesAlive === 0) break;
@@ -190,7 +225,7 @@ let _dbgPatterns = all.reduce((s,r) => s + ((r.exileMeta&&r.exileMeta.patterns)|
 console.log('DEBUG exileMeta: ' + _dbgPatterns + ' patterns, ' + _dbgBackfire + ' backfires across 50 runs');
 
 // 统计
-let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0, medicObs:0, medicDetect:0, medicDetectWolf:0, hearerWoke:0, hearerDir:0, hearerNeighbor:0, witchProtect:0, witchProtectBlocked:0, witchExposed:0 };
+let stats = { deaths:0, witchSave:0, witchCurse:0, swaps:0, guards:0, shares:0, wk:0, ff:0, guarded:0, witchCurseWolvesOnly:0, witchCurseTotal:0, duels:0, duelsKilledWolf:0, duelsKilledSelf:0, duelsMutualKill:0, duelsInnocent:0, hwKills:0, hwAwakened:0, prophetShots:0, prophetShotsKilledWolf:0, prophetCounterShots:0, prophetCounterHit:0, prophetCounterMiss:0, exileAccusations:0, exileSuccessful:0, exileFailed:0, exiledWolves:0, exiledGood:0, swingWins:0, goldWaterExiles:0, blocBackfires:0, trapTriggered:0, trapObserved:0, jbAccuse:0, jbAccuseWolf:0, jbExileWolf:0, medicObs:0, medicDetect:0, medicDetectWolf:0, hearerWoke:0, hearerDir:0, hearerNeighbor:0, witchProtect:0, witchProtectBlocked:0, witchExposed:0, selfStabAttempts:0, selfStabRevived:0, selfStabDetected:0 };
 all.forEach(r => r.log.forEach(l => {
   if (l.kill.killed) stats.deaths++;
   if (l.swap) stats.swaps++;
@@ -231,6 +266,11 @@ if (l.prophetCounter) { stats.prophetCounterShots++; if (l.prophetCounter.hit) s
       stats.witchExposed++;
     }
   }
+  if (l.selfStab) {
+    stats.selfStabAttempts++;
+    if (l.selfStab.witchRevived) stats.selfStabRevived++;
+    if (l.selfStab.witchRecognized) stats.selfStabDetected++;
+  }
 }));
 
 // Count backfires per-run (not per-day) to avoid multi-counting
@@ -258,6 +298,7 @@ console.log('镇煞决斗: ' + stats.duels + ' (杀狼:' + stats.duelsKilledWolf
 console.log('隐狼觉醒击杀: ' + stats.hwKills);
 console.log('流放系统: 质疑' + stats.exileAccusations + '次 (成功:' + stats.exileSuccessful + ' 流放狼:' + stats.exiledWolves + ' 流放好人:' + stats.exiledGood + ' 陈默关键票翻盘:' + stats.swingWins + ' 票型反噬:' + stats.blocBackfires + ' 失败:' + stats.exileFailed + ')');
 console.log('叶知秋银水保护: 介入' + stats.witchProtect + '次 (成功阻断流放:' + stats.witchProtectBlocked + ' 暴露次数:' + stats.witchExposed + ')');
+console.log('自刀骗药: 尝试' + stats.selfStabAttempts + '次 (被骗复活:' + stats.selfStabRevived + ' 识破:' + stats.selfStabDetected + ')');
 console.log('江白陷阱: 触发' + stats.trapTriggered + ' 观察' + stats.trapObserved + ' 质疑' + stats.jbAccuse + '(质疑狼:' + stats.jbAccuseWolf + ' 流放狼:' + stats.jbExileWolf + ')');;
 console.log('老郑感知: 醒来' + stats.hearerWoke + '次(听出方向' + stats.hearerDir + ' 隔壁出门' + stats.hearerNeighbor + ')');
 console.log('苏晚体检: 观察' + stats.medicObs + ' 检测' + stats.medicDetect + '(检出杀手:' + stats.medicDetectWolf + ')');

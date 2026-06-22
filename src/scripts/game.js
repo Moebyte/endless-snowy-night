@@ -425,6 +425,7 @@ Game.resetLoopState = function () {
     if (typeof Game.trapReset === 'function') Game.trapReset();
     if (typeof Game.medicReset === 'function') Game.medicReset();
     if (typeof Game.hearerReset === 'function') Game.hearerReset();
+    if (typeof Game.selfStabReset === 'function') Game.selfStabReset();
 
   }
 
