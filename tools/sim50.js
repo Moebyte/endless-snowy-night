@@ -7,6 +7,7 @@ sandbox.window = sandbox; sandbox.global = sandbox;
 vm.createContext(sandbox);
 const scripts = [
   'src/scripts/state.js','src/scripts/game.js',
+  'src/scripts/loop-phase.js',
   'src/scripts/skills/prophet.js','src/scripts/skills/witch.js',
   'src/scripts/skills/knight.js','src/scripts/skills/magician.js',
   'src/scripts/wolves/vote.js','src/scripts/wolves/night-kill.js',
@@ -25,10 +26,11 @@ const N = GameState.PROFILES;
 const nm = c => (N[c]||{}).name || c;
 const WOLVES = ['zhou_yang','tang_xiaotang','zhao_mingcheng','gu_yan'];
 
-function runOne(seed) {
+function runOne(seed, loopNum) {
   sandbox.State.variables.game = GameState.create();
   const g = sandbox.State.variables.game;
   g.day = 2;
+  g.loop = loopNum || 1;
   const log = [];
   let hearerResult = null;
   for (let day = 2; day <= 7; day++) {
@@ -225,7 +227,15 @@ function runOne(seed) {
 }
 
 const all = [];
-for (let i = 1; i <= 50; i++) all.push(runOne(i));
+// Run across all three phases to verify phase-gating works.
+  // Loops 1-17 = early (loop 1-3), 18-34 = mid (loop 4-7), 35-50 = late (loop 8+).
+  for (let i = 1; i <= 50; i++) {
+    let loopNum;
+    if (i <= 17) loopNum = ((i - 1) % 3) + 1;       // early: 1,2,3 cycling
+    else if (i <= 34) loopNum = ((i - 18) % 4) + 4;  // mid: 4,5,6,7 cycling
+    else loopNum = ((i - 35) % 3) + 8;                // late: 8,9,10 cycling
+    all.push(runOne(i, loopNum));
+  }
 // DEBUG: check exileMeta capture
 let _dbgBackfire = all.filter(r => r.exileMeta && r.exileMeta.backfire).length;
 let _dbgPatterns = all.reduce((s,r) => s + ((r.exileMeta&&r.exileMeta.patterns)||0), 0);
@@ -305,7 +315,7 @@ console.log('镇煞决斗: ' + stats.duels + ' (杀狼:' + stats.duelsKilledWolf
 console.log('隐狼觉醒击杀: ' + stats.hwKills);
 console.log('流放系统: 质疑' + stats.exileAccusations + '次 (成功:' + stats.exileSuccessful + ' 流放狼:' + stats.exiledWolves + ' 流放好人:' + stats.exiledGood + ' 陈默关键票翻盘:' + stats.swingWins + ' 票型反噬:' + stats.blocBackfires + ' 失败:' + stats.exileFailed + ')');
 console.log('叶知秋银水保护: 介入' + stats.witchProtect + '次 (成功阻断流放:' + stats.witchProtectBlocked + ' 暴露次数:' + stats.witchExposed + ')');
-console.log('自刀骗药: 尝试' + stats.selfStabAttempts + '次 (被骗复活:' + stats.selfStabRevived + ' 识破:' + stats.selfStabDetected + ')');
+console.log('自刀骗药: 尝试' + stats.selfStabAttempts + '次 (被骗复活:' + stats.selfStabRevived + ' 识破:' + stats.selfStabDetected + ') [仅mid/late阶段触发]');
 console.log('江白陷阱: 触发' + stats.trapTriggered + ' 观察' + stats.trapObserved + ' 质疑' + stats.jbAccuse + '(质疑狼:' + stats.jbAccuseWolf + ' 流放狼:' + stats.jbExileWolf + ')');;
 console.log('老郑感知: 醒来' + stats.hearerWoke + '次(听出方向' + stats.hearerDir + ' 隔壁出门' + stats.hearerNeighbor + ')');
 console.log('苏晚体检: 观察' + stats.medicObs + ' 检测' + stats.medicDetect + '(检出杀手:' + stats.medicDetectWolf + ')');
