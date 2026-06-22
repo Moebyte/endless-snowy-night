@@ -49,6 +49,24 @@
     gu_yan:          { d2: 0.10, d3: 0.40, d4plus: 0.85 }
   };
 
+  // Count alive gods (prophet, witch, knight, magician)
+  var GOD_ROLE_LIST = ["prophet", "witch", "knight", "magician"];
+  Game.aliveGodsCount = function () {
+    var g = ensureState();
+    return GOD_ROLE_LIST.filter(function (role) {
+      for (var cid in g.roles) {
+        if (g.roles[cid] === role && g.alive[cid] &&
+            !(typeof Game.isExiled === 'function' && Game.isExiled(cid))) {
+          return true;
+        }
+      }
+      return false;
+    }).length;
+  };
+
+  // [v9.5.2] Dynamic kill-heart: base psychology + situation awareness.
+  // Fewer gods alive = wolves smell blood = bolder.
+  // Each dead god adds +8% kill-heart. All gods dead: +15% flat boost.
   Game.wolfKillHeart = function (wolfId) {
     var g = ensureState();
     var kh = KILL_HEART[wolfId];
@@ -58,6 +76,12 @@
     if (day <= 2) threshold = kh.d2;
     else if (day === 3) threshold = kh.d3;
     else threshold = kh.d4plus;
+
+    var aliveGods = Game.aliveGodsCount();
+    var godBoost = (4 - aliveGods) * 0.08;
+    if (aliveGods === 0) godBoost = 0.15;
+
+    threshold = Math.min(0.99, threshold + godBoost);
     return threshold;
   };
 
@@ -206,10 +230,17 @@
       return { leader: null, finalTarget: null, resolution: "no_attendance", absent: "all_bound" };
     }
 
-    // Single wolf alone: 50% chance too scared to act
+    // [v9.5.2] Single wolf: dynamic hesitation based on gods alive.
+    // All gods dead = 10% hesitate. Fewer gods = wolves sense victory.
     if (attending.length === 1) {
-      if (Math.random() < 0.5) {
-        return { leader: attending[0], finalTarget: null, resolution: "lone_wolf_hesitated", absent: "alone" };
+      var aliveGods = Game.aliveGodsCount();
+      var loneHesitate;
+      if (aliveGods === 0) loneHesitate = 0.10;
+      else if (aliveGods === 1) loneHesitate = 0.20;
+      else if (aliveGods === 2) loneHesitate = 0.35;
+      else loneHesitate = 0.50;
+      if (Math.random() < loneHesitate) {
+        return { leader: attending[0], finalTarget: null, resolution: "lone_wolf_hesitated", absent: "alone", godsAlive: aliveGods };
       }
     }
 
