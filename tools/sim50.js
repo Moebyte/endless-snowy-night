@@ -7,14 +7,14 @@ sandbox.window = sandbox; sandbox.global = sandbox;
 vm.createContext(sandbox);
 const scripts = [
   'src/scripts/state.js','src/scripts/game.js',
-  'src/scripts/skills/prophet.js','src/scripts/skills/witch.js',
+  'src/scripts/skills/prophet.js','src/scripts/skills/prophet-gun.js','src/scripts/skills/witch.js',
   'src/scripts/skills/knight.js','src/scripts/skills/magician.js',
   'src/scripts/wolves/vote.js','src/scripts/wolves/night-kill.js',
   'src/scripts/wolves/mech-wolf.js','src/scripts/wolves/hidden-wolf.js',
   'src/scripts/wolves/fake-jump.js',
   'src/scripts/wolves/self-stab.js',
   'src/scripts/day-events.js',
-  'src/scripts/skills/exile.js',
+  'src/scripts/skills/exile.js','src/scripts/skills/exile-vote.js','src/scripts/skills/exile-ai.js',
   'src/scripts/skills/traps.js',
   'src/scripts/skills/medic.js',
   'src/scripts/skills/hearer.js',
