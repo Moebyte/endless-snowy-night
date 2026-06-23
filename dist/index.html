@@ -6281,16 +6281,12 @@ Game.mechWolfAIActivatePower = function () {
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="4" name="Common_Map" tags="" position="100,100" size="100,100">&lt;&lt;set _zones to [&#39;main_1f&#39;,&#39;main_2f&#39;,&#39;main_3f&#39;,&#39;east_wing&#39;,&#39;west_wing&#39;,&#39;courtyard&#39;,&#39;underground&#39;]&gt;&gt;
 &lt;h2&gt;落雁山庄 · 地图&lt;/h2&gt;
-&lt;p class=&quot;muted&quot;&gt;探索过的区域会显示名称，未探索的显示为 ???。&lt;/p&gt;
+&lt;p class=&quot;muted&quot;&gt;点击已探索的地点可查看详情。&lt;/p&gt;
 &lt;&lt;for _zi to 0; _zi lt _zones.length; _zi++&gt;&gt;
 &lt;&lt;set _zid to _zones[_zi]&gt;&gt;
-&lt;&lt;set _zDiscovered to Game.isZoneDiscovered(_zid)&gt;&gt;
 &lt;&lt;set _zLocs to Game.getLocationsByZone(_zid)&gt;&gt;
 &lt;div class=&quot;map-zone&quot;&gt;
-&lt;h3 class=&quot;map-zone-title&quot;&gt;&lt;&lt;if _zDiscovered&gt;&gt;&lt;&lt;print GameState.ZONES[_zid].name&gt;&gt;&lt;&lt;else&gt;&gt;???&lt;&lt;/if&gt;&gt;&lt;/h3&gt;
-&lt;&lt;if _zDiscovered and GameState.ZONES[_zid].desc&gt;&gt;
-&lt;p class=&quot;map-zone-desc muted&quot;&gt;&lt;&lt;print GameState.ZONES[_zid].desc&gt;&gt;&lt;/p&gt;
-&lt;&lt;/if&gt;&gt;
+&lt;h3 class=&quot;map-zone-title&quot;&gt;&lt;&lt;print GameState.ZONES[_zid].name&gt;&gt;&lt;/h3&gt;
 &lt;div class=&quot;map-grid&quot;&gt;
 &lt;&lt;for _li to 0; _li lt _zLocs.length; _li++&gt;&gt;
 &lt;&lt;set _loc to _zLocs[_li]&gt;&gt;
@@ -6572,6 +6568,13 @@ Game.mechWolfAIActivatePower = function () {
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="8" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;
 &lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
+&lt;&lt;set $game.visitedLocations to {
+  foyer: 1,
+  grand_hall: 1,
+  dining_room: 1,
+  guest_corridor: 1
+}&gt;&gt;
+
 &lt;&lt;set $returnTarget to &#39;Start&#39;&gt;&gt;</tw-passagedata>
   <tw-passagedata pid="9" name="Day7_Ending" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;if Game.canReachTrueEnding()&gt;&gt;

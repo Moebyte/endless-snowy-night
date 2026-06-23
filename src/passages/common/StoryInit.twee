@@ -1,4 +1,11 @@
 :: StoryInit
 <<set $game to GameState.create()>>
 <<set $game.visited[passage()] to 1>>
+<<set $game.visitedLocations to {
+  foyer: 1,
+  grand_hall: 1,
+  dining_room: 1,
+  guest_corridor: 1
+}>>
+
 <<set $returnTarget to 'Start'>>
