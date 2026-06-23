@@ -111,6 +111,9 @@
   Game.witchProtectVoteWeight = function () { return 3; };
 
   // Clear all soul_bound flags (called at morning transition, daily reset)
+  // [v9.5.3] clearSoulBounds clears the soul_bound FLAG (effect expires at dawn)
+  // but does NOT clear lastBoundTarget. That persists so the witch cannot bind
+  // the same person again the following night.
   Game.clearSoulBounds = function () {
     var g = ensureState();
     if (!g.flags) return;
@@ -136,6 +139,8 @@
     w.actedTonight = true;
     w.curses.push({ target: targetId, type: "bind_soul", day: g.day });
     g.flags["soul_bound_" + targetId] = true;
+    // [v9.5.3] Track last bound target to prevent consecutive binds
+    w.lastBoundTarget = targetId;
 
     return { ok: true, reason: "bound", target: targetId };
   };
@@ -232,7 +237,10 @@
     var g = ensureState();
     if (!g.alive["ye_zhiqiu"]) return null;
 
+    var w = ensureWitch(g);
     var candidates = Game.activeList().filter(function (c) {
+      // [v9.5.3] Cannot bind the same person two nights in a row
+      if (w.lastBoundTarget && c === w.lastBoundTarget) return false;
       return c !== "ye_zhiqiu" && c !== "chen_mo"; // never bind Chen Mo
     });
     if (!candidates.length) return null;
