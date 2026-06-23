@@ -6577,13 +6577,10 @@ Game.mechWolfAIActivatePower = function () {
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="8" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;
 &lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
-&lt;&lt;set $game.visitedLocations to {
-  foyer: 1,
-  grand_hall: 1,
-  dining_room: 1,
-  guest_corridor: 1
-}&gt;&gt;
-
+&lt;&lt;set $game.visitedLocations.foyer to 1&gt;&gt;
+&lt;&lt;set $game.visitedLocations.grand_hall to 1&gt;&gt;
+&lt;&lt;set $game.visitedLocations.dining_room to 1&gt;&gt;
+&lt;&lt;set $game.visitedLocations.guest_corridor to 1&gt;&gt;
 &lt;&lt;set $returnTarget to &#39;Start&#39;&gt;&gt;</tw-passagedata>
   <tw-passagedata pid="9" name="Day7_Ending" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;if Game.canReachTrueEnding()&gt;&gt;
