@@ -150,3 +150,155 @@ body {
   .passage h1 { font-size: 1.5em; }
   .passage h2 { font-size: 1.2em; }
 }
+/* === Estate Map === */
+
+.map-zone {
+  margin: 20px 0;
+}
+
+.map-zone-title {
+  color: var(--heading);
+  font-size: 1.05em;
+  margin: 14px 0 6px;
+}
+
+.map-zone-desc {
+  font-size: 0.82em;
+  margin-bottom: 8px;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.map-tile {
+  display: block;
+  padding: 10px 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-decoration: none;
+}
+
+.map-tile.visited {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.map-tile.visited:hover {
+  background: #1f2937;
+  border-color: var(--accent);
+}
+
+.map-tile.locked {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  color: #484f58;
+  cursor: default;
+}
+
+.map-tile-name {
+  display: block;
+}
+
+/* === Guest Room Floor Plan === */
+
+.floor-section {
+  margin: 16px 0;
+}
+
+.floor-title {
+  color: var(--heading);
+  font-size: 0.95em;
+  margin: 10px 0 6px;
+}
+
+.floor-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.stairs {
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #161b22;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  font-size: 0.72em;
+  color: var(--muted);
+  text-align: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 2px;
+}
+
+.room-tile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 64px;
+  text-align: center;
+}
+
+.room-tile.player-room {
+  border-color: var(--accent);
+  background: #161b22;
+}
+
+.room-num {
+  font-size: 0.75em;
+  color: var(--muted);
+  font-weight: bold;
+}
+
+.room-occupant {
+  font-size: 0.85em;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.room-tag {
+  font-size: 0.68em;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.room-empty {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+@media (max-width: 600px) {
+  .map-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+  .floor-row {
+    gap: 4px;
+  }
+  .stairs {
+    flex-basis: 36px;
+    font-size: 0.65em;
+  }
+  .room-tile {
+    min-height: 52px;
+    padding: 6px 2px;
+  }
+  .room-occupant {
+    font-size: 0.75em;
+  }
+}
+

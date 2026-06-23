@@ -104,7 +104,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 		<div id="init-lacking"><p>Browser lacks capabilities required to play.</p><p>Upgrade or switch to another browser.</p></div>
 		<div id="init-loading"><div>Loading&hellip;</div></div>
 	</div>
-	<tw-storydata name="无尽雪夜" startnode="3" creator="Twine" creator-version="2.10.0" ifid="75844B93-430E-E599-4D6B-E878828384A7" format="SugarCube" format-version="2.37.3" options="" hidden>
+	<tw-storydata name="无尽雪夜" startnode="6" creator="Twine" creator-version="2.10.0" ifid="75844B93-430E-E599-4D6B-E878828384A7" format="SugarCube" format-version="2.37.3" options="" hidden>
   <style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">/* === 无尽雪夜 · 最小样式 === */
 
 :root {
@@ -257,6 +257,158 @@ body {
   .passage h1 { font-size: 1.5em; }
   .passage h2 { font-size: 1.2em; }
 }
+/* === Estate Map === */
+
+.map-zone {
+  margin: 20px 0;
+}
+
+.map-zone-title {
+  color: var(--heading);
+  font-size: 1.05em;
+  margin: 14px 0 6px;
+}
+
+.map-zone-desc {
+  font-size: 0.82em;
+  margin-bottom: 8px;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.map-tile {
+  display: block;
+  padding: 10px 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-decoration: none;
+}
+
+.map-tile.visited {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.map-tile.visited:hover {
+  background: #1f2937;
+  border-color: var(--accent);
+}
+
+.map-tile.locked {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  color: #484f58;
+  cursor: default;
+}
+
+.map-tile-name {
+  display: block;
+}
+
+/* === Guest Room Floor Plan === */
+
+.floor-section {
+  margin: 16px 0;
+}
+
+.floor-title {
+  color: var(--heading);
+  font-size: 0.95em;
+  margin: 10px 0 6px;
+}
+
+.floor-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.stairs {
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #161b22;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  font-size: 0.72em;
+  color: var(--muted);
+  text-align: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 2px;
+}
+
+.room-tile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 64px;
+  text-align: center;
+}
+
+.room-tile.player-room {
+  border-color: var(--accent);
+  background: #161b22;
+}
+
+.room-num {
+  font-size: 0.75em;
+  color: var(--muted);
+  font-weight: bold;
+}
+
+.room-occupant {
+  font-size: 0.85em;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.room-tag {
+  font-size: 0.68em;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.room-empty {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+@media (max-width: 600px) {
+  .map-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+  .floor-row {
+    gap: 4px;
+  }
+  .stairs {
+    flex-basis: 36px;
+    font-size: 0.65em;
+  }
+  .room-tile {
+    min-height: 52px;
+    padding: 6px 2px;
+  }
+  .room-occupant {
+    font-size: 0.75em;
+  }
+}
+
 </style>
   <script role="script" id="twine-user-script" type="text/twine-javascript">/*
  * day-events.js
@@ -1247,6 +1399,19 @@ Game.getStatus = function () {
       if (_origOnLoad) _origOnLoad.apply(this, arguments);
     };
   }
+})();
+
+
+(function () {
+  "use strict";
+  window.Game = window.Game || {};
+
+  // Explore a location: mark visited, return its data for display
+  Game.exploreLocation = function (locId) {
+    if (!GameState.MAP[locId]) return null;
+    Game.visitLocation(locId);
+    return GameState.MAP[locId];
+  };
 })();
 
 
@@ -6056,7 +6221,99 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;else&gt;&gt;
 &lt;&lt;goto &quot;Day_Morning&quot;&gt;&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="2" name="Common_NightResolution" tags="" position="100,100" size="100,100">/% 夜间结算顺序:
+  <tw-passagedata pid="2" name="Common_Explore" tags="" position="100,100" size="100,100">/% Dynamic location explorer. Caller sets _exploreLocId before navigating here. %/
+&lt;&lt;set _loc to Game.exploreLocation($game._exploreLocId)&gt;&gt;
+&lt;&lt;if _loc&gt;&gt;
+&lt;h2&gt;&lt;&lt;print _loc.name&gt;&gt;&lt;/h2&gt;
+&lt;p&gt;&lt;&lt;print _loc.desc&gt;&gt;&lt;/p&gt;
+&lt;&lt;set _zone to GameState.MAP[$game._exploreLocId].zone&gt;&gt;
+&lt;&lt;set _zoneName to GameState.ZONES[_zone].name&gt;&gt;
+&lt;p class=&quot;muted&quot;&gt;区域：&lt;&lt;print _zoneName&gt;&gt; | 访问次数：&lt;&lt;print $game.visitedLocations[$game._exploreLocId] || 0&gt;&gt;&lt;/p&gt;
+&lt;&lt;else&gt;&gt;
+&lt;p class=&quot;danger&quot;&gt;未知地点。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;div class=&quot;choice-list&quot;&gt;
+[[继续探索-&gt;Common_Map]]
+&lt;/div&gt;</tw-passagedata>
+  <tw-passagedata pid="3" name="Common_GuestRooms" tags="" position="100,100" size="100,100">&lt;h2&gt;住宿区 · 楼层平面图&lt;/h2&gt;
+&lt;p class=&quot;muted&quot;&gt;三层楼，每层四间客房，东西两端各有楼梯。&lt;/p&gt;
+&lt;&lt;set _floors to [3,2,1]&gt;&gt;
+&lt;&lt;set _floorLabels to {3:&#39;三层（女生层）&#39;,2:&#39;二层（主角层）&#39;,1:&#39;一层（散客层）&#39;}&gt;&gt;
+&lt;&lt;for _fi to 0; _fi lt _floors.length; _fi++&gt;&gt;
+&lt;&lt;set _floor to _floors[_fi]&gt;&gt;
+&lt;&lt;set _rooms to []&gt;&gt;
+&lt;&lt;for _rn to 0; _rn lt 12; _rn++&gt;&gt;
+&lt;&lt;set _roomNum to String(_rn + 101)&gt;&gt;
+&lt;&lt;if GameState.ROOMS[_roomNum] and GameState.ROOMS[_roomNum].floor eq _floor&gt;&gt;
+&lt;&lt;run _rooms.push(_roomNum)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;div class=&quot;floor-section&quot;&gt;
+&lt;h3 class=&quot;floor-title&quot;&gt;&lt;&lt;print _floorLabels[_floor]&gt;&gt;&lt;/h3&gt;
+&lt;div class=&quot;floor-row&quot;&gt;
+&lt;span class=&quot;stairs&quot;&gt;西楼梯&lt;/span&gt;
+&lt;&lt;for _ri to 0; _ri lt _rooms.length; _ri++&gt;&gt;
+&lt;&lt;set _rn to _rooms[_ri]&gt;&gt;
+&lt;&lt;set _room to GameState.ROOMS[_rn]&gt;&gt;
+&lt;&lt;set _cid to _room.char&gt;&gt;
+&lt;&lt;set _name to GameState.PROFILES[_cid].name&gt;&gt;
+&lt;&lt;set _alive to Game.isAlive(_cid)&gt;&gt;
+&lt;&lt;set _exiled to (typeof Game.isExiled eq &#39;function&#39; and Game.isExiled(_cid))&gt;&gt;
+&lt;&lt;set _isPlayer to (_cid eq &#39;chen_mo&#39;)&gt;&gt;
+&lt;span class=&quot;room-tile&lt;&lt;if _isPlayer&gt;&gt; player-room&lt;&lt;/if&gt;&gt;&lt;&lt;if not _alive or _exiled&gt;&gt; room-empty&lt;&lt;/if&gt;&gt;&quot;&gt;
+&lt;span class=&quot;room-num&quot;&gt;&lt;&lt;print _rn&gt;&gt;&lt;/span&gt;
+&lt;&lt;if _alive and not _exiled&gt;&gt;
+&lt;span class=&quot;room-occupant&quot;&gt;&lt;&lt;print _name&gt;&gt;&lt;/span&gt;
+&lt;&lt;else&gt;&gt;
+&lt;span class=&quot;room-occupant muted&quot;&gt;（空）&lt;/span&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;if _isPlayer&gt;&gt;
+&lt;span class=&quot;room-tag&quot;&gt;你&lt;/span&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;/span&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;span class=&quot;stairs&quot;&gt;东楼梯&lt;/span&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;div class=&quot;choice-list&quot;&gt;
+[[返回-&gt;Day_Morning]]
+&lt;/div&gt;</tw-passagedata>
+  <tw-passagedata pid="4" name="Common_Map" tags="" position="100,100" size="100,100">&lt;&lt;set _zones to [&#39;main_1f&#39;,&#39;main_2f&#39;,&#39;main_3f&#39;,&#39;east_wing&#39;,&#39;west_wing&#39;,&#39;courtyard&#39;,&#39;underground&#39;]&gt;&gt;
+&lt;h2&gt;落雁山庄 · 地图&lt;/h2&gt;
+&lt;p class=&quot;muted&quot;&gt;探索过的区域会显示名称，未探索的显示为 ???。&lt;/p&gt;
+&lt;&lt;for _zi to 0; _zi lt _zones.length; _zi++&gt;&gt;
+&lt;&lt;set _zid to _zones[_zi]&gt;&gt;
+&lt;&lt;set _zDiscovered to Game.isZoneDiscovered(_zid)&gt;&gt;
+&lt;&lt;set _zLocs to Game.getLocationsByZone(_zid)&gt;&gt;
+&lt;div class=&quot;map-zone&quot;&gt;
+&lt;h3 class=&quot;map-zone-title&quot;&gt;&lt;&lt;if _zDiscovered&gt;&gt;&lt;&lt;print GameState.ZONES[_zid].name&gt;&gt;&lt;&lt;else&gt;&gt;???&lt;&lt;/if&gt;&gt;&lt;/h3&gt;
+&lt;&lt;if _zDiscovered and GameState.ZONES[_zid].desc&gt;&gt;
+&lt;p class=&quot;map-zone-desc muted&quot;&gt;&lt;&lt;print GameState.ZONES[_zid].desc&gt;&gt;&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;div class=&quot;map-grid&quot;&gt;
+&lt;&lt;for _li to 0; _li lt _zLocs.length; _li++&gt;&gt;
+&lt;&lt;set _loc to _zLocs[_li]&gt;&gt;
+&lt;&lt;set _visited to Game.hasVisitedLocation(_loc.id)&gt;&gt;
+&lt;&lt;if _visited&gt;&gt;
+&lt;div class=&quot;map-tile visited&quot;&gt;
+&lt;&lt;link _loc.name &quot;Common_Explore&quot;&gt;&gt;
+&lt;&lt;set $game._exploreLocId to _loc.id&gt;&gt;
+&lt;&lt;/link&gt;&gt;
+&lt;/div&gt;
+&lt;&lt;else&gt;&gt;
+&lt;span class=&quot;map-tile locked&quot;&gt;
+&lt;span class=&quot;map-tile-name&quot;&gt;???&lt;/span&gt;
+&lt;/span&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;/div&gt;
+&lt;/div&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;div class=&quot;choice-list&quot;&gt;
+[[返回-&gt;Day_Morning]]
+&lt;/div&gt;</tw-passagedata>
+  <tw-passagedata pid="5" name="Common_NightResolution" tags="" position="100,100" size="100,100">/% 夜间结算顺序:
  *   1. 幻真致幻交换 (沈慎 AI 选两人)
  *   2. 昭判查验 + 信任分享 (方衡 AI)
  *   3. 镇煚守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
@@ -6298,7 +6555,7 @@ Game.mechWolfAIActivatePower = function () {
 [[继续新的一天|Common_DayTransition]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="3" name="Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
+  <tw-passagedata pid="6" name="Start" tags="" position="100,100" size="100,100">&lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
 &lt;h1&gt;无尽雪夜&lt;/h1&gt;
 &lt;p&gt;窗外是铅灰色的雪幕。风像锝子，一下下划着玻璃。&lt;/p&gt;
 &lt;p&gt;陈默睑开眼。天花板有水渍，形状像一张哭泣的人脸。&lt;/p&gt;
@@ -6308,15 +6565,15 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[开始游戏-&gt;Day_Morning]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="4" name="StoryCaption" tags="" position="100,100" size="100,100">&lt;div class=&quot;hud&quot;&gt;
+  <tw-passagedata pid="7" name="StoryCaption" tags="" position="100,100" size="100,100">&lt;div class=&quot;hud&quot;&gt;
 &lt;span class=&quot;hud-item&quot;&gt;轮回 &lt;&lt;print $game.loop&gt;&gt;&lt;/span&gt;
 &lt;span class=&quot;hud-item&quot;&gt;DAY &lt;&lt;print $game.day&gt;&gt;&lt;/span&gt;
 &lt;span class=&quot;hud-item&quot;&gt;理智 &lt;&lt;print Math.round($game.stats.san)&gt;&gt;&lt;/span&gt;
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="5" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;
+  <tw-passagedata pid="8" name="StoryInit" tags="" position="100,100" size="100,100">&lt;&lt;set $game to GameState.create()&gt;&gt;
 &lt;&lt;set $game.visited[passage()] to 1&gt;&gt;
 &lt;&lt;set $returnTarget to &#39;Start&#39;&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="6" name="Day7_Ending" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="9" name="Day7_Ending" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;if Game.canReachTrueEnding()&gt;&gt;
 &lt;h2&gt;真结局 · 破局&lt;/h2&gt;
 &lt;p&gt;[待填剧情]&lt;/p&gt;
@@ -6330,7 +6587,7 @@ Game.mechWolfAIActivatePower = function () {
 [[再次轮回-&gt;Start]]
 &lt;/div&gt;
 &lt;&lt;/if&gt;&gt;</tw-passagedata>
-  <tw-passagedata pid="7" name="Day_Evening" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="10" name="Day_Evening" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set $game.time to &#39;20:00&#39;&gt;&gt;
 &lt;h2&gt;DAY &lt;&lt;print $game.day&gt;&gt; 夜晚&lt;/h2&gt;
 &lt;p&gt;[待填剧情]&lt;/p&gt;
@@ -6338,15 +6595,17 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[入睡-&gt;Common_NightResolution]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="8" name="Day_Morning" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
+  <tw-passagedata pid="11" name="Day_Morning" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
 &lt;h2&gt;DAY &lt;&lt;print $game.day&gt;&gt; 早晨&lt;/h2&gt;
-&lt;p class=&quot;muted&quot;&gt;第 &lt;&lt;print $game.loop&gt;&gt; 轮回 · 第 &lt;&lt;print $game.day&gt;&gt; 天&lt;/p&gt;
+&lt;p class=&quot;muted&quot;&gt;第 &lt;&lt;print $game.loop&gt;&gt; 轮回 - 第 &lt;&lt;print $game.day&gt;&gt; 天&lt;/p&gt;
 &lt;p&gt;[待填剧情]&lt;/p&gt;
 &lt;div class=&quot;alive-list&quot;&gt;
 &lt;p class=&quot;muted&quot;&gt;存活人数：&lt;&lt;print Game.aliveCount()&gt;&gt;&lt;/p&gt;
 &lt;/div&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
+[[查看地图-&gt;Common_Map]]
+[[查看住宿区-&gt;Common_GuestRooms]]
 [[进入夜晚-&gt;Day_Evening]]
 &lt;/div&gt;</tw-passagedata>
 </tw-storydata>

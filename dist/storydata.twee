@@ -991,6 +991,19 @@ Game.getStatus = function () {
 })();
 
 
+(function () {
+  "use strict";
+  window.Game = window.Game || {};
+
+  // Explore a location: mark visited, return its data for display
+  Game.exploreLocation = function (locId) {
+    if (!GameState.MAP[locId]) return null;
+    Game.visitLocation(locId);
+    return GameState.MAP[locId];
+  };
+})();
+
+
 /*
  * pursuit.js - Night pursuit system: wolf hunts player across the manor map
  */
@@ -5944,6 +5957,158 @@ body {
   .passage h1 { font-size: 1.5em; }
   .passage h2 { font-size: 1.2em; }
 }
+/* === Estate Map === */
+
+.map-zone {
+  margin: 20px 0;
+}
+
+.map-zone-title {
+  color: var(--heading);
+  font-size: 1.05em;
+  margin: 14px 0 6px;
+}
+
+.map-zone-desc {
+  font-size: 0.82em;
+  margin-bottom: 8px;
+}
+
+.map-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+
+.map-tile {
+  display: block;
+  padding: 10px 8px;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.88em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-decoration: none;
+}
+
+.map-tile.visited {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.map-tile.visited:hover {
+  background: #1f2937;
+  border-color: var(--accent);
+}
+
+.map-tile.locked {
+  background: #0d1117;
+  border: 1px solid #21262d;
+  color: #484f58;
+  cursor: default;
+}
+
+.map-tile-name {
+  display: block;
+}
+
+/* === Guest Room Floor Plan === */
+
+.floor-section {
+  margin: 16px 0;
+}
+
+.floor-title {
+  color: var(--heading);
+  font-size: 0.95em;
+  margin: 10px 0 6px;
+}
+
+.floor-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.stairs {
+  flex: 0 0 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #161b22;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  font-size: 0.72em;
+  color: var(--muted);
+  text-align: center;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 2px;
+}
+
+.room-tile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  min-height: 64px;
+  text-align: center;
+}
+
+.room-tile.player-room {
+  border-color: var(--accent);
+  background: #161b22;
+}
+
+.room-num {
+  font-size: 0.75em;
+  color: var(--muted);
+  font-weight: bold;
+}
+
+.room-occupant {
+  font-size: 0.85em;
+  color: var(--text);
+  margin-top: 2px;
+}
+
+.room-tag {
+  font-size: 0.68em;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+.room-empty {
+  opacity: 0.4;
+  border-style: dashed;
+}
+
+@media (max-width: 600px) {
+  .map-grid {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  }
+  .floor-row {
+    gap: 4px;
+  }
+  .stairs {
+    flex-basis: 36px;
+    font-size: 0.65em;
+  }
+  .room-tile {
+    min-height: 52px;
+    padding: 6px 2px;
+  }
+  .room-occupant {
+    font-size: 0.75em;
+  }
+}
+
 
 
 :: Common_DayTransition
@@ -5954,6 +6119,107 @@ body {
 <<else>>
 <<goto "Day_Morning">>
 <</if>>
+
+
+:: Common_Explore
+/% Dynamic location explorer. Caller sets _exploreLocId before navigating here. %/
+<<set _loc to Game.exploreLocation($game._exploreLocId)>>
+<<if _loc>>
+<h2><<print _loc.name>></h2>
+<p><<print _loc.desc>></p>
+<<set _zone to GameState.MAP[$game._exploreLocId].zone>>
+<<set _zoneName to GameState.ZONES[_zone].name>>
+<p class="muted">区域：<<print _zoneName>> | 访问次数：<<print $game.visitedLocations[$game._exploreLocId] || 0>></p>
+<<else>>
+<p class="danger">未知地点。</p>
+<</if>>
+<div class="choice-list">
+[[继续探索->Common_Map]]
+</div>
+
+
+:: Common_GuestRooms
+<h2>住宿区 · 楼层平面图</h2>
+<p class="muted">三层楼，每层四间客房，东西两端各有楼梯。</p>
+<<set _floors to [3,2,1]>>
+<<set _floorLabels to {3:'三层（女生层）',2:'二层（主角层）',1:'一层（散客层）'}>>
+<<for _fi to 0; _fi lt _floors.length; _fi++>>
+<<set _floor to _floors[_fi]>>
+<<set _rooms to []>>
+<<for _rn to 0; _rn lt 12; _rn++>>
+<<set _roomNum to String(_rn + 101)>>
+<<if GameState.ROOMS[_roomNum] and GameState.ROOMS[_roomNum].floor eq _floor>>
+<<run _rooms.push(_roomNum)>>
+<</if>>
+<</for>>
+<div class="floor-section">
+<h3 class="floor-title"><<print _floorLabels[_floor]>></h3>
+<div class="floor-row">
+<span class="stairs">西楼梯</span>
+<<for _ri to 0; _ri lt _rooms.length; _ri++>>
+<<set _rn to _rooms[_ri]>>
+<<set _room to GameState.ROOMS[_rn]>>
+<<set _cid to _room.char>>
+<<set _name to GameState.PROFILES[_cid].name>>
+<<set _alive to Game.isAlive(_cid)>>
+<<set _exiled to (typeof Game.isExiled eq 'function' and Game.isExiled(_cid))>>
+<<set _isPlayer to (_cid eq 'chen_mo')>>
+<span class="room-tile<<if _isPlayer>> player-room<</if>><<if not _alive or _exiled>> room-empty<</if>>">
+<span class="room-num"><<print _rn>></span>
+<<if _alive and not _exiled>>
+<span class="room-occupant"><<print _name>></span>
+<<else>>
+<span class="room-occupant muted">（空）</span>
+<</if>>
+<<if _isPlayer>>
+<span class="room-tag">你</span>
+<</if>>
+</span>
+<</for>>
+<span class="stairs">东楼梯</span>
+</div>
+</div>
+<</for>>
+<div class="choice-list">
+[[返回->Day_Morning]]
+</div>
+
+
+:: Common_Map
+<<set _zones to ['main_1f','main_2f','main_3f','east_wing','west_wing','courtyard','underground']>>
+<h2>落雁山庄 · 地图</h2>
+<p class="muted">探索过的区域会显示名称，未探索的显示为 ???。</p>
+<<for _zi to 0; _zi lt _zones.length; _zi++>>
+<<set _zid to _zones[_zi]>>
+<<set _zDiscovered to Game.isZoneDiscovered(_zid)>>
+<<set _zLocs to Game.getLocationsByZone(_zid)>>
+<div class="map-zone">
+<h3 class="map-zone-title"><<if _zDiscovered>><<print GameState.ZONES[_zid].name>><<else>>???<</if>></h3>
+<<if _zDiscovered and GameState.ZONES[_zid].desc>>
+<p class="map-zone-desc muted"><<print GameState.ZONES[_zid].desc>></p>
+<</if>>
+<div class="map-grid">
+<<for _li to 0; _li lt _zLocs.length; _li++>>
+<<set _loc to _zLocs[_li]>>
+<<set _visited to Game.hasVisitedLocation(_loc.id)>>
+<<if _visited>>
+<div class="map-tile visited">
+<<link _loc.name "Common_Explore">>
+<<set $game._exploreLocId to _loc.id>>
+<</link>>
+</div>
+<<else>>
+<span class="map-tile locked">
+<span class="map-tile-name">???</span>
+</span>
+<</if>>
+<</for>>
+</div>
+</div>
+<</for>>
+<div class="choice-list">
+[[返回->Day_Morning]]
+</div>
 
 
 :: Common_NightResolution
@@ -6260,11 +6526,13 @@ body {
 <<run Game.visit()>>
 <<set $game.time to '06:00'>>
 <h2>DAY <<print $game.day>> 早晨</h2>
-<p class="muted">第 <<print $game.loop>> 轮回 · 第 <<print $game.day>> 天</p>
+<p class="muted">第 <<print $game.loop>> 轮回 - 第 <<print $game.day>> 天</p>
 <p>[待填剧情]</p>
 <div class="alive-list">
 <p class="muted">存活人数：<<print Game.aliveCount()>></p>
 </div>
 <div class="choice-list">
+[[查看地图->Common_Map]]
+[[查看住宿区->Common_GuestRooms]]
 [[进入夜晚->Day_Evening]]
 </div>

@@ -1,0 +1,45 @@
+:: Common_GuestRooms
+<h2>住宿区 · 楼层平面图</h2>
+<p class="muted">三层楼，每层四间客房，东西两端各有楼梯。</p>
+<<set _floors to [3,2,1]>>
+<<set _floorLabels to {3:'三层（女生层）',2:'二层（主角层）',1:'一层（散客层）'}>>
+<<for _fi to 0; _fi lt _floors.length; _fi++>>
+<<set _floor to _floors[_fi]>>
+<<set _rooms to []>>
+<<for _rn to 0; _rn lt 12; _rn++>>
+<<set _roomNum to String(_rn + 101)>>
+<<if GameState.ROOMS[_roomNum] and GameState.ROOMS[_roomNum].floor eq _floor>>
+<<run _rooms.push(_roomNum)>>
+<</if>>
+<</for>>
+<div class="floor-section">
+<h3 class="floor-title"><<print _floorLabels[_floor]>></h3>
+<div class="floor-row">
+<span class="stairs">西楼梯</span>
+<<for _ri to 0; _ri lt _rooms.length; _ri++>>
+<<set _rn to _rooms[_ri]>>
+<<set _room to GameState.ROOMS[_rn]>>
+<<set _cid to _room.char>>
+<<set _name to GameState.PROFILES[_cid].name>>
+<<set _alive to Game.isAlive(_cid)>>
+<<set _exiled to (typeof Game.isExiled eq 'function' and Game.isExiled(_cid))>>
+<<set _isPlayer to (_cid eq 'chen_mo')>>
+<span class="room-tile<<if _isPlayer>> player-room<</if>><<if not _alive or _exiled>> room-empty<</if>>">
+<span class="room-num"><<print _rn>></span>
+<<if _alive and not _exiled>>
+<span class="room-occupant"><<print _name>></span>
+<<else>>
+<span class="room-occupant muted">（空）</span>
+<</if>>
+<<if _isPlayer>>
+<span class="room-tag">你</span>
+<</if>>
+</span>
+<</for>>
+<span class="stairs">东楼梯</span>
+</div>
+</div>
+<</for>>
+<div class="choice-list">
+[[返回->Day_Morning]]
+</div>

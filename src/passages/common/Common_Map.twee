@@ -1,0 +1,35 @@
+:: Common_Map
+<<set _zones to ['main_1f','main_2f','main_3f','east_wing','west_wing','courtyard','underground']>>
+<h2>落雁山庄 · 地图</h2>
+<p class="muted">探索过的区域会显示名称，未探索的显示为 ???。</p>
+<<for _zi to 0; _zi lt _zones.length; _zi++>>
+<<set _zid to _zones[_zi]>>
+<<set _zDiscovered to Game.isZoneDiscovered(_zid)>>
+<<set _zLocs to Game.getLocationsByZone(_zid)>>
+<div class="map-zone">
+<h3 class="map-zone-title"><<if _zDiscovered>><<print GameState.ZONES[_zid].name>><<else>>???<</if>></h3>
+<<if _zDiscovered and GameState.ZONES[_zid].desc>>
+<p class="map-zone-desc muted"><<print GameState.ZONES[_zid].desc>></p>
+<</if>>
+<div class="map-grid">
+<<for _li to 0; _li lt _zLocs.length; _li++>>
+<<set _loc to _zLocs[_li]>>
+<<set _visited to Game.hasVisitedLocation(_loc.id)>>
+<<if _visited>>
+<div class="map-tile visited">
+<<link _loc.name "Common_Explore">>
+<<set $game._exploreLocId to _loc.id>>
+<</link>>
+</div>
+<<else>>
+<span class="map-tile locked">
+<span class="map-tile-name">???</span>
+</span>
+<</if>>
+<</for>>
+</div>
+</div>
+<</for>>
+<div class="choice-list">
+[[返回->Day_Morning]]
+</div>

@@ -2,11 +2,13 @@
 <<run Game.visit()>>
 <<set $game.time to '06:00'>>
 <h2>DAY <<print $game.day>> 早晨</h2>
-<p class="muted">第 <<print $game.loop>> 轮回 · 第 <<print $game.day>> 天</p>
+<p class="muted">第 <<print $game.loop>> 轮回 - 第 <<print $game.day>> 天</p>
 <p>[待填剧情]</p>
 <div class="alive-list">
 <p class="muted">存活人数：<<print Game.aliveCount()>></p>
 </div>
 <div class="choice-list">
+[[查看地图->Common_Map]]
+[[查看住宿区->Common_GuestRooms]]
 [[进入夜晚->Day_Evening]]
 </div>

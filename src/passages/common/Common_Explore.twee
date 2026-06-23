@@ -1,0 +1,15 @@
+:: Common_Explore
+/% Dynamic location explorer. Caller sets _exploreLocId before navigating here. %/
+<<set _loc to Game.exploreLocation($game._exploreLocId)>>
+<<if _loc>>
+<h2><<print _loc.name>></h2>
+<p><<print _loc.desc>></p>
+<<set _zone to GameState.MAP[$game._exploreLocId].zone>>
+<<set _zoneName to GameState.ZONES[_zone].name>>
+<p class="muted">区域：<<print _zoneName>> | 访问次数：<<print $game.visitedLocations[$game._exploreLocId] || 0>></p>
+<<else>>
+<p class="danger">未知地点。</p>
+<</if>>
+<div class="choice-list">
+[[继续探索->Common_Map]]
+</div>

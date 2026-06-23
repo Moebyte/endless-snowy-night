@@ -50,6 +50,11 @@ function extractLinks(content) {
   while ((m = gotoRe.exec(content)) !== null) {
     if (!isDynamicTarget(m[1])) links.add(m[1]);
   }
+  // <<link "text" "Target">>
+  const linkMacroRe = /<<link\s+[^>]+?\s+["']([^"']+)["']>>/g;
+  while ((m = linkMacroRe.exec(content)) !== null) {
+    if (!isDynamicTarget(m[1])) links.add(m[1]);
+  }
   // <<include "Target">>
   const includeRe = /<<include\s+["']([^"']+)["']>>/g;
   while ((m = includeRe.exec(content)) !== null) {
