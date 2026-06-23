@@ -54,7 +54,7 @@
 <<set _checkResult to Game.prophetCheck(_prophetTarget)>>
 <<run _nightLog.push('方衡查验了 ' + GameState.PROFILES[_prophetTarget].name + '：' + (_checkResult.alignment == 'enemy' ? '敌人' : '盟友'))>>
 <<if Game.prophetShouldShare()>>
-<<set _shareTarget to Game.prophetAICheckNight()>>
+<<set _shareTarget to Game.prophetAIShareTarget()>>
 <<if _shareTarget>>
 <<set _shareResult to Game.prophetShareInfo(_shareTarget, _prophetTarget)>>
 <</if>>
@@ -76,18 +76,18 @@
 
 / ============ 4. 堕仙击杀 ============ /
 <<set _kill to Game.executeWolfKill()>>
-<<run Game.setLastWolfKill(_kill)>>
+
 <<run Game.witchSenseDeath()>>
 <<run Game.visit()>>
 
 / ============ 5. 渡君决策 ============ /
 <<if Game.isAlive('ye_zhiqiu') and !Game.witchBroken() and Game.witchRemaining() > 0>>
-<<set _witchDecision to Game.witchAIDecide()>>
+<<set _witchDecision to Game.witchAIDecideNightAction()>>
 <<else>>
 <<set _witchDecision to { action: 'pass' }>>
 <</if>>
 
-<<if _witchDecision.action is 'save'>>
+<<if _witchDecision.action is 'revive'>>
 <<set _witchSaved to Game.witchRevive(Game.witchGetSensedDeath())>>
 <<if _witchSaved.ok>>
 / The witch revived the victim: rewrite the kill result so the narrative
@@ -96,9 +96,9 @@
 <<set _kill.special to 'saved_by_witch'>>
 <</if>>
 <</if>>
-<<if _witchDecision.action is 'curse'>>
+<<if _witchDecision.action is 'bind'>>
 <<set _witchCurseTarget to _witchDecision.target>>
-<<set _witchCurseResult to Game.witchCurse(_witchCurseTarget)>>
+<<set _witchCurseResult to Game.witchBindSoul(_witchCurseTarget)>>
 <<set _witchCurseName to GameState.PROFILES[_witchCurseTarget].name>>
 <</if>>
 
@@ -200,7 +200,7 @@
 <</if>>
 
 / 渡君诅咒 /
-<<if _witchDecision.action is 'curse' and _witchCurseResult.ok>>
+<<if _witchDecision.action is 'bind' and _witchCurseResult.ok>>
 <h3>叶知秋的诅咒</h3>
 <p>清晨，你发现 <strong><<print _witchCurseName>></strong> 倒在自己的房间里。没有外伤，没有血迹，只是嘴唇发黑——像是被某种看不见的力量夺走了呼吸。</p>
 <p class="system-hint">渡君叶知秋在夜间诅咒了 <<print _witchCurseName>>。诅咒是神力，幽主的反杀能力无法触发。</p>

@@ -1,14 +1,11 @@
 # 无尽雪夜（Endless Snow Night）
 
-基于 Twine 2 + SugarCube 2 的文字冒险游戏。十二个陌生人被困在与世隔绝的落雁山庄，每七天一个轮回——只有陈默记得发生过的一切。
+基于 Twine 2 + SugarCube 2 的文字冒险游戏。十二名陌生人在暴风雪中被困于落雁山庄，每七天一个轮回——只有陈默记得发生过的一切。
 
 ## 快速开始
 
 ```bash
-# 安装依赖（可选，构建脚本纯 Node.js）
-npm install
-
-# 构建游戏
+# 构建（纯 Node.js，无需 npm install）
 npm run build
 
 # 构建并监听文件变化
@@ -16,6 +13,12 @@ npm run dev
 
 # 检查链接完整性
 npm run check
+
+# 跑 50 轮 AI 模拟（平衡性调参）
+node tools/sim50.js
+
+# 跑单种子详细模拟
+node tools/sim_detail.js <seed>
 ```
 
 构建完成后，直接在浏览器打开 `dist/index.html` 即可游玩。
@@ -24,8 +27,8 @@ npm run check
 
 - **体裁**：文字冒险 / 悬疑生存 / 无限流
 - **核心机制**：每 7 天一个轮回，主角陈默保留记忆，其他人全部重置
-- **阵营**：4 神（预言家、女巫、骑士、魔术师） vs 4 村民 vs 4 狼（狼王、隐狼、清道夫、机械狼）
-- **结局**：真结局、好结局、坏结局、隐藏结局（弑神分支）
+- **阵营**：4 神（昭判、渡君、镇煞、幻真） vs 4 村民 vs 4 狼
+- **结局**：真结局、好结局、坏结局等多结局分支
 
 详细设定见 [docs/design-doc.md](docs/design-doc.md)。
 
@@ -33,69 +36,49 @@ npm run check
 
 ```
 src/
-  passages/           # 所有剧情 passage（.twee）
-    chapter01/        # Day 1：抵达山庄
-    chapter02/        # Day 2：循环觉醒
-    chapter03_06/     # Day 3-6：推理调查 + 探索场景
-    chapter07/        # Day 7：结局
-    common/           # 公共 UI（状态栏、地图、道具栏、神职面板、夜间结算）
-  scripts/            # SugarCube Story JavaScript
-    state.js          # 状态结构与常量（角色、道具、线索、地图）
+  passages/           # 剧情 passage（.twee）
+    common/           # Start、Day_Morning、Day_Evening、Day7_Ending、夜间结算、UI
+    story/            # 昼夜流程入口
+  scripts/            # SugarCube Story JavaScript（自动拼接进 HTML）
+    state.js          # 状态结构与常量（角色、道具、线索、地图、房间）
     game.js           # 公共 API（道具/线索/Flag/轮回/安全屋）
-    skills/           # 神职 AI 技能（witch/knight/prophet/magician）
-    wolves/           # 狼队 AI（投票、夜间击杀、悍跳、隐狼、机械狼）
+    skills/           # 神职 AI（prophet/witch/knight/magician + exile 三件套）
+    wolves/           # 狼队 AI（vote/night-kill/hidden-wolf/mech-wolf/fake-jump/self-stab）
+    day-events.js     # 白天事件池
     pursuit.js        # 夜间追击战
   styles/
-    story.css         # 游戏样式
+    story.css
+vendor/
+  sugarcube-2/        # SugarCube 2 格式文件（构建用）
 tools/
-  build.js            # 构建脚本（Twee → HTML）
-  check-links.js      # 链接检查
-  sim_v*.js           # AI 决策模拟脚本
+  build.js            # 构建脚本（Twee + JS → 单 HTML）
+  check-links.js      # passage 链接完整性检查
+  sim50.js            # 50 轮 AI 模拟（批量统计）
+  sim_detail.js       # 单种子详细模拟（输出逐日行动日志）
 dist/
   index.html          # 可发布 HTML
-  storydata.twee      # Twee 源码产物
 docs/
-  design-doc.md       # 游戏设计文档
-  writing-guide.md    # 写作指南
-  variable-guide.md   # 变量指南
+  design-doc.md       # 游戏设计文档 v9
+  character-bible.md  # 角色圣经 v9（作者用）
+  writing-guide.md    # 写作指南（含陈默视角限制）
+  variable-guide.md   # 变量与状态管理指南
   passage-guidelines.md
-  character-bible.md  # 角色圣经（作者用）
-outputs/
-  暴风雪山庄_无限流_剧本_Pilot.md  # 原始剧本
+  story-outlines.md   # 三条完整 Day1-7 剧情大纲（取自模拟器）
+  story-pool/         # 每个角色的白天剧情池素材
+  character_pools/    # 角色卡 me.md / they.md + 交互矩阵
+  prompts/            # 角色写作提示词（批量生成剧情池用）
 ```
 
+## 安全提醒
 
-## 维护说明
-
-### 关于 Git 工作目录
-
-由于 Codex 沙箱对 workspace root 下的 `.git` 目录施加了只读保护，无法直接在该目录执行 `git push`。因此，我把 Git 元数据（`.git`）移到了同级的 `files-mentioned-by-the-user-md-git` 目录。
-
-后续操作方式：
-
-- **编辑文件**：在 `files-mentioned-by-the-user-md` 中正常编辑。
-- **Git 命令**：需要显式指定 `--git-dir` 和 `--work-tree`，例如：
-  ```bash
-  git --git-dir=C:/Users/xhvai/Documents/Codex/2026-06-19/files-mentioned-by-the-user-md-git/.git --work-tree=C:/Users/xhvai/Documents/Codex/2026-06-19/files-mentioned-by-the-user-md status
-  ```
-- **简化方式**：已在仓库根目录提供 `git-wrapper.ps1`，可以替代 `git` 命令使用：
-  ```powershell
-  ./git-wrapper.ps1 status
-  ./git-wrapper.ps1 add .
-  ./git-wrapper.ps1 commit -m "xxx"
-  ./git-wrapper.ps1 push origin main
-  ```
-
-### 安全提醒
-
-- 本地 `.ssh/` 目录存放 GitHub Deploy Key 私钥，已加入 `.gitignore`，不会被提交。
-- 之前暴露的 PAT 已删除，不再使用。
+- 本地 `.ssh/` 目录存放 GitHub Deploy Key，已加入 `.gitignore`。
+- 之前暴露的 PAT 已删除，仅使用 SSH deploy key 推送。
 
 ## 开发指南
 
 ### 写新剧情
 
-1. 在 `src/passages/chapterXX/` 下新建 `.twee` 文件
+1. 在 `src/passages/common/` 或 `src/passages/story/` 下新建 `.twee` 文件
 2. 第一行格式：`:: PassageName`（PascalCase + 下划线）
 3. 用 `<<run Game.addClue("clue_id")>>` 添加线索
 4. 用 `<<run Game.addItem("item_id")>>` 添加道具
@@ -107,15 +90,19 @@ outputs/
 ### 运行 AI 模拟
 
 ```bash
-node tools/sim_v14.js
+# 50 轮批量统计
+node tools/sim50.js
+
+# 单种子逐日日志（用于提取剧情素材）
+node tools/sim_detail.js 42
 ```
 
-模拟 20 轮 7 天轮回，输出神职和狼队的死亡分布，用于平衡性调参。
+模拟器会输出每轮的死亡顺序、神职和狼队的技能发动情况、流放结果。
 
 ### 部署到 GitHub Pages
 
 1. `npm run build`
-2. 把 `dist/index.html` 推送到 `gh-pages` 分支
+2. 推送 `dist/index.html` 到 `gh-pages` 分支（或配置 GitHub Actions 自动部署，见 `.github/workflows/deploy.yml`）
 3. 访问 `https://<username>.github.io/<repo>/`
 
 ## 技术栈

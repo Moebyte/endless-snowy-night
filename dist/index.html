@@ -4967,7 +4967,7 @@ GameState.getProfile = function (charId) {
     if (!fp) return null;
     if (!Game.isAlive("fang_heng")) return null;
 
-    var hasAura = Game.prophetSenseAura(fp.wolfId);
+    var hasAura = false; // aura sensing removed per design v9
     return {
       wolfId: fp.wolfId,
       hasAura: hasAura
@@ -6111,7 +6111,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;set _checkResult to Game.prophetCheck(_prophetTarget)&gt;&gt;
 &lt;&lt;run _nightLog.push(&#39;方衡查验了 &#39; + GameState.PROFILES[_prophetTarget].name + &#39;：&#39; + (_checkResult.alignment == &#39;enemy&#39; ? &#39;敌人&#39; : &#39;盟友&#39;))&gt;&gt;
 &lt;&lt;if Game.prophetShouldShare()&gt;&gt;
-&lt;&lt;set _shareTarget to Game.prophetAICheckNight()&gt;&gt;
+&lt;&lt;set _shareTarget to Game.prophetAIShareTarget()&gt;&gt;
 &lt;&lt;if _shareTarget&gt;&gt;
 &lt;&lt;set _shareResult to Game.prophetShareInfo(_shareTarget, _prophetTarget)&gt;&gt;
 &lt;&lt;/if&gt;&gt;
@@ -6133,18 +6133,18 @@ Game.mechWolfAIActivatePower = function () {
 
 / ============ 4. 堕仙击杀 ============ /
 &lt;&lt;set _kill to Game.executeWolfKill()&gt;&gt;
-&lt;&lt;run Game.setLastWolfKill(_kill)&gt;&gt;
+
 &lt;&lt;run Game.witchSenseDeath()&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 
 / ============ 5. 渡君决策 ============ /
 &lt;&lt;if Game.isAlive(&#39;ye_zhiqiu&#39;) and !Game.witchBroken() and Game.witchRemaining() &gt; 0&gt;&gt;
-&lt;&lt;set _witchDecision to Game.witchAIDecide()&gt;&gt;
+&lt;&lt;set _witchDecision to Game.witchAIDecideNightAction()&gt;&gt;
 &lt;&lt;else&gt;&gt;
 &lt;&lt;set _witchDecision to { action: &#39;pass&#39; }&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-&lt;&lt;if _witchDecision.action is &#39;save&#39;&gt;&gt;
+&lt;&lt;if _witchDecision.action is &#39;revive&#39;&gt;&gt;
 &lt;&lt;set _witchSaved to Game.witchRevive(Game.witchGetSensedDeath())&gt;&gt;
 &lt;&lt;if _witchSaved.ok&gt;&gt;
 / The witch revived the victim: rewrite the kill result so the narrative
@@ -6153,9 +6153,9 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;set _kill.special to &#39;saved_by_witch&#39;&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
-&lt;&lt;if _witchDecision.action is &#39;curse&#39;&gt;&gt;
+&lt;&lt;if _witchDecision.action is &#39;bind&#39;&gt;&gt;
 &lt;&lt;set _witchCurseTarget to _witchDecision.target&gt;&gt;
-&lt;&lt;set _witchCurseResult to Game.witchCurse(_witchCurseTarget)&gt;&gt;
+&lt;&lt;set _witchCurseResult to Game.witchBindSoul(_witchCurseTarget)&gt;&gt;
 &lt;&lt;set _witchCurseName to GameState.PROFILES[_witchCurseTarget].name&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
@@ -6257,7 +6257,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 
 / 渡君诅咒 /
-&lt;&lt;if _witchDecision.action is &#39;curse&#39; and _witchCurseResult.ok&gt;&gt;
+&lt;&lt;if _witchDecision.action is &#39;bind&#39; and _witchCurseResult.ok&gt;&gt;
 &lt;h3&gt;叶知秋的诅咒&lt;/h3&gt;
 &lt;p&gt;清晨，你发现 &lt;strong&gt;&lt;&lt;print _witchCurseName&gt;&gt;&lt;/strong&gt; 倒在自己的房间里。没有外伤，没有血迹，只是嘴唇发黑——像是被某种看不见的力量夺走了呼吸。&lt;/p&gt;
 &lt;p class=&quot;system-hint&quot;&gt;渡君叶知秋在夜间诅咒了 &lt;&lt;print _witchCurseName&gt;&gt;。诅咒是神力，幽主的反杀能力无法触发。&lt;/p&gt;

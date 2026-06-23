@@ -137,7 +137,7 @@
     if (!fp) return null;
     if (!Game.isAlive("fang_heng")) return null;
 
-    var hasAura = Game.prophetSenseAura(fp.wolfId);
+    var hasAura = false; // aura sensing removed per design v9
     return {
       wolfId: fp.wolfId,
       hasAura: hasAura
