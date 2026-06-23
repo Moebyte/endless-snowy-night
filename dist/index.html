@@ -411,6 +411,15 @@ body {
 
 </style>
   <script role="script" id="twine-user-script" type="text/twine-javascript">/*
+ * 00-init.js
+ * Must load before all other scripts.
+ * Ensures window.Game and window.GameState exist before any IIFE tries to use them.
+ */
+window.Game = window.Game || {};
+window.GameState = window.GameState || {};
+
+
+/*
  * day-events.js
  *
  * White-day event simulator. Generates plausible daytime interactions
