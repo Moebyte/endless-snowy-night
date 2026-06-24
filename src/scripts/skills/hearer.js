@@ -23,11 +23,7 @@
   "use strict";
 
   var Game = window.Game;
-
-  function ensureState() {
-    if (!State.variables.game) State.variables.game = GameState.create();
-    return State.variables.game;
-  }
+  var ensureState = Game.ensureState;
 
   // Lao Zheng'''s room and floor
   var LAO_ZHENG_ROOM = "204";

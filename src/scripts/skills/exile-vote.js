@@ -5,14 +5,14 @@
 (function () {
 
   Game.exileVote = function (accuser, target) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     var voters = Game.exileActiveList().filter(function (id) {
       return id !== target;
     });
 
     var e = Game._exileEnsureExile(g);
     var targetRole = Game.roleOf(target);
-    var targetIsWolf = Game._exileWOLF_ROLES.indexOf(targetRole) !== -1;
+    var targetIsWolf = GameState.WOLF_ROLES.indexOf(targetRole) !== -1;
     var accuserExposed = (accuser === 'fang_heng' && e.fangExposed);
 
     var votesFor = 0, votesAgainst = 0, abstains = 0;
@@ -39,7 +39,7 @@
     for (var i = 0; i < voters.length; i++) {
       var v = voters[i];
       var vRole = Game.roleOf(v);
-      var vIsWolf = Game._exileWOLF_ROLES.indexOf(vRole) !== -1;
+      var vIsWolf = GameState.WOLF_ROLES.indexOf(vRole) !== -1;
       var vote = 'abstain';  // default to abstain (three-state)
       var reason = '';
 
@@ -251,7 +251,7 @@
   // ---- Execute accusation + vote + exile ----
 
   Game.exileAccuse = function (accuser, target) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     var e = Game._exileEnsureExile(g);
 
     if (g.day === e.lastAccusationDay) return { ok: false, reason: 'already_accused_today' };

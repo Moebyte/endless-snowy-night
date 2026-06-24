@@ -16,15 +16,9 @@
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+  var ensureState = Game.ensureState;
+  var WOLF_IDS = GameState.WOLF_IDS;
   var SELF_STAB_PRIORITY = ["zhou_yang", "tang_xiaotang", "zhao_mingcheng"];
   var TRIGGER_CHANCE = 0.10;        // 10% on night 1 safe night
   var DETECT_CHANCE = 0.35;         // 35% witch recognizes self-inflicted wound

@@ -13,14 +13,8 @@
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   Game.PROPHET_TEXTS = {
     friendly_pool: [
@@ -43,8 +37,8 @@
     ]
   };
 
-  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
-  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+  var WOLF_ROLES = GameState.WOLF_ROLES;
+  var GOD_ROLES = GameState.GOD_ROLES;
 
   function ensureProphet(g) {
     var p = g.godSkills.prophet;

@@ -12,15 +12,9 @@
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+  var ensureState = Game.ensureState;
+  var WOLF_ROLES = GameState.WOLF_ROLES;
 
   // ---- Skill: Duel (day action) ----
 

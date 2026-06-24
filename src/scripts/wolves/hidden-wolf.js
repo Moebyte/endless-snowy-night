@@ -12,16 +12,10 @@
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
   // The 3 wolves that Tang Xiaotang is hidden from
-  var KNOWN_WOLVES = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+  var KNOWN_WOLVES = GameState.WOLF_IDS;
 
   // ── Check if Tang Xiaotang has awakened (all other wolves dead) ──
   Game.hiddenWolfAwakened = function () {

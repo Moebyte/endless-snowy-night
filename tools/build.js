@@ -103,11 +103,28 @@ function loadFormatSource() {
   return format.source;
 }
 
+// Explicit load order for scripts that must initialize before others.
+// state.js defines window.GameState; game.js defines window.Game + ensureState/migrateState.
+// Anything not listed here sorts alphabetically after the priority group,
+// so new files need no ordering annotation.
+const PRIORITY_JS = ['state.js', 'game.js'];
+
+function orderJsFiles(files) {
+  const byBasename = new Map(files.map(f => [path.basename(f), f]));
+  const head = [];
+  PRIORITY_JS.forEach(base => {
+    const f = byBasename.get(base);
+    if (f) { head.push(f); byBasename.delete(base); }
+  });
+  const tail = [...byBasename.values()].sort();
+  return [...head, ...tail];
+}
+
 function build() {
   if (!fs.existsSync(DIST)) fs.mkdirSync(DIST, { recursive: true });
 
   const passageFiles = walk(path.join(SRC, 'passages'), '.twee').sort();
-  const jsFiles = walk(path.join(SRC, 'scripts'), '.js').sort();
+  const jsFiles = orderJsFiles(walk(path.join(SRC, 'scripts'), '.js'));
   const cssFiles = walk(path.join(SRC, 'styles'), '.css').sort();
 
   const passageContents = passageFiles.map(f => stripBOM(fs.readFileSync(f, 'utf8')));

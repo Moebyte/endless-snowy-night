@@ -18,14 +18,8 @@
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   // Natural tension matrix: a -> b means a has friction with b
   // Values are base suspicion weights when a conflict triggers
@@ -167,7 +161,7 @@
       ]
     };
 
-    // 40% chance of a wolf tell event per day
+    // 70% chance of a wolf tell event per day
     if (Math.random() < 0.7) {
       var wolfTellStarters = Object.keys(WOLF_TELLS).filter(function(w) {
         return aliveList.indexOf(w) !== -1;

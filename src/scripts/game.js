@@ -10,10 +10,23 @@
 
   function migrateState(g) {
     if (!g) return g;
+    // Backfill fields added after the original schema. Each branch is idempotent:
+    // only seeds a field when missing, never overwrites existing save data.
+    // Fresh defaults mirror GameState.create() (state.js).
+    var fresh = GameState.create();
     if (!g.metCharacters) g.metCharacters = {};
     if (!g.characterReveals) g.characterReveals = {};
     if (!g.revealed) g.revealed = {};
     if (!g.visitedLocations) g.visitedLocations = {};
+    if (!g.visited) g.visited = {};
+    if (!g.safehouse) g.safehouse = fresh.safehouse;
+    if (!g.godSkills) g.godSkills = fresh.godSkills;
+    if (!g.traps) g.traps = fresh.traps;
+    if (!g.medic) g.medic = fresh.medic;
+    if (!g.hearer) g.hearer = fresh.hearer;
+    if (!g.dayEvents) g.dayEvents = fresh.dayEvents;
+    if (!g.memories) g.memories = fresh.memories;
+    if (g.lastWolfKill === undefined) g.lastWolfKill = fresh.lastWolfKill;
     return g;
   }
 
@@ -23,6 +36,10 @@
     }
     return migrateState(State.variables.game);
   }
+
+  // Public accessor: all modules should call Game.ensureState() rather than
+  // redefining a local copy, so save migration runs uniformly everywhere.
+  Game.ensureState = ensureState;
 
 Game.addItem = function (id, count) {
 
@@ -490,38 +507,6 @@ Game.clearSafehouse = function () {
     g.safehouse.intruded = false;
 
     g.safehouse.target = null;
-
-  }
-
-Game.canKillGod = function (charId) {
-
-    var g = ensureState();
-
-    var role = g.roles[charId];
-
-    // 闁绘瑩妫垮Ч澶愬矗閿熻姤绂掗妷 鎼愮紒浣哄剳缁辨瑩寮甸悜姗堟嫹閹?鐎氱偓寰勬ウ鍨幋闁告梹鍐荤槐 
-
-    var wolfRoles = [
-
-      GameState.ROLES.WOLF_KING,
-
-      GameState.ROLES.HIDDEN_WOLF,
-
-      GameState.ROLES.WOLF,
-
-      GameState.ROLES.MECHANICAL_WOLF
-
-    ];
-
-    if (wolfRoles.indexOf(role) !== -1) {
-
-      return true;
-
-    }
-
-    // 闁哄鍨堕惃 濞戞搫鎷烽柛娆欐嫹闁哄牆 鎰?鍙?娑?閹蜂即鎳撴笟 閸庢粓宕ｉ敓鑺ョ閵?鎼愮紒浣哄仜閵囨碍鎷呴敓 
-
-
 
   }
 

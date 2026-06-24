@@ -5,7 +5,7 @@
 (function () {
 
   Game.exileAIPhase = function () {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     if (!g.alive['chen_mo']) return null;
 
     Game.exileUpdateSuspicion();
@@ -36,7 +36,7 @@
   // ---- Chen Mo visits an exiled character (protagonist privilege) ----
 
   Game.exileVisit = function (target) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     if (!Game.isExiled(target)) return { ok: false, reason: 'not_exiled' };
     return { ok: true, target: target, day: g.day };
   };
@@ -44,7 +44,7 @@
   // ---- Reset (on loop reset) ----
 
   Game.exileReset = function () {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     g.exile = null;
     Game._exileEnsureExile(g);
   };
@@ -57,13 +57,13 @@
   // a day event fires that raises suspicion toward those wolves.
 
   Game.exileRecordVotePattern = function (voteResult, target, exiled) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     var e = Game._exileEnsureExile(g);
     if (!e.votePatterns) e.votePatterns = [];
 
     // Only track patterns when the target was a GOOD person (wolves framing).
     var targetRole = Game.roleOf(target);
-    var targetIsWolf = Game._exileWOLF_ROLES.indexOf(targetRole) !== -1;
+    var targetIsWolf = GameState.WOLF_ROLES.indexOf(targetRole) !== -1;
     if (targetIsWolf) return;  // wolves voting to protect a wolf isn't a tell
 
     // Record which wolves voted "exile" (frame good) this round.
@@ -71,7 +71,7 @@
     for (var i = 0; i < voteResult.voters.length; i++) {
       var vt = voteResult.voters[i];
       var vtRole = Game.roleOf(vt.id);
-      if (Game._exileWOLF_ROLES.indexOf(vtRole) !== -1 && vt.vote === 'exile') {
+      if (GameState.WOLF_ROLES.indexOf(vtRole) !== -1 && vt.vote === 'exile') {
         wolvesVotingExile.push(vt.id);
       }
     }
@@ -98,7 +98,7 @@
   };
 
   Game.exileTriggerBackfire = function (patterns) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     var e = Game._exileEnsureExile(g);
 
     // Count how many times each wolf appeared in bloc patterns.

@@ -11,16 +11,10 @@
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
-  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+  var WOLF_IDS = GameState.WOLF_IDS;
+  var GOD_ROLES = GameState.GOD_ROLES;
+  var ensureState = Game.ensureState;
 
   var REASONS = {
     aggressive: ["他白天太活跃了。", "他看我的眼神不对劲。", "留着他迟早出事。"],
@@ -126,6 +120,7 @@
     var pr = g.godSkills.prophet;
     if (pr && pr.exposed && candidates.indexOf("fang_heng") !== -1 && g.alive["fang_heng"]) {
       return { target: "fang_heng", reason: "He has a gun. He already killed someone. Eliminate him now." };
+    }
 
     // If Lao Zheng publicly spoke about hearing footsteps at night,
     // ALL wolves prioritize killing him — he's a surveillance threat.
@@ -137,8 +132,6 @@
     // wolves prioritize her — she can revive anyone they kill.
     if (Game.hasFlag("ye_zhiqiu_exposed") && candidates.indexOf("ye_zhiqiu") !== -1 && g.alive["ye_zhiqiu"]) {
       return { target: "ye_zhiqiu", reason: "She just revealed she can bring the dead back. She dies tonight." };
-    }
-
     }
 
     if (g.day <= 1) {

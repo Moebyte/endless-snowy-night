@@ -9,18 +9,12 @@
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   // Known wolves (Tang Xiaotang is hidden — not part of pack kills)
-  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
-  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+  var WOLF_IDS = GameState.WOLF_IDS;
+  var GOD_ROLES = GameState.GOD_ROLES;
 
   // Resolve the wolf pack's night kill.
   // Returns { target, killed, actualTarget, killer, special }

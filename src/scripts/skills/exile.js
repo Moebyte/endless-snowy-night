@@ -33,15 +33,9 @@
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+  var ensureState = Game.ensureState;
+  var WOLF_ROLES = GameState.WOLF_ROLES;
 
   // The three tracked accusers
   var ACCUSERS = ['fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'];
@@ -344,9 +338,9 @@ var protect = {
   // Abstains do NOT count — silence is neither support nor opposition.
   // Returns { votesFor, votesAgainst, abstains, voters: [{id, vote, reason}] }
   // Export shared helpers for exile-vote.js and exile-ai.js
-  Game._exileEnsureState = ensureState;
+  // Shared with exile-vote.js / exile-ai.js. ensureState + WOLF_ROLES now use
+  // the public Game.ensureState() / GameState.WOLF_ROLES; the rest stay private.
   Game._exileEnsureExile = ensureExile;
-  Game._exileWOLF_ROLES = WOLF_ROLES;
   Game._exileACCUSERS = ACCUSERS;
   Game._exileTHRESHOLDS = THRESHOLDS;
   Game._exileMajorityNeeded = majorityNeeded;

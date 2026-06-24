@@ -5,12 +5,7 @@
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
+  var ensureState = Game.ensureState;
 
   Game.HIDE_SPOTS = ['pantry', 'gallery', 'children_room', 'sewing_room', 'chapel', 'well'];
 

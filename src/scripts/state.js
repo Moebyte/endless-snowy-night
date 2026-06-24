@@ -39,6 +39,29 @@
     MECHANICAL_WOLF: 'mechanical_wolf'
   };
 
+  // Derived role/character groupings (single source of truth).
+  // WOLF_ROLES: all four wolf role types (incl. hidden wolf Tang Xiaotang).
+  GameState.WOLF_ROLES = [
+    GameState.ROLES.WOLF_KING,
+    GameState.ROLES.HIDDEN_WOLF,
+    GameState.ROLES.WOLF,
+    GameState.ROLES.MECHANICAL_WOLF
+  ];
+  // GOD_ROLES: the four divine/guardian roles (伪神).
+  GameState.GOD_ROLES = [
+    GameState.ROLES.PROPHET,
+    GameState.ROLES.WITCH,
+    GameState.ROLES.KNIGHT,
+    GameState.ROLES.MAGICIAN
+  ];
+  // WOLF_IDS: the three wolves who attend the first-night meeting.
+  // (Tang Xiaotang, the hidden wolf, is NOT in this list.)
+  GameState.WOLF_IDS = [
+    GameState.CHARACTERS.ZHOU_YANG,
+    GameState.CHARACTERS.ZHAO_MINGCHENG,
+    GameState.CHARACTERS.GU_YAN
+  ];
+
   // Display labels for roles (v8 terminology)
   
   // Room assignments (v9.5)

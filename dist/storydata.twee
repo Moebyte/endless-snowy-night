@@ -1,279 +1,452 @@
 :: StoryJavaScript
 /*
- * 00-init.js
- * Must load before all other scripts.
- * Ensures window.Game and window.GameState exist before any IIFE tries to use them.
- */
-window.Game = window.Game || {};
-window.GameState = window.GameState || {};
-
-
-/*
- * day-events.js
- *
- * White-day event simulator. Generates plausible daytime interactions
- * (conflicts, suspicions, observations) that drive all god-role AI.
- *
- * Events are based on the character interaction matrix:
- *   - Natural tensions (who dislikes whom)
- *   - Random triggered conflicts (two people clash over something)
- *   - Observations (someone notices something "off" about another)
- *
- * Each event has: { day, type, a, b, target, observer, weight, desc }
- *   - type: "conflict" | "suspicion" | "observation" | "tang_hint"
- *   - weight: how much this event affects suspicion (5-50)
- *   - "tang_hint": Tang Xiaotang subtly hints someone is suspicious (huge weight for Lin Xiaoman)
+ * state.js
+ * Game state initial structure and constant definitions.
+ * All state hangs on State.variables.game to avoid global pollution.
  */
 
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
+  window.GameState = window.GameState || {};
 
-  var Game = window.Game;
-
-  // Natural tension matrix: a -> b means a has friction with b
-  // Values are base suspicion weights when a conflict triggers
-  var TENSIONS = {
-    // Lin Xiaoman's natural dislikes (from they.md)
-    // She observes others' behavior — not because they target Tang,
-    // but because their vibe is "wrong" to her protective instinct
-    lin_xiaoman: {
-      zhou_yang: 20,      // she senses "hunter's eyes", something dark under his smile
-      fang_heng: 15,      // he interrogates people like suspects
-      zhao_mingcheng: 20, // he evaluates people like merchandise
-      shen_shen: 10,      // he makes people uncomfortable, calculating gaze
-      gu_yan: 15          // he looks at people like lab samples, too intense
-    },
-    // Fang Heng's natural targets (cop instinct)
-    fang_heng: {
-      zhou_yang: 20,      // "right hand always in pocket"
-      chen_mo: 15,        // "knows something but won't say"
-      zhao_mingcheng: 10, // old acquaintance, mutual wariness
-      gu_yan: 10          // "writing formulas, intense"
-    },
-    // Tang Xiaotang's emotional dislikes (hidden wolf, but has feelings)
-    tang_xiaotang: {
-      su_wan: 10,         // rival for Chen Mo
-      fang_heng: 5        // fears being caught
-    },
-    // Zhao Mingcheng targets Fang Heng (secret rivalry)
-    zhao_mingcheng: {
-      fang_heng: 25       // wants to eliminate Fang Heng
-    },
-    // Zhou Yang's fear (he fears people who can expose him)
-    zhou_yang: {
-      chen_mo: 15,        // "he knows something, won't say"
-      fang_heng: 20       // "cop instinct, can see through me"
-    },
-    // Gu Yan observes everyone analytically
-    gu_yan: {
-      fang_heng: 10,
-      chen_mo: 10
-    },
-    // Shen Shen evaluates everyone
-    shen_shen: {
-      zhao_mingcheng: 10,
-      chen_mo: 10
-    }
+  // Character IDs
+  GameState.CHARACTERS = {
+    CHEN_MO: 'chen_mo',
+    SU_WAN: 'su_wan',
+    JIANG_BAI: 'jiang_bai',
+    FANG_HENG: 'fang_heng',
+    SHEN_SHEN: 'shen_shen',
+    YE_ZHIQIU: 'ye_zhiqiu',
+    ZHENG_SHOUSHAN: 'zheng_shoushan',
+    LIN_XIAOMAN: 'lin_xiaoman',
+    GU_YAN: 'gu_yan',
+    ZHOU_YANG: 'zhou_yang',
+    TANG_XIAOTANG: 'tang_xiaotang',
+    ZHAO_MINGCHENG: 'zhao_mingcheng'
   };
 
-  // Characters who can trigger conflict events
-  var CONFLICT_STARTERS = Object.keys(TENSIONS);
+  // Role IDs
+  GameState.ROLES = {
+    MEMORY: 'memory',
+    PROPHET: 'prophet',
+    WITCH: 'witch',
+    KNIGHT: 'knight',
+    MAGICIAN: 'magician',
+    VILLAGER: 'villager',
+    WOLF_KING: 'wolf_king',
+    HIDDEN_WOLF: 'hidden_wolf',
+    WOLF: 'wolf',
+    MECHANICAL_WOLF: 'mechanical_wolf'
+  };
 
-  // ---- Public API ----
+  // Derived role/character groupings (single source of truth).
+  // WOLF_ROLES: all four wolf role types (incl. hidden wolf Tang Xiaotang).
+  GameState.WOLF_ROLES = [
+    GameState.ROLES.WOLF_KING,
+    GameState.ROLES.HIDDEN_WOLF,
+    GameState.ROLES.WOLF,
+    GameState.ROLES.MECHANICAL_WOLF
+  ];
+  // GOD_ROLES: the four divine/guardian roles (伪神).
+  GameState.GOD_ROLES = [
+    GameState.ROLES.PROPHET,
+    GameState.ROLES.WITCH,
+    GameState.ROLES.KNIGHT,
+    GameState.ROLES.MAGICIAN
+  ];
+  // WOLF_IDS: the three wolves who attend the first-night meeting.
+  // (Tang Xiaotang, the hidden wolf, is NOT in this list.)
+  GameState.WOLF_IDS = [
+    GameState.CHARACTERS.ZHOU_YANG,
+    GameState.CHARACTERS.ZHAO_MINGCHENG,
+    GameState.CHARACTERS.GU_YAN
+  ];
 
-  // Generate day events for the current day.
-  // Called once per day (at morning transition).
-  Game.generateDayEvents = function () {
-    var g = ensureState();
-    var day = g.day;
-    g.dayEvents = g.dayEvents || [];
+  // Display labels for roles (v8 terminology)
+  
+  // Room assignments (v9.5)
+  // 3 floors, 4 rooms each, stairs at both ends (east/west)
+  GameState.ROOMS = {
+    // Floor 1 (lobby level) - 101(W) 102 103 104(E)
+    '101': { floor: 1, pos: 'W', char: 'zhou_yang' },
+    '102': { floor: 1, pos: 'W-M', char: 'shen_shen' },
+    '103': { floor: 1, pos: 'M-E', char: 'fang_heng' },
+    '104': { floor: 1, pos: 'E', char: 'zhao_mingcheng' },
+    // Floor 2 (protagonist level) - 201(W) 202 203 204(E)
+    '201': { floor: 2, pos: 'W', char: 'chen_mo' },
+    '202': { floor: 2, pos: 'W-M', char: 'jiang_bai' },
+    '203': { floor: 2, pos: 'M-E', char: 'gu_yan' },
+    '204': { floor: 2, pos: 'E', char: 'zheng_shoushan' },
+    // Floor 3 (girls' level) - 301(W) 302 303 304(E)
+    '301': { floor: 3, pos: 'W', char: 'su_wan' },
+    '302': { floor: 3, pos: 'W-M', char: 'lin_xiaoman' },
+    '303': { floor: 3, pos: 'M-E', char: 'tang_xiaotang' },
+    '304': { floor: 3, pos: 'E', char: 'ye_zhiqiu' }
+  };
 
-    var aliveList = Game.activeList();
-    if (aliveList.length < 3) return g.dayEvents;
+  // Reverse lookup: charId -> room number
+  GameState.CHAR_ROOMS = {};
+  Object.keys(GameState.ROOMS).forEach(function (rn) {
+    GameState.CHAR_ROOMS[GameState.ROOMS[rn].char] = rn;
+  });
 
-    var newEvents = [];
+GameState.ROLE_LABELS = {
+    memory: '劫主',
+    prophet: '昭判',
+    witch: '渡君',
+    knight: '镇煞',
+    magician: '幻真',
+    villager: '凡人',
+    wolf_king: '幽主',
+    hidden_wolf: '匿魂',
+    wolf: '无常',
+    mechanical_wolf: '噬道'
+  };
 
-    // 1. Generate 1-3 conflict/suspicion events based on tensions
-    var numEvents = Math.floor(Math.random() * 3); // 0-2 (less noise, B-type carries more signal)
+  // Ending IDs (v8 three-tier system)
+  GameState.ENDINGS = {
+    BAD: 'bad',
+    GOOD: 'good',
+    TRUE: 'true'
+  };
+  // ITEMS: Chinese names + descriptions
+  GameState.ITEMS = {
+    notebook: { name: "笔记本", desc: "陈默用来记录跨轮回情报的笔记本。最后一页写着：不要相信任何人。" },
+    old_key: { name: "旧钥匙", desc: "一把锈迹斑斑的铁钥匙，可能能打开地下酒窖的铁门。" },
+    wolf_knife: { name: "狼牙匕首", desc: "造型狰狞的匕首，刀刃有暗红色痕迹。" },
+    bread: { name: "面包", desc: "山庄厨房仅剩的干粮，硬得能砸核桃。" },
+    compass: { name: "损坏的指南针", desc: "指针一直在转，从不指向同一个方向。" },
+    lighter: { name: "打火机", desc: "老式煤油打火机，还能打火。" },
+    flashlight: { name: "手电筒", desc: "光线已经很微弱了，但还能用一会儿。" },
+    first_aid_kit: { name: "急救箱", desc: "苏晚随身携带的急救箱，里面有纱布、碘伏和止血药。" },
+    syringe: { name: "注射器", desc: "干净的注射器，可用于注射药液。" },
+    pocket_knife: { name: "折叠刀", desc: "江白随身的小刀，刀刃锋利。" },
+    ritual_dagger: { name: "仪式匕首", desc: "祭坛上发现的骨制匕首，刀柄刻满符文。" },
+    mirror_shard: { name: "镜子碎片", desc: "从祭祀空间的镜子上敲下来的碎片，倒影里好像有另一个世界。" },
+    guest_register: { name: "住客登记簿", desc: "前台找到的登记簿，密密麻麻写满了名字，有些被划掉。" },
+    old_photo: { name: "泛黄照片", desc: "二十年前在山庄拍摄的合影，老郑站在最后一排。" },
+    cassette_tape: { name: "磁带", desc: "广播室找到的老式磁带，录音内容是前任祭坛守护者的独白。" },
+    medicine_bottle: { name: "药瓶", desc: "标签被撕掉的药瓶，含化学药剂。" },
+    wire: { name: "铜线", desc: "一段约两米的铜线，可以用于临时电路修复。" },
+    bible: { name: "破旧圣经", desc: "阁楼找到的圣经，扉页写着老郑的忏悔。" },
+    old_note: { name: "发黄的纸条", desc: "铁门门缝里塞的纸条：他们不会让人出去的，不要相信导游。" },
+    ritual_log: { name: "祭祀日志", desc: "神秘房间找到的日志，记载了仪式的规则和历史。" },
+  };
+  // CLUES: Chinese names + descriptions (breaking = key to true ending)
+  GameState.CLUES = {
+    locked_doors: { name: "锁门规律", desc: "每晚23:00后，所有安全屋自动上锁，只有狼能闯入。" },
+    cellar_door: { name: "地下铁门", desc: "酒窖深处的铁门，需要特定形状钥匙才能打开。" },
+    jiangbai_scar: { name: "江白旧疤", desc: "江白右手腕上的疤很整齐，不像玻璃划伤。" },
+    zhouyang_pocket: { name: "周阳插口袋", desc: "周阳的右手始终插在口袋里。" },
+    fang_temperature: { name: "方衡体温异常", desc: "方衡体温偏低，但不像是生病的温度。" },
+    phone_battery: { name: "手机电量异常", desc: "林小满的手机显示被困第三天，电量一直是100%。" },
+    cellar_blood: { name: "酒窖血腥味", desc: "铁门后有明显的血腥味。" },
+    old_guests: { name: "以往的客人", desc: "住客登记簿显示多年来的访客记录，有些人再也没有离开。" },
+    ritual_tablet: { name: "祭祀铭文", desc: "祭坛上的铭文：第七日，祭品满，门开。存者出，亡者留。", breaking: true },
+    recruitment_tablet: { name: "招募铭文", desc: "铭文后半部分：掌祭者即掌生死，存者若取祭者之位，则轮回终，新神立。", breaking: true },
+    shenshen_identity: { name: "沈慎暗示", desc: "沈慎说看所有人都是双重曝光的——他也能感知到轮回的痕迹。", breaking: true },
+    god_kill_method: { name: "弑神方法", desc: "取代祭坛的守护者就能终结轮回，但需要等价交换。", breaking: true },
+    fang_heng_theory: { name: "方衡的推测", desc: "狼的杀戮可能有特定目标顺序，而不是随机。" },
+    tang_saw_3f: { name: "唐小棠目击证词", desc: "唐小棠声称昨晚23:00后看到有人上三楼。" },
+    fang_and_zhao_known: { name: "方衡与赵明城相识", desc: "周阳观察到两人交换眼神，顾言证实赵明城介绍他来山庄。" },
+    hidden_floor: { name: "隐藏夹层", desc: "顾言通过建筑结构对称性推算山庄存在隐藏空间。" },
+    burned_notebook: { name: "烧毁的笔记", desc: "有人烧了一本笔记，灰烬上残留着'者笔记别让人看到'字样。" },
+    ye_supernatural_wound: { name: "超自然伤口", desc: "叶知秋验尸确认伤口不是人类能造成的。" },
+    ye_opinion_fang_shen: { name: "叶知秋对方衡和沈慎的评价", desc: "方衡身上有不干净的味道，沈慎对死亡过于熟悉。" },
+    six_digit_lock: { name: "六进制密码锁", desc: "二楼走廊尽头的房间门装有六进制密码锁。" },
+    mystery_room: { name: "神秘房间", desc: "密码锁后面的房间，藏有祭祀日志和关于仪式的书籍。" },
+    zhao_fang_deal: { name: "赵明城与方衡的交易", desc: "两人来山庄是为了取走前主人留下的东西——各取所需。" },
+    altar_inscription: { name: "祭坛铭文", desc: "铁门后的祭坛刻着：第七日，祭品满，门开。存者出，亡者留。" },
+  };
 
-    for (var i = 0; i < numEvents; i++) {
-      // Pick a random starter who is alive
-      var starters = CONFLICT_STARTERS.filter(function (s) {
-        return aliveList.indexOf(s) !== -1;
-      });
-      if (!starters.length) break;
+  GameState.BREAKING_CLUES = Object.keys(GameState.CLUES).filter(function (id) {
+    return GameState.CLUES[id].breaking === true;
+  });
 
-      var starter = starters[Math.floor(Math.random() * starters.length)];
-      var targets = Object.keys(TENSIONS[starter]).filter(function (t) {
-        return aliveList.indexOf(t) !== -1;
-      });
-      if (!targets.length) continue;
+  // WITCH_MATERIALS: materials for crafting potions
+  GameState.WITCH_MATERIALS = {
+    medicine_bottle: { name: "药瓶", desc: "标签被撕掉的药瓶，含化学药剂。", sources: ["dining_room"] },
+    syringe: { name: "注射器", desc: "干净的注射器，可用于注射药液。", sources: ["master_bedroom"] },
+    herb_bundle: { name: "草药束", desc: "温室里找到的干燥草药。", sources: ["conservatory"] },
+    chemical_vial: { name: "化学试剂瓶", desc: "工坊里的化学试剂。", sources: ["workshop"] },
+  };
 
-      var target = targets[Math.floor(Math.random() * targets.length)];
-      var baseWeight = TENSIONS[starter][target];
-      // Good-vs-good tensions produce weaker events (noise)
-      var starterRole = (typeof Game !== 'undefined' && typeof Game.roleOf === 'function') ? Game.roleOf(starter) : '';
-      var targetRole2 = (typeof Game !== 'undefined' && typeof Game.roleOf === 'function') ? Game.roleOf(target) : '';
-      var isWolfStarter = starterRole === 'wolf_king' || starterRole === 'hidden_wolf' || starterRole === 'wolf' || starterRole === 'mechanical_wolf';
-      var isWolfTarget = targetRole2 === 'wolf_king' || targetRole2 === 'hidden_wolf' || targetRole2 === 'wolf' || targetRole2 === 'mechanical_wolf';
-      // If neither is a wolf, this is good-vs-good noise — halve the weight
-      if (!isWolfStarter && !isWolfTarget) baseWeight = Math.floor(baseWeight / 2);
+  // WITCH_POTIONS: non-lethal potions (control effects)
+  GameState.WITCH_POTIONS = {
+    sleeping_potion: {
+      name: "安眠药",
+      desc: "让目标当晚深度睡眠，不会醒来，不会目击夜间事件。",
+      recipe: { medicine_bottle: 1 },
+      effect: "sleep"
+    },
+    paralytic: {
+      name: "麻痹剂",
+      desc: "让目标当晚身体无法动弹，无法行动。",
+      recipe: { medicine_bottle: 1, syringe: 1 },
+      effect: "paralyze"
+    },
+    deep_sedative: {
+      name: "强效镇静剂",
+      desc: "同时麻痹和安眠，目标当晚完全失去行动能力。",
+      recipe: { syringe: 1, chemical_vial: 1, herb_bundle: 1 },
+      effect: "deep_sedation"
+    },
+    truth_serum: {
+      name: "吐真剂",
+      desc: "让目标在白天对话中不自觉地吐露真实想法。一次性。",
+      recipe: { chemical_vial: 1, herb_bundle: 1 },
+      effect: "truth"
+    },
+  };
 
-      // Random variation
-      var weight = Math.max(5, baseWeight + Math.floor(Math.random() * 10) - 5);
+  // MAP: location id -> {name, desc, zone}
+  GameState.MAP = {
+    foyer: { name: "门厅", desc: "庄园正门入口，双开橡木门已被积雪封死。水晶吊灯倾斜悬挂。", zone: "main_1f" },
+    grand_hall: { name: "大厅", desc: "壁炉、前台、通往各处的走廊。所有人白天的聚集地。", zone: "main_1f" },
+    dining_room: { name: "餐厅", desc: "长条橡木餐桌，能坐二十人。墙上有肖像画。", zone: "main_1f" },
+    kitchen: { name: "厨房", desc: "仅剩干粮的地方，也是食物危机的源头。", zone: "main_1f" },
+    pantry: { name: "储藏室", desc: "厨房后方的储藏室，货架大多空了。", zone: "main_1f" },
+    drawing_room: { name: "会客室", desc: "壁炉旁的休息区，沙发和旧钢琴。", zone: "main_1f" },
+    study: { name: "书房", desc: "满墙书架，书桌上有放大镜和信件。", zone: "main_1f" },
+    gallery: { name: "画廊", desc: "挂着历任庄园主人肖像的走廊，画中人的眼睛似乎在追踪你。", zone: "main_1f" },
+    guest_corridor: { name: "客房走廊", desc: "十二间客房，夜间是各自的安全屋。", zone: "main_2f" },
+    master_bedroom: { name: "主卧", desc: "庄园主人曾住的房间，床头的镜子蒙着灰。", zone: "main_2f" },
+    children_room: { name: "儿童房", desc: "积灰的童床和木马，墙上有蜡笔画痕迹。", zone: "main_2f" },
+    sewing_room: { name: "缝纫室", desc: "旧式缝纫机和布料，抽屉里可能有针线。", zone: "main_2f" },
+    balcony: { name: "阳台", desc: "能俯瞰中庭和庭院，风雪很大。", zone: "main_2f" },
+    attic: { name: "阁楼", desc: "布满灰尘，能找到泛黄的照片和二十年前的物件。", zone: "main_3f" },
+    archive_room: { name: "档案室", desc: "庄园二十年的文件和账本，锁着的铁柜里有秘密。", zone: "main_3f" },
+    library: { name: "图书室", desc: "满架旧书，藏着山庄的历史和往届住客的记录。", zone: "east_wing" },
+    music_room: { name: "音乐室", desc: "三角钢琴和大提琴，琴键落满灰尘。", zone: "east_wing" },
+    conservatory: { name: "温室", desc: "玻璃已碎，枯死的植物在雪中僵立。", zone: "east_wing" },
+    broadcast_room: { name: "广播室", desc: "老旧的广播设备，磁带里录着前任神的独白。", zone: "east_wing" },
+    generator_room: { name: "配电室", desc: "庄园的电力来源，江白能在这里发挥作用。", zone: "west_wing" },
+    workshop: { name: "工坊", desc: "木工和金工工具，能制作简易武器和工具。", zone: "west_wing" },
+    armory: { name: "杂物间", desc: "堆满旧家具和旅行箱，可能藏着前任住客的遗物。", zone: "west_wing" },
+    wine_cellar: { name: "酒窖", desc: "酒架大多空了，最深处通向地下铁门。", zone: "west_wing" },
+    courtyard: { name: "中庭", desc: "被风雪包围的露天区域，指南针在这里会剧烈转动。", zone: "courtyard" },
+    garden: { name: "花园", desc: "枯萎的玫瑰丛和干涸的喷泉，雪下有墓碑。", zone: "courtyard" },
+    well: { name: "古井", desc: "井口结冰，扔下去能听到微弱的回声。", zone: "courtyard" },
+    chapel: { name: "小教堂", desc: "废弃的家庭礼拜堂，十字架歪斜，圣经散落。", zone: "courtyard" },
+    cellar_door: { name: "地下铁门", desc: "酒窖深处的铁门，门上写着天黑请闭眼。", zone: "underground" },
+    altar: { name: "祭祀空间", desc: "石阶、镜子、骨刀。轮回的真相所在。", zone: "underground" },
+    crypt: { name: "地下墓室", desc: "铁门后的岩路，排列着石椁和刻着名字的墙壁。", zone: "underground" },
+  };
 
-      // Pick event type
-      var types = ['conflict', 'suspicion', 'observation'];
-      var type = types[Math.floor(Math.random() * types.length)];
+  // ZONES: zone id -> {name, desc}
+  GameState.ZONES = {
+    main_1f: { name: "主楼一层", desc: "门厅、大厅、餐厅、厨房、储藏室、会客厅、书房、画廊。" },
+    main_2f: { name: "主楼二层", desc: "客房走廊、主卧、儿童房、缝纫室、阳台。" },
+    main_3f: { name: "主楼三层 / 阁楼", desc: "阁楼与档案室。" },
+    east_wing: { name: "东厢房", desc: "图书室、音乐室、温室、广播室。" },
+    west_wing: { name: "西厢房", desc: "配电室、工坊、杂物间、酒窖。" },
+    courtyard: { name: "庭院", desc: "中庭、花园、古井、小教堂。" },
+    underground: { name: "地下空间", desc: "地下铁门、祭祀空间、地下墓穴。" }
+  };
 
-      // For conflict: both parties are involved
-      // For suspicion: starter observes target
-      // For observation: starter notices something about target
-      var event = {
-        day: day,
-        type: type,
-        a: starter,
-        b: target,
-        target: target,
-        observer: starter,
-        weight: weight,
-        desc: type + ': ' + starter + ' -> ' + target + ' (w:' + weight + ')'
-      };
+  GameState.BACKSTORY_KEYS = {
+    chen_mo: 'chenmo_guilt',
+    su_wan: 'suwan_resolve',
+    jiang_bai: 'jiangbai_origin',
+    fang_heng: 'fang_corruption',
+    shen_shen: 'shenshen_debt',
+    ye_zhiqiu: 'yezhiqiu_malpractice',
+    zheng_shoushan: 'villager',
+    lin_xiaoman: 'linxiaoman_devotion',
+    zhou_yang: 'zhouyang_arrogance',
+    tang_xiaotang: 'tangxiaotang_trauma',
+    zhao_mingcheng: 'zhaomingcheng_network',
+    gu_yan: 'guyan_ambition'
+  };
 
-      newEvents.push(event);
-      g.dayEvents.push(event);
-    }
+  // (comment)
+  GameState.FLAGS = {
+    MET_EVERYONE: 'met_everyone',
+    SAW_LAOZHENG_DIE: 'saw_laozheng_die',
+    LOOP_AWAKENED: 'loop_awakened',
+    JIANGBAI_TRUSTS: 'jiangbai_trusts',
+    ZHOU_SUSPICIOUS: 'zhou_suspicious',
+    TANG_SUSPICIOUS: 'tang_suspicious',
+    SHENSHEN_REVEALED: 'shenshen_revealed',
+    FANG_REVEALED: 'fang_revealed',
+    FANG_ZHAO_CONNECTION: 'fang_zhao_connection', // (comment)
+    DOOR_OPENED: 'door_opened',
+    MIRROR_BROKEN: 'mirror_broken'
+  };
 
-    var WOLF_ROLES_FOR_TELL = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
-    // 1b. B-type events: wolves reveal tells during the day
-    // These give good guys a chance to catch wolves through observation
-    var WOLF_TELLS = {
-      zhou_yang: [
-        { type: 'observation', desc: 'zhou_yang right hand always in pocket', weight: 15 },
-        { type: 'observation', desc: 'zhou_yang smile vanishes for a split second', weight: 12 },
-        { type: 'suspicion', desc: 'zhou_yang looks at someone like prey', weight: 18 }
-      ],
-      zhao_mingcheng: [
-        { type: 'observation', desc: 'zhao_mingcheng exchanges glances with fang_heng', weight: 15 },
-        { type: 'suspicion', desc: 'zhao_mingcheng mediates a conflict too smoothly', weight: 10 },
-        { type: 'observation', desc: 'zhao_mingcheng evaluates people like merchandise', weight: 18 }
-      ],
-      gu_yan: [
-        { type: 'observation', desc: 'gu_yan stares at people too intensely', weight: 12 },
-        { type: 'suspicion', desc: 'gu_yan writes formulas obsessively, muttering', weight: 15 },
-        { type: 'observation', desc: 'gu_yan tries to get close to someone with god powers', weight: 20 }
-      ],
-      shen_shen: [
-        // Shen Shen is a god, but his behavior looks suspicious (sitting in corners, evaluating)
-        { type: 'observation', desc: 'shen_shen sits alone, watching everyone', weight: 8 },
-        { type: 'suspicion', desc: 'shen_shen makes someone see things that arent real', weight: 25 }
-      ]
-    };
+  
+  // PROFILES: v8 character bible - public identity + hidden secrets
+  GameState.PROFILES = {
+    chen_mo: { name: "陈默", firstImpression: "你自己。白衫衫皱巴巴的，袖口还有血迹。", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，寡言，习惯用笔记与逻辑拆解问题", talent: "逻辑分析、记笔记、观察系统漏洞", secret: "你是劫主，唯一保留轮回记忆的人。" },
+    su_wan: { name: "苏晚", firstImpression: "穿白大褂的女生，气质温和，一直随身带着急救箱。", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔坚定，医者仁心", talent: "急救、诊断中毒/伤势、安抚他人", secret: "凡人·青囊。她没有超自然能力，但凡人的存在决定伪神力量的强弱。" },
+    jiang_bai: { name: "江白", firstImpression: "戴耳机的男生，话不多，总坐在靠窗的位置。", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具", secret: "凡人·雷工。他右手腕的旧瘤不是玻璃划的，来源他一直含糊带过。" },
+    fang_heng: { name: "方衡", firstImpression: "四十出头的男人，穿着深色夹克，第一天主动亮明身份：我是警察，在市局工作。话不多，总在观察四周。", age: 41, job: "警察（自称）", personality: "沉稳敏锐，表面温和", talent: "观察微表情、布局审讯、焦点孤立目标", secret: "昭判。实际是市刑警支队副队长（副处级）、黑警。对外只说在市局工作，不提级别和部门。收钱封口，与赵明城做过交易、互知底牌。" },
+    shen_shen: { name: "沈慎", firstImpression: "沉默的中年男人，手指修长，动作很轻，几乎不发出声音。", age: 38, job: "网吧网管", personality: "沉默寡言，动作利落", talent: "手速快、操控感知、观察人心", secret: "伪神·幻真。他曾是地下赌场荷官兼老千，出千害得别人家破人亡。" },
+    ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，不爱说话。", age: 32, job: "止仪馆入殓师", personality: "沉静温柔，不爱多言", talent: "医疗护理、急救包扎、配制药剂", secret: "渡君。她能感知生命流逝，还魂夺命，但超过3次就会崩溃。" },
+    zheng_shoushan: { name: "郑守山", firstImpression: "年纪最大的男人，自称老郑，说自己是这次旅行的导游。", age: 58, job: "大巴司机", personality: "热情能说会道，熟悉山路", talent: "野外生存、认路、讲故事", secret: "引路人。他开了20年这条山路，有模糊的既视感，似乎知道山庄的某些真相。" },
+    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "伪神·镇煞。她有太妹背景，为了保护唐小棠可以不择手段。" },
+    zhou_yang: { name: "周阳", firstImpression: "高个子体育生，笑容阳光，喜欢和人打招呼。", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好", talent: "奔跑、体能好、带动气氛", secret: "堕仙·幽主。他好胜心极强，享受在竞争中把对手压垮。被杀时可以同归于尽。" },
+    tang_xiaotang: { name: "唐小棠", firstImpression: "爱笑的女生，紧紧挝着林小满的手臂，看起来有点怕生。", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强", talent: "读文字、察言观色、写作", secret: "堕仙·匿魂。她幼年被养父虐待猝㷴，精神状态长期不稳定，暗恋陈默。领言家查验为盟友。" },
+    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，自称做外贸生意。", age: 45, job: "外贸公司老板", personality: "圆滑世故，擅长旋旦", talent: "谈判、资源调配、心理施压", secret: "堕仙·无常。他是政治掮客、白手套，与方衡做过交易、互知对方真实身份（方衡知道他是白手套，他知道方衡是黑警）。来山庄是为收购度假村。能抹除尸体。" },
+    gu_yan: { name: "顾言", firstImpression: "戴眼镜的年轻人，手里拿着笔记本，不时低头记录什么。", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强", talent: "物理推理、拆解机关、实验验证", secret: "堕仙·噬道。他曾强夺同门师兄弟的学术成果，引掌能力后只能用一次。" },
+  };
 
-    // 40% chance of a wolf tell event per day
-    if (Math.random() < 0.7) {
-      var wolfTellStarters = Object.keys(WOLF_TELLS).filter(function(w) {
-        return aliveList.indexOf(w) !== -1;
-      });
-      if (wolfTellStarters.length) {
-        var tellWolf = wolfTellStarters[Math.floor(Math.random() * wolfTellStarters.length)];
-        var tells = WOLF_TELLS[tellWolf];
-        var tell = tells[Math.floor(Math.random() * tells.length)];
+GameState.getProfile = function (charId) {
+  return GameState.PROFILES[charId] || null;
+};
 
-        // A random good guy observes this tell
-        var observers = aliveList.filter(function(c) {
-          return c !== tellWolf &&
-                 WOLF_ROLES_FOR_TELL.indexOf(c) === -1; // not a wolf
-        });
-        if (observers.length) {
-          var observer = observers[Math.floor(Math.random() * observers.length)];
-          var tellEvent = {
-            day: day,
-            type: tell.type,
-            a: tellWolf,
-            b: tellWolf,       // the wolf is both source and target of observation
-            target: tellWolf,
-            observer: observer,
-            weight: tell.weight,
-            desc: tell.desc + ' (observed by ' + observer + ')'
-          };
-          newEvents.push(tellEvent);
-          g.dayEvents.push(tellEvent);
+  // GameState.create: fresh game state
+  GameState.create = function () {
+    return {
+      // chapter and loop
+      chapter: 1,
+      loop: 1,
+      day: 1,
+      time: '06:00',
+
+      // protagonist state
+      stats: {
+        san: 100,
+        hunger: 0,
+        trust_suwan: 50,
+        trust_jiangbai: 30,
+        trust_fang_heng: 30,
+        trust_shenshen: 20,
+        fear_level: 0
+      },
+
+      // alive status (true = alive)
+      alive: {
+        chen_mo: true,
+        su_wan: true,
+        jiang_bai: true,
+        fang_heng: true,
+        shen_shen: true,
+        ye_zhiqiu: true,
+        zheng_shoushan: true,
+        lin_xiaoman: true,
+        gu_yan: true,
+        zhou_yang: true,
+        tang_xiaotang: true,
+        zhao_mingcheng: true
+      },
+
+      // current role assignments
+      roles: {
+        chen_mo: 'memory',
+        su_wan: 'villager',
+        jiang_bai: 'villager',
+        fang_heng: 'prophet',
+        shen_shen: 'magician',
+        ye_zhiqiu: 'witch',
+        zheng_shoushan: 'villager',
+        lin_xiaoman: 'knight',
+        gu_yan: 'mechanical_wolf',
+        zhou_yang: 'wolf_king',
+        tang_xiaotang: 'hidden_wolf',
+        zhao_mingcheng: 'wolf'
+      },
+
+      // inventory, clues, flags, endings
+      inventory: {},
+      clues: {},
+      flags: {},
+      endings: {},
+
+      // passage visit log
+      visited: {},
+
+      // visited locations (map)
+      visitedLocations: {},
+
+      // revealed character hidden info
+      revealed: {},
+
+      // characters the protagonist has met
+      metCharacters: {},
+
+      // per-character unlocked info aspects (basic/personality/talent/backstory/identity)
+      characterReveals: {},
+
+      // safehouse status (intruded each night)
+      safehouse: {
+        intruded: false,
+        target: null
+      },
+
+      // god skills (reset each loop)
+      godSkills: {
+        witch: {
+          uses: 0,
+          maxUses: 2,
+          broken: false,
+          curses: [],
+          materials: {},
+          potions: {},
+          sensedDeath: null
+        },
+        knight: {
+          duelsUsed: 0,
+          weakenedDays: 0,
+          // Independent cooldowns: duel (day) and guard (night) no longer share.
+          duelCooldown: 0,
+          guardCooldown: 0,
+          // Guard can be consecutive (night apart), so no lastGuardTarget lock.
+          guarding: null,
+          // Lin Xiaoman's personal suspicion toward each character (0-100).
+          // Driven by day events: who targets Tang Xiaotang gets big spikes.
+          suspicion: {}
+        },
+        prophet: {
+          checks: [],
+          exposed: false,
+          // Hunter ability: 2 bullets (passive counter-kill + active shoot)
+          bullets: 2
+        },
+        magician: {
+          swapsUsed: 0,
+          maxSwaps: 7,
+          currentSwap: null,
+          swapHistory: [],
+          lastSwapPair: null
         }
+      },
+
+      // last wolf kill result
+      lastWolfKill: null,
+
+      // day events generated each morning (conflicts, suspicions, observations)
+      // Drives all god-role AI decisions. See day-events.js
+      dayEvents: [],
+
+      // memory fragments (persist across loops)
+      memories: [],
+
+      // Jiang Bai trap system (resets each loop)
+      traps: {
+        armed: false,
+        triggered: false,
+        injuredWolf: null,
+        lastTriggerDay: 0,
+        detected: false,
+        totalTriggers: 0,
+        lastObservedInjury: null
+      },
+
+      // Su Wan medic system (resets each loop)
+      medic: {
+        observations: [],
+        lastObserved: null,
+        lastResult: null
+      },
+
+      // Lao Zheng night hearing system (resets each loop)
+      hearer: {
+        lastResult: null,
+        history: []
       }
-    }
-
-        // 2. Tang Xiaotang hint event (only if Tang is alive and it's day 3+)
-    // She subtly hints someone is suspicious — Lin Xiaoman trusts this implicitly.
-    // [v9.3.3 FIX] Tang Xiaotang is a hidden wolf. She senses her wolf teammates
-    // (awakened via the system on Night 1). She would NEVER hint a teammate as
-    // suspicious — that would get them killed. Her hints always target GOOD people.
-    if (g.alive['tang_xiaotang'] && day >= 3 && Math.random() < 0.3) {
-      var WOLF_TEAM = ['zhou_yang', 'tang_xiaotang', 'gu_yan', 'zhao_mingcheng'];
-      var tangTargets = aliveList.filter(function (c) {
-        // Never hint herself, Chen Mo (she loves him), Lin Xiaoman (her best friend),
-        // or any wolf teammate (she protects them).
-        return c !== 'tang_xiaotang' && c !== 'chen_mo' && c !== 'lin_xiaoman' &&
-               WOLF_TEAM.indexOf(c) === -1;
-      });
-      if (tangTargets.length) {
-        var hintTarget = tangTargets[Math.floor(Math.random() * tangTargets.length)];
-        var hintEvent = {
-          day: day,
-          type: 'tang_hint',
-          a: 'tang_xiaotang',
-          b: hintTarget,
-          target: hintTarget,
-          observer: 'lin_xiaoman', // Lin overhears
-          weight: 50, // Huge weight for Lin Xiaoman
-          desc: 'tang_hint: tang_xiaotang hints ' + hintTarget + ' is suspicious'
-        };
-        newEvents.push(hintEvent);
-        g.dayEvents.push(hintEvent);
-      }
-    }
-
-    return newEvents;
-  };
-
-  // Get all events for a specific day
-  Game.getDayEvents = function (day) {
-    var g = ensureState();
-    var d = day || g.day;
-    return (g.dayEvents || []).filter(function (e) { return e.day === d; });
-  };
-
-  // Get all events involving a specific character (as a, b, target, or observer)
-  Game.getEventsInvolving = function (charId, day) {
-    var g = ensureState();
-    var events = g.dayEvents || [];
-    if (day !== undefined) events = events.filter(function (e) { return e.day === day; });
-    return events.filter(function (e) {
-      return e.a === charId || e.b === charId || e.target === charId || e.observer === charId;
-    });
-  };
-
-  // Get events where someone targets Tang Xiaotang (for Lin Xiaoman's rage)
-  Game.getEventsTargetingTang = function (day) {
-    var g = ensureState();
-    var events = g.dayEvents || [];
-    if (day !== undefined) events = events.filter(function (e) { return e.day === day; });
-    return events.filter(function (e) {
-      return e.target === 'tang_xiaotang' || e.b === 'tang_xiaotang';
-    });
-  };
-
-  // Clear all day events (on loop reset)
-  Game.clearDayEvents = function () {
-    var g = ensureState();
-    g.dayEvents = [];
+    };
   };
 
 })();
@@ -291,10 +464,23 @@ window.GameState = window.GameState || {};
 
   function migrateState(g) {
     if (!g) return g;
+    // Backfill fields added after the original schema. Each branch is idempotent:
+    // only seeds a field when missing, never overwrites existing save data.
+    // Fresh defaults mirror GameState.create() (state.js).
+    var fresh = GameState.create();
     if (!g.metCharacters) g.metCharacters = {};
     if (!g.characterReveals) g.characterReveals = {};
     if (!g.revealed) g.revealed = {};
     if (!g.visitedLocations) g.visitedLocations = {};
+    if (!g.visited) g.visited = {};
+    if (!g.safehouse) g.safehouse = fresh.safehouse;
+    if (!g.godSkills) g.godSkills = fresh.godSkills;
+    if (!g.traps) g.traps = fresh.traps;
+    if (!g.medic) g.medic = fresh.medic;
+    if (!g.hearer) g.hearer = fresh.hearer;
+    if (!g.dayEvents) g.dayEvents = fresh.dayEvents;
+    if (!g.memories) g.memories = fresh.memories;
+    if (g.lastWolfKill === undefined) g.lastWolfKill = fresh.lastWolfKill;
     return g;
   }
 
@@ -304,6 +490,10 @@ window.GameState = window.GameState || {};
     }
     return migrateState(State.variables.game);
   }
+
+  // Public accessor: all modules should call Game.ensureState() rather than
+  // redefining a local copy, so save migration runs uniformly everywhere.
+  Game.ensureState = ensureState;
 
 Game.addItem = function (id, count) {
 
@@ -774,38 +964,6 @@ Game.clearSafehouse = function () {
 
   }
 
-Game.canKillGod = function (charId) {
-
-    var g = ensureState();
-
-    var role = g.roles[charId];
-
-    // 闁绘瑩妫垮Ч澶愬矗閿熻姤绂掗妷 鎼愮紒浣哄剳缁辨瑩寮甸悜姗堟嫹閹?鐎氱偓寰勬ウ鍨幋闁告梹鍐荤槐 
-
-    var wolfRoles = [
-
-      GameState.ROLES.WOLF_KING,
-
-      GameState.ROLES.HIDDEN_WOLF,
-
-      GameState.ROLES.WOLF,
-
-      GameState.ROLES.MECHANICAL_WOLF
-
-    ];
-
-    if (wolfRoles.indexOf(role) !== -1) {
-
-      return true;
-
-    }
-
-    // 闁哄鍨堕惃 濞戞搫鎷烽柛娆欐嫹闁哄牆 鎰?鍙?娑?閹蜂即鎳撴笟 閸庢粓宕ｉ敓鑺ョ閵?鎼愮紒浣哄仜閵囨碍鎷呴敓 
-
-
-
-  }
-
 Game.revealInfo = function (charId, key) {
 
     var g = ensureState();
@@ -1000,6 +1158,271 @@ Game.getStatus = function () {
 })();
 
 
+/*
+ * day-events.js
+ *
+ * White-day event simulator. Generates plausible daytime interactions
+ * (conflicts, suspicions, observations) that drive all god-role AI.
+ *
+ * Events are based on the character interaction matrix:
+ *   - Natural tensions (who dislikes whom)
+ *   - Random triggered conflicts (two people clash over something)
+ *   - Observations (someone notices something "off" about another)
+ *
+ * Each event has: { day, type, a, b, target, observer, weight, desc }
+ *   - type: "conflict" | "suspicion" | "observation" | "tang_hint"
+ *   - weight: how much this event affects suspicion (5-50)
+ *   - "tang_hint": Tang Xiaotang subtly hints someone is suspicious (huge weight for Lin Xiaoman)
+ */
+
+(function () {
+  'use strict';
+
+  var Game = window.Game;
+  var ensureState = Game.ensureState;
+
+  // Natural tension matrix: a -> b means a has friction with b
+  // Values are base suspicion weights when a conflict triggers
+  var TENSIONS = {
+    // Lin Xiaoman's natural dislikes (from they.md)
+    // She observes others' behavior — not because they target Tang,
+    // but because their vibe is "wrong" to her protective instinct
+    lin_xiaoman: {
+      zhou_yang: 20,      // she senses "hunter's eyes", something dark under his smile
+      fang_heng: 15,      // he interrogates people like suspects
+      zhao_mingcheng: 20, // he evaluates people like merchandise
+      shen_shen: 10,      // he makes people uncomfortable, calculating gaze
+      gu_yan: 15          // he looks at people like lab samples, too intense
+    },
+    // Fang Heng's natural targets (cop instinct)
+    fang_heng: {
+      zhou_yang: 20,      // "right hand always in pocket"
+      chen_mo: 15,        // "knows something but won't say"
+      zhao_mingcheng: 10, // old acquaintance, mutual wariness
+      gu_yan: 10          // "writing formulas, intense"
+    },
+    // Tang Xiaotang's emotional dislikes (hidden wolf, but has feelings)
+    tang_xiaotang: {
+      su_wan: 10,         // rival for Chen Mo
+      fang_heng: 5        // fears being caught
+    },
+    // Zhao Mingcheng targets Fang Heng (secret rivalry)
+    zhao_mingcheng: {
+      fang_heng: 25       // wants to eliminate Fang Heng
+    },
+    // Zhou Yang's fear (he fears people who can expose him)
+    zhou_yang: {
+      chen_mo: 15,        // "he knows something, won't say"
+      fang_heng: 20       // "cop instinct, can see through me"
+    },
+    // Gu Yan observes everyone analytically
+    gu_yan: {
+      fang_heng: 10,
+      chen_mo: 10
+    },
+    // Shen Shen evaluates everyone
+    shen_shen: {
+      zhao_mingcheng: 10,
+      chen_mo: 10
+    }
+  };
+
+  // Characters who can trigger conflict events
+  var CONFLICT_STARTERS = Object.keys(TENSIONS);
+
+  // ---- Public API ----
+
+  // Generate day events for the current day.
+  // Called once per day (at morning transition).
+  Game.generateDayEvents = function () {
+    var g = ensureState();
+    var day = g.day;
+    g.dayEvents = g.dayEvents || [];
+
+    var aliveList = Game.activeList();
+    if (aliveList.length < 3) return g.dayEvents;
+
+    var newEvents = [];
+
+    // 1. Generate 1-3 conflict/suspicion events based on tensions
+    var numEvents = Math.floor(Math.random() * 3); // 0-2 (less noise, B-type carries more signal)
+
+    for (var i = 0; i < numEvents; i++) {
+      // Pick a random starter who is alive
+      var starters = CONFLICT_STARTERS.filter(function (s) {
+        return aliveList.indexOf(s) !== -1;
+      });
+      if (!starters.length) break;
+
+      var starter = starters[Math.floor(Math.random() * starters.length)];
+      var targets = Object.keys(TENSIONS[starter]).filter(function (t) {
+        return aliveList.indexOf(t) !== -1;
+      });
+      if (!targets.length) continue;
+
+      var target = targets[Math.floor(Math.random() * targets.length)];
+      var baseWeight = TENSIONS[starter][target];
+      // Good-vs-good tensions produce weaker events (noise)
+      var starterRole = (typeof Game !== 'undefined' && typeof Game.roleOf === 'function') ? Game.roleOf(starter) : '';
+      var targetRole2 = (typeof Game !== 'undefined' && typeof Game.roleOf === 'function') ? Game.roleOf(target) : '';
+      var isWolfStarter = starterRole === 'wolf_king' || starterRole === 'hidden_wolf' || starterRole === 'wolf' || starterRole === 'mechanical_wolf';
+      var isWolfTarget = targetRole2 === 'wolf_king' || targetRole2 === 'hidden_wolf' || targetRole2 === 'wolf' || targetRole2 === 'mechanical_wolf';
+      // If neither is a wolf, this is good-vs-good noise — halve the weight
+      if (!isWolfStarter && !isWolfTarget) baseWeight = Math.floor(baseWeight / 2);
+
+      // Random variation
+      var weight = Math.max(5, baseWeight + Math.floor(Math.random() * 10) - 5);
+
+      // Pick event type
+      var types = ['conflict', 'suspicion', 'observation'];
+      var type = types[Math.floor(Math.random() * types.length)];
+
+      // For conflict: both parties are involved
+      // For suspicion: starter observes target
+      // For observation: starter notices something about target
+      var event = {
+        day: day,
+        type: type,
+        a: starter,
+        b: target,
+        target: target,
+        observer: starter,
+        weight: weight,
+        desc: type + ': ' + starter + ' -> ' + target + ' (w:' + weight + ')'
+      };
+
+      newEvents.push(event);
+      g.dayEvents.push(event);
+    }
+
+    var WOLF_ROLES_FOR_TELL = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+    // 1b. B-type events: wolves reveal tells during the day
+    // These give good guys a chance to catch wolves through observation
+    var WOLF_TELLS = {
+      zhou_yang: [
+        { type: 'observation', desc: 'zhou_yang right hand always in pocket', weight: 15 },
+        { type: 'observation', desc: 'zhou_yang smile vanishes for a split second', weight: 12 },
+        { type: 'suspicion', desc: 'zhou_yang looks at someone like prey', weight: 18 }
+      ],
+      zhao_mingcheng: [
+        { type: 'observation', desc: 'zhao_mingcheng exchanges glances with fang_heng', weight: 15 },
+        { type: 'suspicion', desc: 'zhao_mingcheng mediates a conflict too smoothly', weight: 10 },
+        { type: 'observation', desc: 'zhao_mingcheng evaluates people like merchandise', weight: 18 }
+      ],
+      gu_yan: [
+        { type: 'observation', desc: 'gu_yan stares at people too intensely', weight: 12 },
+        { type: 'suspicion', desc: 'gu_yan writes formulas obsessively, muttering', weight: 15 },
+        { type: 'observation', desc: 'gu_yan tries to get close to someone with god powers', weight: 20 }
+      ],
+      shen_shen: [
+        // Shen Shen is a god, but his behavior looks suspicious (sitting in corners, evaluating)
+        { type: 'observation', desc: 'shen_shen sits alone, watching everyone', weight: 8 },
+        { type: 'suspicion', desc: 'shen_shen makes someone see things that arent real', weight: 25 }
+      ]
+    };
+
+    // 70% chance of a wolf tell event per day
+    if (Math.random() < 0.7) {
+      var wolfTellStarters = Object.keys(WOLF_TELLS).filter(function(w) {
+        return aliveList.indexOf(w) !== -1;
+      });
+      if (wolfTellStarters.length) {
+        var tellWolf = wolfTellStarters[Math.floor(Math.random() * wolfTellStarters.length)];
+        var tells = WOLF_TELLS[tellWolf];
+        var tell = tells[Math.floor(Math.random() * tells.length)];
+
+        // A random good guy observes this tell
+        var observers = aliveList.filter(function(c) {
+          return c !== tellWolf &&
+                 WOLF_ROLES_FOR_TELL.indexOf(c) === -1; // not a wolf
+        });
+        if (observers.length) {
+          var observer = observers[Math.floor(Math.random() * observers.length)];
+          var tellEvent = {
+            day: day,
+            type: tell.type,
+            a: tellWolf,
+            b: tellWolf,       // the wolf is both source and target of observation
+            target: tellWolf,
+            observer: observer,
+            weight: tell.weight,
+            desc: tell.desc + ' (observed by ' + observer + ')'
+          };
+          newEvents.push(tellEvent);
+          g.dayEvents.push(tellEvent);
+        }
+      }
+    }
+
+        // 2. Tang Xiaotang hint event (only if Tang is alive and it's day 3+)
+    // She subtly hints someone is suspicious — Lin Xiaoman trusts this implicitly.
+    // [v9.3.3 FIX] Tang Xiaotang is a hidden wolf. She senses her wolf teammates
+    // (awakened via the system on Night 1). She would NEVER hint a teammate as
+    // suspicious — that would get them killed. Her hints always target GOOD people.
+    if (g.alive['tang_xiaotang'] && day >= 3 && Math.random() < 0.3) {
+      var WOLF_TEAM = ['zhou_yang', 'tang_xiaotang', 'gu_yan', 'zhao_mingcheng'];
+      var tangTargets = aliveList.filter(function (c) {
+        // Never hint herself, Chen Mo (she loves him), Lin Xiaoman (her best friend),
+        // or any wolf teammate (she protects them).
+        return c !== 'tang_xiaotang' && c !== 'chen_mo' && c !== 'lin_xiaoman' &&
+               WOLF_TEAM.indexOf(c) === -1;
+      });
+      if (tangTargets.length) {
+        var hintTarget = tangTargets[Math.floor(Math.random() * tangTargets.length)];
+        var hintEvent = {
+          day: day,
+          type: 'tang_hint',
+          a: 'tang_xiaotang',
+          b: hintTarget,
+          target: hintTarget,
+          observer: 'lin_xiaoman', // Lin overhears
+          weight: 50, // Huge weight for Lin Xiaoman
+          desc: 'tang_hint: tang_xiaotang hints ' + hintTarget + ' is suspicious'
+        };
+        newEvents.push(hintEvent);
+        g.dayEvents.push(hintEvent);
+      }
+    }
+
+    return newEvents;
+  };
+
+  // Get all events for a specific day
+  Game.getDayEvents = function (day) {
+    var g = ensureState();
+    var d = day || g.day;
+    return (g.dayEvents || []).filter(function (e) { return e.day === d; });
+  };
+
+  // Get all events involving a specific character (as a, b, target, or observer)
+  Game.getEventsInvolving = function (charId, day) {
+    var g = ensureState();
+    var events = g.dayEvents || [];
+    if (day !== undefined) events = events.filter(function (e) { return e.day === day; });
+    return events.filter(function (e) {
+      return e.a === charId || e.b === charId || e.target === charId || e.observer === charId;
+    });
+  };
+
+  // Get events where someone targets Tang Xiaotang (for Lin Xiaoman's rage)
+  Game.getEventsTargetingTang = function (day) {
+    var g = ensureState();
+    var events = g.dayEvents || [];
+    if (day !== undefined) events = events.filter(function (e) { return e.day === day; });
+    return events.filter(function (e) {
+      return e.target === 'tang_xiaotang' || e.b === 'tang_xiaotang';
+    });
+  };
+
+  // Clear all day events (on loop reset)
+  Game.clearDayEvents = function () {
+    var g = ensureState();
+    g.dayEvents = [];
+  };
+
+})();
+
+
 (function () {
   "use strict";
   window.Game = window.Game || {};
@@ -1020,12 +1443,7 @@ Game.getStatus = function () {
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
+  var ensureState = Game.ensureState;
 
   Game.HIDE_SPOTS = ['pantry', 'gallery', 'children_room', 'sewing_room', 'chapel', 'well'];
 
@@ -1241,7 +1659,7 @@ Game.getStatus = function () {
 (function () {
 
   Game.exileAIPhase = function () {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     if (!g.alive['chen_mo']) return null;
 
     Game.exileUpdateSuspicion();
@@ -1272,7 +1690,7 @@ Game.getStatus = function () {
   // ---- Chen Mo visits an exiled character (protagonist privilege) ----
 
   Game.exileVisit = function (target) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     if (!Game.isExiled(target)) return { ok: false, reason: 'not_exiled' };
     return { ok: true, target: target, day: g.day };
   };
@@ -1280,7 +1698,7 @@ Game.getStatus = function () {
   // ---- Reset (on loop reset) ----
 
   Game.exileReset = function () {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     g.exile = null;
     Game._exileEnsureExile(g);
   };
@@ -1293,13 +1711,13 @@ Game.getStatus = function () {
   // a day event fires that raises suspicion toward those wolves.
 
   Game.exileRecordVotePattern = function (voteResult, target, exiled) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     var e = Game._exileEnsureExile(g);
     if (!e.votePatterns) e.votePatterns = [];
 
     // Only track patterns when the target was a GOOD person (wolves framing).
     var targetRole = Game.roleOf(target);
-    var targetIsWolf = Game._exileWOLF_ROLES.indexOf(targetRole) !== -1;
+    var targetIsWolf = GameState.WOLF_ROLES.indexOf(targetRole) !== -1;
     if (targetIsWolf) return;  // wolves voting to protect a wolf isn't a tell
 
     // Record which wolves voted "exile" (frame good) this round.
@@ -1307,7 +1725,7 @@ Game.getStatus = function () {
     for (var i = 0; i < voteResult.voters.length; i++) {
       var vt = voteResult.voters[i];
       var vtRole = Game.roleOf(vt.id);
-      if (Game._exileWOLF_ROLES.indexOf(vtRole) !== -1 && vt.vote === 'exile') {
+      if (GameState.WOLF_ROLES.indexOf(vtRole) !== -1 && vt.vote === 'exile') {
         wolvesVotingExile.push(vt.id);
       }
     }
@@ -1334,7 +1752,7 @@ Game.getStatus = function () {
   };
 
   Game.exileTriggerBackfire = function (patterns) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     var e = Game._exileEnsureExile(g);
 
     // Count how many times each wolf appeared in bloc patterns.
@@ -1445,14 +1863,14 @@ Game.getStatus = function () {
 (function () {
 
   Game.exileVote = function (accuser, target) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     var voters = Game.exileActiveList().filter(function (id) {
       return id !== target;
     });
 
     var e = Game._exileEnsureExile(g);
     var targetRole = Game.roleOf(target);
-    var targetIsWolf = Game._exileWOLF_ROLES.indexOf(targetRole) !== -1;
+    var targetIsWolf = GameState.WOLF_ROLES.indexOf(targetRole) !== -1;
     var accuserExposed = (accuser === 'fang_heng' && e.fangExposed);
 
     var votesFor = 0, votesAgainst = 0, abstains = 0;
@@ -1479,7 +1897,7 @@ Game.getStatus = function () {
     for (var i = 0; i < voters.length; i++) {
       var v = voters[i];
       var vRole = Game.roleOf(v);
-      var vIsWolf = Game._exileWOLF_ROLES.indexOf(vRole) !== -1;
+      var vIsWolf = GameState.WOLF_ROLES.indexOf(vRole) !== -1;
       var vote = 'abstain';  // default to abstain (three-state)
       var reason = '';
 
@@ -1691,7 +2109,7 @@ Game.getStatus = function () {
   // ---- Execute accusation + vote + exile ----
 
   Game.exileAccuse = function (accuser, target) {
-    var g = Game._exileEnsureState();
+    var g = Game.ensureState();
     var e = Game._exileEnsureExile(g);
 
     if (g.day === e.lastAccusationDay) return { ok: false, reason: 'already_accused_today' };
@@ -1826,15 +2244,9 @@ Game.getStatus = function () {
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+  var ensureState = Game.ensureState;
+  var WOLF_ROLES = GameState.WOLF_ROLES;
 
   // The three tracked accusers
   var ACCUSERS = ['fang_heng', 'jiang_bai', 'zhao_mingcheng', 'gu_yan'];
@@ -2137,9 +2549,9 @@ var protect = {
   // Abstains do NOT count — silence is neither support nor opposition.
   // Returns { votesFor, votesAgainst, abstains, voters: [{id, vote, reason}] }
   // Export shared helpers for exile-vote.js and exile-ai.js
-  Game._exileEnsureState = ensureState;
+  // Shared with exile-vote.js / exile-ai.js. ensureState + WOLF_ROLES now use
+  // the public Game.ensureState() / GameState.WOLF_ROLES; the rest stay private.
   Game._exileEnsureExile = ensureExile;
-  Game._exileWOLF_ROLES = WOLF_ROLES;
   Game._exileACCUSERS = ACCUSERS;
   Game._exileTHRESHOLDS = THRESHOLDS;
   Game._exileMajorityNeeded = majorityNeeded;
@@ -2172,11 +2584,7 @@ var protect = {
   "use strict";
 
   var Game = window.Game;
-
-  function ensureState() {
-    if (!State.variables.game) State.variables.game = GameState.create();
-    return State.variables.game;
-  }
+  var ensureState = Game.ensureState;
 
   // Lao Zheng'''s room and floor
   var LAO_ZHENG_ROOM = "204";
@@ -2297,15 +2705,9 @@ var protect = {
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_ROLES = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+  var ensureState = Game.ensureState;
+  var WOLF_ROLES = GameState.WOLF_ROLES;
 
   // ---- Skill: Duel (day action) ----
 
@@ -2665,14 +3067,8 @@ var protect = {
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   // ── Core skill functions ──
 
@@ -2901,12 +3297,8 @@ var protect = {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) State.variables.game = GameState.create();
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   // ── Initialize observation state ──
   Game.medicInit = function () {
@@ -3012,13 +3404,8 @@ var protect = {
  */
 (function () {
   "use strict";
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   Game.prophetShoot = function (targetId) {
     var g = ensureState();
@@ -3269,14 +3656,8 @@ var protect = {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   Game.PROPHET_TEXTS = {
     friendly_pool: [
@@ -3299,8 +3680,8 @@ var protect = {
     ]
   };
 
-  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
-  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+  var WOLF_ROLES = GameState.WOLF_ROLES;
+  var GOD_ROLES = GameState.GOD_ROLES;
 
   function ensureProphet(g) {
     var p = g.godSkills.prophet;
@@ -3639,12 +4020,8 @@ var protect = {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) State.variables.game = GameState.create();
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   // ── Initialize trap state ──
   Game.trapInit = function () {
@@ -3776,16 +4153,10 @@ var protect = {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
-  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+  var ensureState = Game.ensureState;
+  var WOLF_ROLES = GameState.WOLF_ROLES;
+  var GOD_ROLES = GameState.GOD_ROLES;
 
   function ensureWitch(g) {
     var w = g.godSkills.witch;
@@ -4162,436 +4533,6 @@ var protect = {
 
 
 /*
- * state.js
- * Game state initial structure and constant definitions.
- * All state hangs on State.variables.game to avoid global pollution.
- */
-
-(function () {
-  'use strict';
-
-  window.GameState = window.GameState || {};
-
-  // Character IDs
-  GameState.CHARACTERS = {
-    CHEN_MO: 'chen_mo',
-    SU_WAN: 'su_wan',
-    JIANG_BAI: 'jiang_bai',
-    FANG_HENG: 'fang_heng',
-    SHEN_SHEN: 'shen_shen',
-    YE_ZHIQIU: 'ye_zhiqiu',
-    ZHENG_SHOUSHAN: 'zheng_shoushan',
-    LIN_XIAOMAN: 'lin_xiaoman',
-    GU_YAN: 'gu_yan',
-    ZHOU_YANG: 'zhou_yang',
-    TANG_XIAOTANG: 'tang_xiaotang',
-    ZHAO_MINGCHENG: 'zhao_mingcheng'
-  };
-
-  // Role IDs
-  GameState.ROLES = {
-    MEMORY: 'memory',
-    PROPHET: 'prophet',
-    WITCH: 'witch',
-    KNIGHT: 'knight',
-    MAGICIAN: 'magician',
-    VILLAGER: 'villager',
-    WOLF_KING: 'wolf_king',
-    HIDDEN_WOLF: 'hidden_wolf',
-    WOLF: 'wolf',
-    MECHANICAL_WOLF: 'mechanical_wolf'
-  };
-
-  // Display labels for roles (v8 terminology)
-  
-  // Room assignments (v9.5)
-  // 3 floors, 4 rooms each, stairs at both ends (east/west)
-  GameState.ROOMS = {
-    // Floor 1 (lobby level) - 101(W) 102 103 104(E)
-    '101': { floor: 1, pos: 'W', char: 'zhou_yang' },
-    '102': { floor: 1, pos: 'W-M', char: 'shen_shen' },
-    '103': { floor: 1, pos: 'M-E', char: 'fang_heng' },
-    '104': { floor: 1, pos: 'E', char: 'zhao_mingcheng' },
-    // Floor 2 (protagonist level) - 201(W) 202 203 204(E)
-    '201': { floor: 2, pos: 'W', char: 'chen_mo' },
-    '202': { floor: 2, pos: 'W-M', char: 'jiang_bai' },
-    '203': { floor: 2, pos: 'M-E', char: 'gu_yan' },
-    '204': { floor: 2, pos: 'E', char: 'zheng_shoushan' },
-    // Floor 3 (girls' level) - 301(W) 302 303 304(E)
-    '301': { floor: 3, pos: 'W', char: 'su_wan' },
-    '302': { floor: 3, pos: 'W-M', char: 'lin_xiaoman' },
-    '303': { floor: 3, pos: 'M-E', char: 'tang_xiaotang' },
-    '304': { floor: 3, pos: 'E', char: 'ye_zhiqiu' }
-  };
-
-  // Reverse lookup: charId -> room number
-  GameState.CHAR_ROOMS = {};
-  Object.keys(GameState.ROOMS).forEach(function (rn) {
-    GameState.CHAR_ROOMS[GameState.ROOMS[rn].char] = rn;
-  });
-
-GameState.ROLE_LABELS = {
-    memory: '劫主',
-    prophet: '昭判',
-    witch: '渡君',
-    knight: '镇煞',
-    magician: '幻真',
-    villager: '凡人',
-    wolf_king: '幽主',
-    hidden_wolf: '匿魂',
-    wolf: '无常',
-    mechanical_wolf: '噬道'
-  };
-
-  // Ending IDs (v8 three-tier system)
-  GameState.ENDINGS = {
-    BAD: 'bad',
-    GOOD: 'good',
-    TRUE: 'true'
-  };
-  // ITEMS: Chinese names + descriptions
-  GameState.ITEMS = {
-    notebook: { name: "笔记本", desc: "陈默用来记录跨轮回情报的笔记本。最后一页写着：不要相信任何人。" },
-    old_key: { name: "旧钥匙", desc: "一把锈迹斑斑的铁钥匙，可能能打开地下酒窖的铁门。" },
-    wolf_knife: { name: "狼牙匕首", desc: "造型狰狞的匕首，刀刃有暗红色痕迹。" },
-    bread: { name: "面包", desc: "山庄厨房仅剩的干粮，硬得能砸核桃。" },
-    compass: { name: "损坏的指南针", desc: "指针一直在转，从不指向同一个方向。" },
-    lighter: { name: "打火机", desc: "老式煤油打火机，还能打火。" },
-    flashlight: { name: "手电筒", desc: "光线已经很微弱了，但还能用一会儿。" },
-    first_aid_kit: { name: "急救箱", desc: "苏晚随身携带的急救箱，里面有纱布、碘伏和止血药。" },
-    syringe: { name: "注射器", desc: "干净的注射器，可用于注射药液。" },
-    pocket_knife: { name: "折叠刀", desc: "江白随身的小刀，刀刃锋利。" },
-    ritual_dagger: { name: "仪式匕首", desc: "祭坛上发现的骨制匕首，刀柄刻满符文。" },
-    mirror_shard: { name: "镜子碎片", desc: "从祭祀空间的镜子上敲下来的碎片，倒影里好像有另一个世界。" },
-    guest_register: { name: "住客登记簿", desc: "前台找到的登记簿，密密麻麻写满了名字，有些被划掉。" },
-    old_photo: { name: "泛黄照片", desc: "二十年前在山庄拍摄的合影，老郑站在最后一排。" },
-    cassette_tape: { name: "磁带", desc: "广播室找到的老式磁带，录音内容是前任祭坛守护者的独白。" },
-    medicine_bottle: { name: "药瓶", desc: "标签被撕掉的药瓶，含化学药剂。" },
-    wire: { name: "铜线", desc: "一段约两米的铜线，可以用于临时电路修复。" },
-    bible: { name: "破旧圣经", desc: "阁楼找到的圣经，扉页写着老郑的忏悔。" },
-    old_note: { name: "发黄的纸条", desc: "铁门门缝里塞的纸条：他们不会让人出去的，不要相信导游。" },
-    ritual_log: { name: "祭祀日志", desc: "神秘房间找到的日志，记载了仪式的规则和历史。" },
-  };
-  // CLUES: Chinese names + descriptions (breaking = key to true ending)
-  GameState.CLUES = {
-    locked_doors: { name: "锁门规律", desc: "每晚23:00后，所有安全屋自动上锁，只有狼能闯入。" },
-    cellar_door: { name: "地下铁门", desc: "酒窖深处的铁门，需要特定形状钥匙才能打开。" },
-    jiangbai_scar: { name: "江白旧疤", desc: "江白右手腕上的疤很整齐，不像玻璃划伤。" },
-    zhouyang_pocket: { name: "周阳插口袋", desc: "周阳的右手始终插在口袋里。" },
-    fang_temperature: { name: "方衡体温异常", desc: "方衡体温偏低，但不像是生病的温度。" },
-    phone_battery: { name: "手机电量异常", desc: "林小满的手机显示被困第三天，电量一直是100%。" },
-    cellar_blood: { name: "酒窖血腥味", desc: "铁门后有明显的血腥味。" },
-    old_guests: { name: "以往的客人", desc: "住客登记簿显示多年来的访客记录，有些人再也没有离开。" },
-    ritual_tablet: { name: "祭祀铭文", desc: "祭坛上的铭文：第七日，祭品满，门开。存者出，亡者留。", breaking: true },
-    recruitment_tablet: { name: "招募铭文", desc: "铭文后半部分：掌祭者即掌生死，存者若取祭者之位，则轮回终，新神立。", breaking: true },
-    shenshen_identity: { name: "沈慎暗示", desc: "沈慎说看所有人都是双重曝光的——他也能感知到轮回的痕迹。", breaking: true },
-    god_kill_method: { name: "弑神方法", desc: "取代祭坛的守护者就能终结轮回，但需要等价交换。", breaking: true },
-    fang_heng_theory: { name: "方衡的推测", desc: "狼的杀戮可能有特定目标顺序，而不是随机。" },
-    tang_saw_3f: { name: "唐小棠目击证词", desc: "唐小棠声称昨晚23:00后看到有人上三楼。" },
-    fang_and_zhao_known: { name: "方衡与赵明城相识", desc: "周阳观察到两人交换眼神，顾言证实赵明城介绍他来山庄。" },
-    hidden_floor: { name: "隐藏夹层", desc: "顾言通过建筑结构对称性推算山庄存在隐藏空间。" },
-    burned_notebook: { name: "烧毁的笔记", desc: "有人烧了一本笔记，灰烬上残留着'者笔记别让人看到'字样。" },
-    ye_supernatural_wound: { name: "超自然伤口", desc: "叶知秋验尸确认伤口不是人类能造成的。" },
-    ye_opinion_fang_shen: { name: "叶知秋对方衡和沈慎的评价", desc: "方衡身上有不干净的味道，沈慎对死亡过于熟悉。" },
-    six_digit_lock: { name: "六进制密码锁", desc: "二楼走廊尽头的房间门装有六进制密码锁。" },
-    mystery_room: { name: "神秘房间", desc: "密码锁后面的房间，藏有祭祀日志和关于仪式的书籍。" },
-    zhao_fang_deal: { name: "赵明城与方衡的交易", desc: "两人来山庄是为了取走前主人留下的东西——各取所需。" },
-    altar_inscription: { name: "祭坛铭文", desc: "铁门后的祭坛刻着：第七日，祭品满，门开。存者出，亡者留。" },
-  };
-
-  GameState.BREAKING_CLUES = Object.keys(GameState.CLUES).filter(function (id) {
-    return GameState.CLUES[id].breaking === true;
-  });
-
-  // WITCH_MATERIALS: materials for crafting potions
-  GameState.WITCH_MATERIALS = {
-    medicine_bottle: { name: "药瓶", desc: "标签被撕掉的药瓶，含化学药剂。", sources: ["dining_room"] },
-    syringe: { name: "注射器", desc: "干净的注射器，可用于注射药液。", sources: ["master_bedroom"] },
-    herb_bundle: { name: "草药束", desc: "温室里找到的干燥草药。", sources: ["conservatory"] },
-    chemical_vial: { name: "化学试剂瓶", desc: "工坊里的化学试剂。", sources: ["workshop"] },
-  };
-
-  // WITCH_POTIONS: non-lethal potions (control effects)
-  GameState.WITCH_POTIONS = {
-    sleeping_potion: {
-      name: "安眠药",
-      desc: "让目标当晚深度睡眠，不会醒来，不会目击夜间事件。",
-      recipe: { medicine_bottle: 1 },
-      effect: "sleep"
-    },
-    paralytic: {
-      name: "麻痹剂",
-      desc: "让目标当晚身体无法动弹，无法行动。",
-      recipe: { medicine_bottle: 1, syringe: 1 },
-      effect: "paralyze"
-    },
-    deep_sedative: {
-      name: "强效镇静剂",
-      desc: "同时麻痹和安眠，目标当晚完全失去行动能力。",
-      recipe: { syringe: 1, chemical_vial: 1, herb_bundle: 1 },
-      effect: "deep_sedation"
-    },
-    truth_serum: {
-      name: "吐真剂",
-      desc: "让目标在白天对话中不自觉地吐露真实想法。一次性。",
-      recipe: { chemical_vial: 1, herb_bundle: 1 },
-      effect: "truth"
-    },
-  };
-
-  // MAP: location id -> {name, desc, zone}
-  GameState.MAP = {
-    foyer: { name: "门厅", desc: "庄园正门入口，双开橡木门已被积雪封死。水晶吊灯倾斜悬挂。", zone: "main_1f" },
-    grand_hall: { name: "大厅", desc: "壁炉、前台、通往各处的走廊。所有人白天的聚集地。", zone: "main_1f" },
-    dining_room: { name: "餐厅", desc: "长条橡木餐桌，能坐二十人。墙上有肖像画。", zone: "main_1f" },
-    kitchen: { name: "厨房", desc: "仅剩干粮的地方，也是食物危机的源头。", zone: "main_1f" },
-    pantry: { name: "储藏室", desc: "厨房后方的储藏室，货架大多空了。", zone: "main_1f" },
-    drawing_room: { name: "会客室", desc: "壁炉旁的休息区，沙发和旧钢琴。", zone: "main_1f" },
-    study: { name: "书房", desc: "满墙书架，书桌上有放大镜和信件。", zone: "main_1f" },
-    gallery: { name: "画廊", desc: "挂着历任庄园主人肖像的走廊，画中人的眼睛似乎在追踪你。", zone: "main_1f" },
-    guest_corridor: { name: "客房走廊", desc: "十二间客房，夜间是各自的安全屋。", zone: "main_2f" },
-    master_bedroom: { name: "主卧", desc: "庄园主人曾住的房间，床头的镜子蒙着灰。", zone: "main_2f" },
-    children_room: { name: "儿童房", desc: "积灰的童床和木马，墙上有蜡笔画痕迹。", zone: "main_2f" },
-    sewing_room: { name: "缝纫室", desc: "旧式缝纫机和布料，抽屉里可能有针线。", zone: "main_2f" },
-    balcony: { name: "阳台", desc: "能俯瞰中庭和庭院，风雪很大。", zone: "main_2f" },
-    attic: { name: "阁楼", desc: "布满灰尘，能找到泛黄的照片和二十年前的物件。", zone: "main_3f" },
-    archive_room: { name: "档案室", desc: "庄园二十年的文件和账本，锁着的铁柜里有秘密。", zone: "main_3f" },
-    library: { name: "图书室", desc: "满架旧书，藏着山庄的历史和往届住客的记录。", zone: "east_wing" },
-    music_room: { name: "音乐室", desc: "三角钢琴和大提琴，琴键落满灰尘。", zone: "east_wing" },
-    conservatory: { name: "温室", desc: "玻璃已碎，枯死的植物在雪中僵立。", zone: "east_wing" },
-    broadcast_room: { name: "广播室", desc: "老旧的广播设备，磁带里录着前任神的独白。", zone: "east_wing" },
-    generator_room: { name: "配电室", desc: "庄园的电力来源，江白能在这里发挥作用。", zone: "west_wing" },
-    workshop: { name: "工坊", desc: "木工和金工工具，能制作简易武器和工具。", zone: "west_wing" },
-    armory: { name: "杂物间", desc: "堆满旧家具和旅行箱，可能藏着前任住客的遗物。", zone: "west_wing" },
-    wine_cellar: { name: "酒窖", desc: "酒架大多空了，最深处通向地下铁门。", zone: "west_wing" },
-    courtyard: { name: "中庭", desc: "被风雪包围的露天区域，指南针在这里会剧烈转动。", zone: "courtyard" },
-    garden: { name: "花园", desc: "枯萎的玫瑰丛和干涸的喷泉，雪下有墓碑。", zone: "courtyard" },
-    well: { name: "古井", desc: "井口结冰，扔下去能听到微弱的回声。", zone: "courtyard" },
-    chapel: { name: "小教堂", desc: "废弃的家庭礼拜堂，十字架歪斜，圣经散落。", zone: "courtyard" },
-    cellar_door: { name: "地下铁门", desc: "酒窖深处的铁门，门上写着天黑请闭眼。", zone: "underground" },
-    altar: { name: "祭祀空间", desc: "石阶、镜子、骨刀。轮回的真相所在。", zone: "underground" },
-    crypt: { name: "地下墓室", desc: "铁门后的岩路，排列着石椁和刻着名字的墙壁。", zone: "underground" },
-  };
-
-  // ZONES: zone id -> {name, desc}
-  GameState.ZONES = {
-    main_1f: { name: "主楼一层", desc: "门厅、大厅、餐厅、厨房、储藏室、会客厅、书房、画廊。" },
-    main_2f: { name: "主楼二层", desc: "客房走廊、主卧、儿童房、缝纫室、阳台。" },
-    main_3f: { name: "主楼三层 / 阁楼", desc: "阁楼与档案室。" },
-    east_wing: { name: "东厢房", desc: "图书室、音乐室、温室、广播室。" },
-    west_wing: { name: "西厢房", desc: "配电室、工坊、杂物间、酒窖。" },
-    courtyard: { name: "庭院", desc: "中庭、花园、古井、小教堂。" },
-    underground: { name: "地下空间", desc: "地下铁门、祭祀空间、地下墓穴。" }
-  };
-
-  GameState.BACKSTORY_KEYS = {
-    chen_mo: 'chenmo_guilt',
-    su_wan: 'suwan_resolve',
-    jiang_bai: 'jiangbai_origin',
-    fang_heng: 'fang_corruption',
-    shen_shen: 'shenshen_debt',
-    ye_zhiqiu: 'yezhiqiu_malpractice',
-    zheng_shoushan: 'villager',
-    lin_xiaoman: 'linxiaoman_devotion',
-    zhou_yang: 'zhouyang_arrogance',
-    tang_xiaotang: 'tangxiaotang_trauma',
-    zhao_mingcheng: 'zhaomingcheng_network',
-    gu_yan: 'guyan_ambition'
-  };
-
-  // (comment)
-  GameState.FLAGS = {
-    MET_EVERYONE: 'met_everyone',
-    SAW_LAOZHENG_DIE: 'saw_laozheng_die',
-    LOOP_AWAKENED: 'loop_awakened',
-    JIANGBAI_TRUSTS: 'jiangbai_trusts',
-    ZHOU_SUSPICIOUS: 'zhou_suspicious',
-    TANG_SUSPICIOUS: 'tang_suspicious',
-    SHENSHEN_REVEALED: 'shenshen_revealed',
-    FANG_REVEALED: 'fang_revealed',
-    FANG_ZHAO_CONNECTION: 'fang_zhao_connection', // (comment)
-    DOOR_OPENED: 'door_opened',
-    MIRROR_BROKEN: 'mirror_broken'
-  };
-
-  
-  // PROFILES: v8 character bible - public identity + hidden secrets
-  GameState.PROFILES = {
-    chen_mo: { name: "陈默", firstImpression: "你自己。白衫衫皱巴巴的，袖口还有血迹。", age: 22, job: "信息工程学院计算机科学专业大四学生", personality: "冷静理性，寡言，习惯用笔记与逻辑拆解问题", talent: "逻辑分析、记笔记、观察系统漏洞", secret: "你是劫主，唯一保留轮回记忆的人。" },
-    su_wan: { name: "苏晚", firstImpression: "穿白大褂的女生，气质温和，一直随身带着急救箱。", age: 21, job: "医学院临床医学专业大四学生", personality: "温柔坚定，医者仁心", talent: "急救、诊断中毒/伤势、安抚他人", secret: "凡人·青囊。她没有超自然能力，但凡人的存在决定伪神力量的强弱。" },
-    jiang_bai: { name: "江白", firstImpression: "戴耳机的男生，话不多，总坐在靠窗的位置。", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具", secret: "凡人·雷工。他右手腕的旧瘤不是玻璃划的，来源他一直含糊带过。" },
-    fang_heng: { name: "方衡", firstImpression: "四十出头的男人，穿着深色夹克，第一天主动亮明身份：我是警察，在市局工作。话不多，总在观察四周。", age: 41, job: "警察（自称）", personality: "沉稳敏锐，表面温和", talent: "观察微表情、布局审讯、焦点孤立目标", secret: "昭判。实际是市刑警支队副队长（副处级）、黑警。对外只说在市局工作，不提级别和部门。收钱封口，与赵明城做过交易、互知底牌。" },
-    shen_shen: { name: "沈慎", firstImpression: "沉默的中年男人，手指修长，动作很轻，几乎不发出声音。", age: 38, job: "网吧网管", personality: "沉默寡言，动作利落", talent: "手速快、操控感知、观察人心", secret: "伪神·幻真。他曾是地下赌场荷官兼老千，出千害得别人家破人亡。" },
-    ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，不爱说话。", age: 32, job: "止仪馆入殓师", personality: "沉静温柔，不爱多言", talent: "医疗护理、急救包扎、配制药剂", secret: "渡君。她能感知生命流逝，还魂夺命，但超过3次就会崩溃。" },
-    zheng_shoushan: { name: "郑守山", firstImpression: "年纪最大的男人，自称老郑，说自己是这次旅行的导游。", age: 58, job: "大巴司机", personality: "热情能说会道，熟悉山路", talent: "野外生存、认路、讲故事", secret: "引路人。他开了20年这条山路，有模糊的既视感，似乎知道山庄的某些真相。" },
-    lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "伪神·镇煞。她有太妹背景，为了保护唐小棠可以不择手段。" },
-    zhou_yang: { name: "周阳", firstImpression: "高个子体育生，笑容阳光，喜欢和人打招呼。", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好", talent: "奔跑、体能好、带动气氛", secret: "堕仙·幽主。他好胜心极强，享受在竞争中把对手压垮。被杀时可以同归于尽。" },
-    tang_xiaotang: { name: "唐小棠", firstImpression: "爱笑的女生，紧紧挝着林小满的手臂，看起来有点怕生。", age: 20, job: "文学院汉语言文学专业大二学生", personality: "活泼敏感，依赖性强", talent: "读文字、察言观色、写作", secret: "堕仙·匿魂。她幼年被养父虐待猝㷴，精神状态长期不稳定，暗恋陈默。领言家查验为盟友。" },
-    zhao_mingcheng: { name: "赵明城", firstImpression: "西装革履的中年男人，气场沉稳，自称做外贸生意。", age: 45, job: "外贸公司老板", personality: "圆滑世故，擅长旋旦", talent: "谈判、资源调配、心理施压", secret: "堕仙·无常。他是政治掮客、白手套，与方衡做过交易、互知对方真实身份（方衡知道他是白手套，他知道方衡是黑警）。来山庄是为收购度假村。能抹除尸体。" },
-    gu_yan: { name: "顾言", firstImpression: "戴眼镜的年轻人，手里拿着笔记本，不时低头记录什么。", age: 24, job: "理学院物理学博士研究生", personality: "敏感自尊，观察力强", talent: "物理推理、拆解机关、实验验证", secret: "堕仙·噬道。他曾强夺同门师兄弟的学术成果，引掌能力后只能用一次。" },
-  };
-
-GameState.getProfile = function (charId) {
-  return GameState.PROFILES[charId] || null;
-};
-
-  // GameState.create: fresh game state
-  GameState.create = function () {
-    return {
-      // chapter and loop
-      chapter: 1,
-      loop: 1,
-      day: 1,
-      time: '06:00',
-
-      // protagonist state
-      stats: {
-        san: 100,
-        hunger: 0,
-        trust_suwan: 50,
-        trust_jiangbai: 30,
-        trust_fang_heng: 30,
-        trust_shenshen: 20,
-        fear_level: 0
-      },
-
-      // alive status (true = alive)
-      alive: {
-        chen_mo: true,
-        su_wan: true,
-        jiang_bai: true,
-        fang_heng: true,
-        shen_shen: true,
-        ye_zhiqiu: true,
-        zheng_shoushan: true,
-        lin_xiaoman: true,
-        gu_yan: true,
-        zhou_yang: true,
-        tang_xiaotang: true,
-        zhao_mingcheng: true
-      },
-
-      // current role assignments
-      roles: {
-        chen_mo: 'memory',
-        su_wan: 'villager',
-        jiang_bai: 'villager',
-        fang_heng: 'prophet',
-        shen_shen: 'magician',
-        ye_zhiqiu: 'witch',
-        zheng_shoushan: 'villager',
-        lin_xiaoman: 'knight',
-        gu_yan: 'mechanical_wolf',
-        zhou_yang: 'wolf_king',
-        tang_xiaotang: 'hidden_wolf',
-        zhao_mingcheng: 'wolf'
-      },
-
-      // inventory, clues, flags, endings
-      inventory: {},
-      clues: {},
-      flags: {},
-      endings: {},
-
-      // passage visit log
-      visited: {},
-
-      // visited locations (map)
-      visitedLocations: {},
-
-      // revealed character hidden info
-      revealed: {},
-
-      // characters the protagonist has met
-      metCharacters: {},
-
-      // per-character unlocked info aspects (basic/personality/talent/backstory/identity)
-      characterReveals: {},
-
-      // safehouse status (intruded each night)
-      safehouse: {
-        intruded: false,
-        target: null
-      },
-
-      // god skills (reset each loop)
-      godSkills: {
-        witch: {
-          uses: 0,
-          maxUses: 2,
-          broken: false,
-          curses: [],
-          materials: {},
-          potions: {},
-          sensedDeath: null
-        },
-        knight: {
-          duelsUsed: 0,
-          weakenedDays: 0,
-          // Independent cooldowns: duel (day) and guard (night) no longer share.
-          duelCooldown: 0,
-          guardCooldown: 0,
-          // Guard can be consecutive (night apart), so no lastGuardTarget lock.
-          guarding: null,
-          // Lin Xiaoman's personal suspicion toward each character (0-100).
-          // Driven by day events: who targets Tang Xiaotang gets big spikes.
-          suspicion: {}
-        },
-        prophet: {
-          checks: [],
-          exposed: false,
-          // Hunter ability: 2 bullets (passive counter-kill + active shoot)
-          bullets: 2
-        },
-        magician: {
-          swapsUsed: 0,
-          maxSwaps: 7,
-          currentSwap: null,
-          swapHistory: [],
-          lastSwapPair: null
-        }
-      },
-
-      // last wolf kill result
-      lastWolfKill: null,
-
-      // day events generated each morning (conflicts, suspicions, observations)
-      // Drives all god-role AI decisions. See day-events.js
-      dayEvents: [],
-
-      // memory fragments (persist across loops)
-      memories: [],
-
-      // Jiang Bai trap system (resets each loop)
-      traps: {
-        armed: false,
-        triggered: false,
-        injuredWolf: null,
-        lastTriggerDay: 0,
-        detected: false,
-        totalTriggers: 0,
-        lastObservedInjury: null
-      },
-
-      // Su Wan medic system (resets each loop)
-      medic: {
-        observations: [],
-        lastObserved: null,
-        lastResult: null
-      },
-
-      // Lao Zheng night hearing system (resets each loop)
-      hearer: {
-        lastResult: null,
-        history: []
-      }
-    };
-  };
-
-})();
-
-
-/*
  * fake-jump.js - Fake-jump wolf: pretends to be the prophet to mislead good guys
  *
  * Only Zhao Mingcheng (calculated, high-intelligence) or Gu Yan (ambitious)
@@ -4603,16 +4544,10 @@ GameState.getProfile = function (charId) {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_ROLES = ["wolf_king", "hidden_wolf", "wolf", "mechanical_wolf"];
-  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+  var ensureState = Game.ensureState;
+  var WOLF_ROLES = GameState.WOLF_ROLES;
+  var GOD_ROLES = GameState.GOD_ROLES;
 
   function ensureFakeProphet(g) {
     if (!g.godSkills) g.godSkills = {};
@@ -4753,16 +4688,10 @@ GameState.getProfile = function (charId) {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
   // The 3 wolves that Tang Xiaotang is hidden from
-  var KNOWN_WOLVES = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+  var KNOWN_WOLVES = GameState.WOLF_IDS;
 
   // ── Check if Tang Xiaotang has awakened (all other wolves dead) ──
   Game.hiddenWolfAwakened = function () {
@@ -4880,14 +4809,8 @@ GameState.getProfile = function (charId) {
 (function () {
   'use strict';
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
 Game.hasMechWolfPower = function () {
 
@@ -5090,18 +5013,12 @@ Game.mechWolfAIActivatePower = function () {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   // Known wolves (Tang Xiaotang is hidden — not part of pack kills)
-  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
-  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+  var WOLF_IDS = GameState.WOLF_IDS;
+  var GOD_ROLES = GameState.GOD_ROLES;
 
   // Resolve the wolf pack's night kill.
   // Returns { target, killed, actualTarget, killer, special }
@@ -5333,15 +5250,9 @@ Game.mechWolfAIActivatePower = function () {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
+  var ensureState = Game.ensureState;
+  var WOLF_IDS = GameState.WOLF_IDS;
   var SELF_STAB_PRIORITY = ["zhou_yang", "tang_xiaotang", "zhao_mingcheng"];
   var TRIGGER_CHANCE = 0.10;        // 10% on night 1 safe night
   var DETECT_CHANCE = 0.35;         // 35% witch recognizes self-inflicted wound
@@ -5502,16 +5413,10 @@ Game.mechWolfAIActivatePower = function () {
 (function () {
   "use strict";
 
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
-
   var Game = window.Game;
-  var WOLF_IDS = ["zhou_yang", "zhao_mingcheng", "gu_yan"];
-  var GOD_ROLES = ["prophet", "witch", "knight", "magician"];
+  var WOLF_IDS = GameState.WOLF_IDS;
+  var GOD_ROLES = GameState.GOD_ROLES;
+  var ensureState = Game.ensureState;
 
   var REASONS = {
     aggressive: ["他白天太活跃了。", "他看我的眼神不对劲。", "留着他迟早出事。"],
@@ -5617,6 +5522,7 @@ Game.mechWolfAIActivatePower = function () {
     var pr = g.godSkills.prophet;
     if (pr && pr.exposed && candidates.indexOf("fang_heng") !== -1 && g.alive["fang_heng"]) {
       return { target: "fang_heng", reason: "He has a gun. He already killed someone. Eliminate him now." };
+    }
 
     // If Lao Zheng publicly spoke about hearing footsteps at night,
     // ALL wolves prioritize killing him — he's a surveillance threat.
@@ -5628,8 +5534,6 @@ Game.mechWolfAIActivatePower = function () {
     // wolves prioritize her — she can revive anyone they kill.
     if (Game.hasFlag("ye_zhiqiu_exposed") && candidates.indexOf("ye_zhiqiu") !== -1 && g.alive["ye_zhiqiu"]) {
       return { target: "ye_zhiqiu", reason: "She just revealed she can bring the dead back. She dies tonight." };
-    }
-
     }
 
     if (g.day <= 1) {

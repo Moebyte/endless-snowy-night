@@ -4,13 +4,8 @@
  */
 (function () {
   "use strict";
-  function ensureState() {
-    if (!State.variables.game) {
-      State.variables.game = GameState.create();
-    }
-    return State.variables.game;
-  }
   var Game = window.Game;
+  var ensureState = Game.ensureState;
 
   Game.prophetShoot = function (targetId) {
     var g = ensureState();
