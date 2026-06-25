@@ -86,6 +86,10 @@
 <<else>>
 <<set _witchDecision to { action: 'pass' }>>
 <</if>>
+/ Guard: witchAIDecideNightAction() has several null paths — witch dead,
+/ already acted tonight, out of revives, no sensed death, or hesitating.
+/ Any null means "no action" -> default to pass so the <<if>> below is safe. /
+<<if not _witchDecision>><<set _witchDecision to { action: 'pass' }>><</if>>
 
 <<if _witchDecision.action is 'revive'>>
 <<set _witchSaved to Game.witchRevive(Game.witchGetSensedDeath())>>

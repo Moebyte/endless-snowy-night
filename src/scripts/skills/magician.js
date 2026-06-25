@@ -166,6 +166,8 @@
   Game.magicianAIDecideSwap = function () {
     var g = ensureState();
     if (!g.alive['shen_shen']) return null;
+    // An exiled character is locked in the cellar and exits all interactions.
+    if (typeof Game.isExiled === 'function' && Game.isExiled('shen_shen')) return null;
 
     var selfDanger = Game.magicianSelfDanger();
 

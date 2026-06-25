@@ -212,6 +212,8 @@
   Game.knightAIGetGuardTarget = function () {
     var g = ensureState();
     if (!g.alive['lin_xiaoman']) return null;
+    // An exiled character is locked in the cellar and exits all interactions.
+    if (typeof Game.isExiled === 'function' && Game.isExiled('lin_xiaoman')) return null;
     if (Game.knightGuardOnCooldown()) return null;
 
     // The people Lin Xiaoman cares about and would protect
@@ -256,6 +258,8 @@
   Game.knightAIGetDuelTarget = function () {
     var g = ensureState();
     if (!g.alive['lin_xiaoman']) return null;
+    // An exiled character is locked in the cellar and exits all interactions.
+    if (typeof Game.isExiled === 'function' && Game.isExiled('lin_xiaoman')) return null;
     if (Game.knightDuelOnCooldown()) return null;
 
     var k = g.godSkills.knight;

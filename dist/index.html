@@ -3316,6 +3316,8 @@ var protect = {
   Game.knightAIGetGuardTarget = function () {
     var g = ensureState();
     if (!g.alive['lin_xiaoman']) return null;
+    // An exiled character is locked in the cellar and exits all interactions.
+    if (typeof Game.isExiled === 'function' && Game.isExiled('lin_xiaoman')) return null;
     if (Game.knightGuardOnCooldown()) return null;
 
     // The people Lin Xiaoman cares about and would protect
@@ -3360,6 +3362,8 @@ var protect = {
   Game.knightAIGetDuelTarget = function () {
     var g = ensureState();
     if (!g.alive['lin_xiaoman']) return null;
+    // An exiled character is locked in the cellar and exits all interactions.
+    if (typeof Game.isExiled === 'function' && Game.isExiled('lin_xiaoman')) return null;
     if (Game.knightDuelOnCooldown()) return null;
 
     var k = g.godSkills.knight;
@@ -3623,6 +3627,8 @@ var protect = {
   Game.magicianAIDecideSwap = function () {
     var g = ensureState();
     if (!g.alive['shen_shen']) return null;
+    // An exiled character is locked in the cellar and exits all interactions.
+    if (typeof Game.isExiled === 'function' && Game.isExiled('shen_shen')) return null;
 
     var selfDanger = Game.magicianSelfDanger();
 
@@ -4242,6 +4248,8 @@ var protect = {
   Game.prophetAIGetCheckTarget = function () {
     var g = ensureState();
     if (!g.alive["fang_heng"]) return null;
+    // An exiled character is locked in the cellar and exits all interactions.
+    if (typeof Game.isExiled === 'function' && Game.isExiled('fang_heng')) return null;
     var pr = ensureProphet(g);
 
     // Candidates: alive, not Fang Heng, not already checked
@@ -6309,6 +6317,10 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;else&gt;&gt;
 &lt;&lt;set _witchDecision to { action: &#39;pass&#39; }&gt;&gt;
 &lt;&lt;/if&gt;&gt;
+/ Guard: witchAIDecideNightAction() has several null paths — witch dead,
+/ already acted tonight, out of revives, no sensed death, or hesitating.
+/ Any null means &quot;no action&quot; -&gt; default to pass so the &lt;&lt;if&gt;&gt; below is safe. /
+&lt;&lt;if not _witchDecision&gt;&gt;&lt;&lt;set _witchDecision to { action: &#39;pass&#39; }&gt;&gt;&lt;&lt;/if&gt;&gt;
 
 &lt;&lt;if _witchDecision.action is &#39;revive&#39;&gt;&gt;
 &lt;&lt;set _witchSaved to Game.witchRevive(Game.witchGetSensedDeath())&gt;&gt;
@@ -6510,12 +6522,101 @@ Game.mechWolfAIActivatePower = function () {
 &lt;/div&gt;</tw-passagedata>
   <tw-passagedata pid="11" name="Day_Morning" tags="" position="100,100" size="100,100">&lt;&lt;run Game.visit()&gt;&gt;
 &lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
-&lt;h2&gt;DAY &lt;&lt;print $game.day&gt;&gt; 早晨&lt;/h2&gt;
-&lt;p class=&quot;muted&quot;&gt;第 &lt;&lt;print $game.loop&gt;&gt; 轮回 - 第 &lt;&lt;print $game.day&gt;&gt; 天&lt;/p&gt;
-&lt;p&gt;[待填剧情]&lt;/p&gt;
+&lt;&lt;set _dayLog to []&gt;&gt;
+
+/=== 白天核心循环（D2 起执行；D1 是到达日，无事件） ===/
+/=== 调用顺序对齐 sim_detail.js，改变会导致 AI 决策失常 ===/
+&lt;&lt;if $game.day gte 2&gt;&gt;
+&lt;&lt;run Game.generateDayEvents()&gt;&gt;
+&lt;&lt;if typeof Game.knightUpdateSuspicion is &#39;function&#39;&gt;&gt;&lt;&lt;run Game.knightUpdateSuspicion()&gt;&gt;&lt;&lt;/if&gt;&gt;
+
+/=== 1. 陷阱晨检（江白） ===/
+&lt;&lt;set _trap to { checked: false, triggered: false, observed: false }&gt;&gt;
+&lt;&lt;if typeof Game.trapMorningCheck is &#39;function&#39;&gt;&gt;
+&lt;&lt;set _trap to Game.trapMorningCheck()&gt;&gt;
+&lt;&lt;if typeof Game.trapStoreObservation is &#39;function&#39;&gt;&gt;&lt;&lt;run Game.trapStoreObservation(_trap)&gt;&gt;&lt;&lt;/if&gt;&gt;
+&lt;&lt;if _trap.triggered and _trap.observed&gt;&gt;
+&lt;&lt;run _dayLog.push(&#39;江白蹲在走廊尽头摆弄他的装置，皱起眉：「昨晚有人碰过这东西。」&#39;)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/=== 2. 放逐博弈（核心） ===/
+&lt;&lt;set _exile to null&gt;&gt;
+&lt;&lt;if typeof Game.exileAIPhase is &#39;function&#39;&gt;&gt;
+&lt;&lt;set _exile to Game.exileAIPhase()&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/=== 3. 苏晚医学观察（仅陈默可见） ===/
+&lt;&lt;set _medic to null&gt;&gt;
+&lt;&lt;if typeof Game.medicAIRun is &#39;function&#39;&gt;&gt;
+&lt;&lt;set _medic to Game.medicAIRun()&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+&lt;h2&gt;DAY &lt;&lt;print $game.day&gt;&gt; · 早晨&lt;/h2&gt;
+&lt;p class=&quot;muted&quot;&gt;第 &lt;&lt;print $game.loop&gt;&gt; 轮回 — 第 &lt;&lt;print $game.day&gt;&gt; 天&lt;/p&gt;
+
+&lt;&lt;if $game.day eq 1&gt;&gt;
+&lt;p&gt;你醒来时，窗外仍是灰蒙蒙的雪。走廊里有人走动的声音，有人在低声交谈。&lt;/p&gt;
+&lt;p&gt;所有人都还在。没有人死去——至少现在还没有。&lt;/p&gt;
+&lt;&lt;else&gt;&gt;
+&lt;p&gt;天亮了。你数了数走廊里走动的人。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+
 &lt;div class=&quot;alive-list&quot;&gt;
 &lt;p class=&quot;muted&quot;&gt;存活人数：&lt;&lt;print Game.aliveCount()&gt;&gt;&lt;/p&gt;
 &lt;/div&gt;
+
+/=== 放逐叙事（旁观者视角：只写现象，不写身份） ===/
+&lt;&lt;if _exile and _exile.ok&gt;&gt;
+&lt;h3&gt;当众指认&lt;/h3&gt;
+&lt;p&gt;早饭时，&lt;strong&gt;&lt;&lt;print GameState.PROFILES[_exile.accuser].name&gt;&gt;&lt;/strong&gt; 突然站起来，手指向 &lt;strong&gt;&lt;&lt;print GameState.PROFILES[_exile.target].name&gt;&gt;&lt;/strong&gt;。&lt;/p&gt;
+&lt;blockquote&gt;「我觉得这个人有问题。我们应该把他关起来。」&lt;/blockquote&gt;
+&lt;p&gt;大厅里一片哗然。有人附和，有人反对，更多人沉默地看着。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;投票结果：&lt;&lt;print _exile.votesFor&gt;&gt; 赞成 · &lt;&lt;print _exile.votesAgainst&gt;&gt; 反对 · &lt;&lt;print _exile.abstains&gt;&gt; 弃权&lt;/p&gt;
+
+&lt;&lt;if _exile.witchProtectTriggered&gt;&gt;
+&lt;p&gt;叶知秋突然开口，声音不大却很坚定：「我救过他。你们不能这样对他。」&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;叶知秋出面担保。大厅里的气氛变了。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+
+&lt;&lt;if _exile.exiled&gt;&gt;
+&lt;&lt;if _exile.swingTriggered&gt;&gt;
+&lt;p&gt;反对和赞成的人数一样多。僵持之际，你最后开口，打破了平衡。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;你的关键一票促成了放逐。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;p&gt;最终，&lt;strong&gt;&lt;&lt;print GameState.PROFILES[_exile.target].name&gt;&gt;&lt;/strong&gt; 被几个人架着，推进了地下室。门从外面锁上了。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;&lt;&lt;print GameState.PROFILES[_exile.target].name&gt;&gt; 被放逐，关入地窖。他/她已退出所有活动。&lt;/p&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天：&#39; + GameState.PROFILES[_exile.accuser].name + &#39; 当众指认 &#39; + GameState.PROFILES[_exile.target].name + &#39;，&#39; + GameState.PROFILES[_exile.target].name + &#39; 被放逐进地窖。&#39;)&gt;&gt;
+&lt;&lt;else&gt;&gt;
+&lt;p&gt;吵了半天，也没人敢真动手。&lt;strong&gt;&lt;&lt;print GameState.PROFILES[_exile.target].name&gt;&gt;&lt;/strong&gt; 沉着脸坐回原位，事情就这么过去了。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;放逐未通过。&lt;&lt;print GameState.PROFILES[_exile.target].name&gt;&gt; 留了下来。&lt;/p&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天：&#39; + GameState.PROFILES[_exile.accuser].name + &#39; 试图指认 &#39; + GameState.PROFILES[_exile.target].name + &#39;，但投票未通过。&#39;)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/=== 苏晚的悄悄话（仅陈默可见，用 isKiller 之外的 detected 现象） ===/
+&lt;&lt;if _medic and _medic.detected&gt;&gt;
+&lt;details class=&quot;night-log&quot;&gt;
+&lt;summary&gt;苏晚把你拉到一边&lt;/summary&gt;
+&lt;p&gt;苏晚压低声音，凑到你耳边：&lt;/p&gt;
+&lt;blockquote&gt;「我刚才借故给 &lt;strong&gt;&lt;&lt;print GameState.PROFILES[_medic.target].name&gt;&gt;&lt;/strong&gt; 把了脉。心跳快得不正常，手还在抖——像刚做过什么剧烈的事。你……离他/她远点。」&lt;/blockquote&gt;
+&lt;p class=&quot;muted&quot;&gt;你知道苏晚不会无缘无故说这种话。她既然开口，就是真的察觉到了什么。&lt;/p&gt;
+&lt;/details&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天：苏晚悄悄告诉我，&#39; + GameState.PROFILES[_medic.target].name + &#39; 的脉搏和状态很不对劲。&#39;)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/=== 白天暗流（江白陷阱等观察，轮回记忆） ===/
+&lt;&lt;if _dayLog.length gt 0&gt;&gt;
+&lt;details class=&quot;night-log&quot;&gt;
+&lt;summary&gt;白天暗流（你的轮回记忆）&lt;/summary&gt;
+&lt;&lt;for _n to 0; _n lt _dayLog.length; _n++&gt;&gt;
+&lt;p class=&quot;muted&quot;&gt;&lt;&lt;print _dayLog[_n]&gt;&gt;&lt;/p&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;/details&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天白天暗流：&#39; + _dayLog.join(&#39;；&#39;))&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
 &lt;div class=&quot;choice-list&quot;&gt;
 [[查看地图-&gt;Common_Map]]
 [[查看住宿区-&gt;Common_GuestRooms]]

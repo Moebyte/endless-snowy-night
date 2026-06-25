@@ -188,6 +188,8 @@
   Game.prophetAIGetCheckTarget = function () {
     var g = ensureState();
     if (!g.alive["fang_heng"]) return null;
+    // An exiled character is locked in the cellar and exits all interactions.
+    if (typeof Game.isExiled === 'function' && Game.isExiled('fang_heng')) return null;
     var pr = ensureProphet(g);
 
     // Candidates: alive, not Fang Heng, not already checked
