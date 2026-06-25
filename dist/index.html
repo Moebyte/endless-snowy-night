@@ -827,6 +827,14 @@ GameState.getProfile = function (charId) {
       // last wolf kill result
       lastWolfKill: null,
 
+      // Structured summary of last night's resolution, written by
+      // Common_NightResolution and read by Day_Morning to narrate what
+      // Chen Mo learns upon waking. Null during the day after it's consumed.
+      // { day, loop, kill:{killed,actualTarget,special,killer}|null,
+      //   witchAction:{type:'revive'|'bind'|'pass', savedTarget?, broken?}|null,
+      //   knightGuarded: charId|null, swap:{a,b}|null, nightLog: [string,...] }
+      lastNightSummary: null,
+
       // day events generated each morning (conflicts, suspicions, observations)
       // Drives all god-role AI decisions. See day-events.js
       dayEvents: [],
@@ -892,6 +900,7 @@ GameState.getProfile = function (charId) {
     if (!g.dayEvents) g.dayEvents = fresh.dayEvents;
     if (!g.memories) g.memories = fresh.memories;
     if (g.lastWolfKill === undefined) g.lastWolfKill = fresh.lastWolfKill;
+    if (g.lastNightSummary === undefined) g.lastNightSummary = null;
     return g;
   }
 
@@ -6235,18 +6244,21 @@ Game.mechWolfAIActivatePower = function () {
 &lt;div class=&quot;choice-list&quot;&gt;
 [[返回-&gt;Day_Morning]]
 &lt;/div&gt;</tw-passagedata>
-  <tw-passagedata pid="5" name="Common_NightResolution" tags="" position="100,100" size="100,100">/% 夜间结算顺序:
+  <tw-passagedata pid="5" name="Common_NightResolution" tags="" position="100,100" size="100,100">/% 夜间结算顺序（全部后台执行，玩家不可见）:
  *   1. 幻真致幻交换 (沈慎 AI 选两人)
  *   2. 昭判查验 + 信任分享 (方衡 AI)
  *   3. 镇煞守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
  *   4. 堕仙击杀 (堕仙投票 AI)
- *   5. 渡君感知死亡 + 救人/诅咒 AI
+ *   5. 渡君感知死亡 + 救人/缚魂 AI
  *   6. 机械堕仙窃取神力判定
- %/
+ *
+ * 玩家不在此页看到任何夜间事件——所有&quot;昨夜发生了什么&quot;的叙事
+ * 由 Day_Morning 读 lastNightSummary 后呈现（陈默醒来才得知）。
+%/
 &lt;&lt;set _nightLog to []&gt;&gt;
 &lt;&lt;set _knightGuarded to null&gt;&gt;
 
-/ ============ 1. 幻真致幻 ============ /
+/% ========= 1. 幻真致幻 ========= %/
 &lt;&lt;if Game.isAlive(&#39;shen_shen&#39;) and !Game.isExiled(&#39;shen_shen&#39;) and Game.magicianSwapsRemaining() &gt; 0&gt;&gt;
 &lt;&lt;set _swapA to null&gt;&gt;
 &lt;&lt;set _swapB to null&gt;&gt;
@@ -6283,7 +6295,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-/ ============ 2. 昭判查验 ============ /
+/% ========= 2. 昭判查验 ========= %/
 &lt;&lt;if Game.isAlive(&#39;fang_heng&#39;) and !Game.isExiled(&#39;fang_heng&#39;)&gt;&gt;
 &lt;&lt;set _prophetTarget to Game.prophetAIGetCheckTarget()&gt;&gt;
 &lt;&lt;if _prophetTarget&gt;&gt;
@@ -6298,7 +6310,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-/ ============ 3. 镇煞守卫 ============ /
+/% ========= 3. 镇煞守卫 ========= %/
 &lt;&lt;if Game.isAlive(&#39;lin_xiaoman&#39;) and !Game.isExiled(&#39;lin_xiaoman&#39;) and !Game.knightWeakened()&gt;&gt;
 &lt;&lt;set _guardTarget to Game.knightAIGetGuardTarget()&gt;&gt;
 &lt;&lt;if _guardTarget&gt;&gt;
@@ -6310,28 +6322,31 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-/ ============ 4. 堕仙击杀 ============ /
+/% ========= 4. 堕仙击杀 ========= %/
 &lt;&lt;set _kill to Game.executeWolfKill()&gt;&gt;
 
 &lt;&lt;run Game.witchSenseDeath()&gt;&gt;
 &lt;&lt;run Game.visit()&gt;&gt;
 
-/ ============ 5. 渡君决策 ============ /
+/% ========= 5. 渡君决策 ========= %/
 &lt;&lt;if Game.isAlive(&#39;ye_zhiqiu&#39;) and !Game.isExiled(&#39;ye_zhiqiu&#39;) and !Game.witchBroken() and Game.witchRemaining() &gt; 0&gt;&gt;
 &lt;&lt;set _witchDecision to Game.witchAIDecideNightAction()&gt;&gt;
 &lt;&lt;else&gt;&gt;
 &lt;&lt;set _witchDecision to { action: &#39;pass&#39; }&gt;&gt;
 &lt;&lt;/if&gt;&gt;
-/ Guard: witchAIDecideNightAction() has several null paths — witch dead,
-/ already acted tonight, out of revives, no sensed death, or hesitating.
-/ Any null means &quot;no action&quot; -&gt; default to pass so the &lt;&lt;if&gt;&gt; below is safe. /
+/% Guard: witchAIDecideNightAction() has several null paths — witch dead, %/
+/% already acted tonight, out of revives, no sensed death, or hesitating. %/
+/% Any null means &quot;no action&quot; -&gt; default to pass so the &lt;&lt;if&gt;&gt; below is safe. %/
 &lt;&lt;if not _witchDecision&gt;&gt;&lt;&lt;set _witchDecision to { action: &#39;pass&#39; }&gt;&gt;&lt;&lt;/if&gt;&gt;
 
+&lt;&lt;set _witchSaved to null&gt;&gt;
+&lt;&lt;set _witchCurseResult to null&gt;&gt;
+&lt;&lt;set _witchCurseName to &#39;&#39;&gt;&gt;
 &lt;&lt;if _witchDecision.action is &#39;revive&#39;&gt;&gt;
 &lt;&lt;set _witchSaved to Game.witchRevive(Game.witchGetSensedDeath())&gt;&gt;
-&lt;&lt;if _witchSaved.ok&gt;&gt;
-/ The witch revived the victim: rewrite the kill result so the narrative
-/ takes the &quot;saved_by_witch&quot; branch instead of &quot;new corpse&quot;. /
+&lt;&lt;if _witchSaved and _witchSaved.ok&gt;&gt;
+/% The witch revived the victim: rewrite the kill result so the morning %/
+/% narrative takes the &quot;saved_by_witch&quot; branch instead of &quot;new corpse&quot;. %/
 &lt;&lt;set _kill.killed to false&gt;&gt;
 &lt;&lt;set _kill.special to &#39;saved_by_witch&#39;&gt;&gt;
 &lt;&lt;/if&gt;&gt;
@@ -6342,126 +6357,33 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;set _witchCurseName to GameState.PROFILES[_witchCurseTarget].name&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
+/% ── 陈默死亡判定（决定是否跨轮回重置，玩家不可见的逻辑） ── %/
 &lt;&lt;set _loopToDeath to false&gt;&gt;
-
-&lt;&lt;if _kill.killed&gt;&gt;
-&lt;&lt;set _actualName to GameState.PROFILES[_kill.actualTarget].name&gt;&gt;
-
-&lt;&lt;if _kill.friendlyFire&gt;&gt;
-&lt;h2&gt;黎明 · 堕仙自相残杀&lt;/h2&gt;
-&lt;p&gt;尖叫声把你惊醒。但当你冲出房间时，看到的场景让所有人困惑。&lt;/p&gt;
-&lt;&lt;if _kill.mutualKill&gt;&gt;
-&lt;p&gt;走廊上有两具尸体：&lt;strong&gt;&lt;&lt;print _actualName&gt;&gt;&lt;/strong&gt;（幽主）和 &lt;strong&gt;&lt;&lt;print _kill.killerName&gt;&gt;&lt;/strong&gt;。他们倒在一起，像是互相撕咬致死。&lt;/p&gt;
-&lt;blockquote&gt;「堕仙怎么会杀自己人？除非——它们被什么东西搞糊涂了。」&lt;/blockquote&gt;
-&lt;p class=&quot;system-hint&quot;&gt;幽主 &lt;&lt;print _actualName&gt;&gt; 被同伴误杀，同归于尽。执行者 &lt;&lt;print _kill.killerName&gt;&gt; 也死了。可能是幻真的交换所致。&lt;/p&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：&#39; + _actualName + &#39; 和 &#39; + _kill.killerName + &#39; 同归于尽。堕仙自相残杀！&#39;)&gt;&gt;
-&lt;&lt;else&gt;&gt;
-&lt;p&gt;&lt;strong&gt;&lt;&lt;print _actualName&gt;&gt;&lt;/strong&gt; 倒在血泊中。但伤痕不对——这是狼的爪牙。&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;一只堕仙被同伴误杀。可能是幻真的交换所致。&lt;/p&gt;
-&lt;&lt;run Game.changeSan(-5)&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：&#39; + _actualName + &#39; 被同伴误杀。&#39;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-
-&lt;&lt;elseif _kill.special is &#39;body_removed&#39;&gt;&gt;
-&lt;h2&gt;黎明 · 消失的尸体&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;&lt;&lt;print _actualName&gt;&gt;&lt;/strong&gt; 的房间门大开着，但里面没有尸体。只有大量的血迹和拖拽的痕迹，延伸到走廊尽头就消失了。&lt;/p&gt;
-&lt;p class=&quot;danger&quot;&gt;尸体被抹除了。没有尸体，就没有证据。渡君即使有还魂之力，也无处施展。&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;&lt;&lt;print _actualName&gt;&gt; 被杀。清道夫堕仙抹除了尸体，渡君无法复活。&lt;/p&gt;
-&lt;&lt;run Game.changeSan(-10)&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：&#39; + _actualName + &#39; 被杀，尸体被抹除。&#39;)&gt;&gt;
-
-&lt;&lt;elseif _kill.special is &#39;saved_by_witch&#39;&gt;&gt;
-&lt;h2&gt;黎明 · 从死亡边缘归来&lt;/h2&gt;
-&lt;p&gt;你冲向 &lt;strong&gt;&lt;&lt;print _actualName&gt;&gt;&lt;/strong&gt; 的房间，却看到他/她正坐在床边，脸色苍白。&lt;/p&gt;
-&lt;p&gt;叶知秋站在一旁，放下手中的药瓶：「差一点。」&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;渡君叶知秋在堕仙袭击后救活了 &lt;&lt;print _actualName&gt;&gt;。&lt;/p&gt;
-&lt;&lt;if _witchSaved.reason is &#39;broken&#39;&gt;&gt;
-&lt;p class=&quot;danger&quot;&gt;叶知秋靠在墙角，双手抱着头，浑身发抖。她用了最后一次力量——精神已经崩溃了。&lt;/p&gt;
-&lt;&lt;run Game.revealInfo(&#39;ye_zhiqiu&#39;, &#39;witch_exposed&#39;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;run Game.changeSan(5)&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：&#39; + _actualName + &#39; 被堕仙袭击，但叶知秋救活了他/她。&#39;)&gt;&gt;
-
-&lt;&lt;elseif _kill.special is &#39;witch_knight_conflict&#39;&gt;&gt;
-&lt;h2&gt;黎明 · 夜色中的混乱&lt;/h2&gt;
-&lt;p&gt;&lt;strong&gt;&lt;&lt;print _actualName&gt;&gt;&lt;/strong&gt; 倒下了。&lt;/p&gt;
-&lt;p&gt;叶知秋站在走廊另一端，神情复杂：「我去了……但有人先到了。她赶走了我，以为安全了——但堕仙还在。」&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;镇煞守卫和渡君救人冲突：守卫赶走了渡君，以为目标安全，堕仙趁机杀人。&lt;/p&gt;
-&lt;&lt;run Game.changeSan(-15)&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：&#39; + _actualName + &#39; 被杀。渡君与守卫冲突。&#39;)&gt;&gt;
-
-&lt;&lt;elseif _kill.special is &#39;protected_by_knight&#39;&gt;&gt;
-&lt;&lt;run Game.knightReset()&gt;&gt;
-&lt;h2&gt;黎明 · 无人死亡&lt;/h2&gt;
-&lt;p&gt;你冲出房间时，发现林小满靠在走廊的墙上，手里的小刀上有血。她对你点了点头：&lt;/p&gt;
-&lt;blockquote&gt;林小满：「昨晚有东西想闯进来。我挡住了。」&lt;/blockquote&gt;
-&lt;p class=&quot;system-hint&quot;&gt;昨夜无人死亡。林小满的保护奏效了，但她现在很虚弱。&lt;/p&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：林小满保护了某人，无人死亡。&#39;)&gt;&gt;
-
-&lt;&lt;else&gt;&gt;
-&lt;h2&gt;黎明 · 新的死者&lt;/h2&gt;
-&lt;p&gt;尖叫声把你从梦中惊醒。你冲出房间，看到走廊上已经围了一圈人。&lt;/p&gt;
-&lt;p&gt;&lt;strong&gt;&lt;&lt;print _actualName&gt;&gt;&lt;/strong&gt; 倒在自己的房间里。门窗从内部锁死，没有搏斗痕迹。&lt;/p&gt;
-&lt;p&gt;苏晚检查后摇头：「死亡时间大约在凌晨两点。没有外伤，像是……在睡梦中被某种力量夺走了呼吸。」&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;&lt;&lt;print _actualName&gt;&gt; 被堕仙杀害。&lt;/p&gt;
-
-&lt;&lt;if _kill.actualTarget is &#39;chen_mo&#39;&gt;&gt;
+&lt;&lt;if _kill and _kill.killed and _kill.actualTarget is &#39;chen_mo&#39;&gt;&gt;
 &lt;&lt;set _loopToDeath to true&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-&lt;&lt;if _kill.actualTarget is &#39;su_wan&#39;&gt;&gt;
-&lt;&lt;run Game.changeSan(-20)&gt;&gt;
-&lt;p class=&quot;danger&quot;&gt;苏晚死了。你的手在发抖。你蹲下来，握住她已经冰冷的手。天花板上水渍的形状开始变化。&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;苏晚的死亡让你遭受重创。理智 -20。&lt;/p&gt;
-&lt;&lt;elseif _kill.actualTarget is &#39;jiang_bai&#39;&gt;&gt;
-&lt;&lt;run Game.changeSan(-15)&gt;&gt;
-&lt;p class=&quot;danger&quot;&gt;江白死了。你的室友，你的死党。他右手腕上的旧疤在晨光中格外刺眼。&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;江白的死亡让你遭受重创。理智 -15。&lt;/p&gt;
+/% ========= 快照昨夜摘要（供 Day_Morning 读取） ========= %/
+/% 必须在 magicianResetDaily（清 currentSwap）之前捕获 swap。 %/
+&lt;&lt;set _swapSnap to null&gt;&gt;
+&lt;&lt;if $game.godSkills.magician.currentSwap&gt;&gt;
+&lt;&lt;set _swapSnap to { a: $game.godSkills.magician.currentSwap.a, b: $game.godSkills.magician.currentSwap.b }&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;set _killSnap to null&gt;&gt;
+&lt;&lt;if _kill&gt;&gt;
+&lt;&lt;set _killSnap to { killed: _kill.killed, actualTarget: _kill.actualTarget, special: _kill.special, killer: _kill.killer }&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;set _witchSnap to null&gt;&gt;
+&lt;&lt;if _witchDecision.action is &#39;revive&#39;&gt;&gt;
+&lt;&lt;set _witchSnap to { type: &#39;revive&#39;, savedTarget: Game.witchGetSensedDeath(), broken: (_witchSaved and _witchSaved.reason is &#39;broken&#39;) }&gt;&gt;
+&lt;&lt;elseif _witchDecision.action is &#39;bind&#39;&gt;&gt;
+&lt;&lt;set _witchSnap to { type: &#39;bind&#39;, boundTarget: _witchDecision.target, broken: (_witchCurseResult and _witchCurseResult.reason is &#39;broken&#39;) }&gt;&gt;
 &lt;&lt;else&gt;&gt;
-&lt;&lt;run Game.changeSan(-10)&gt;&gt;
+&lt;&lt;set _witchSnap to { type: &#39;pass&#39; }&gt;&gt;
 &lt;&lt;/if&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：&#39; + _actualName + &#39; 被杀。&#39;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
+&lt;&lt;run $game.lastNightSummary = { day: $game.day, loop: $game.loop, kill: _killSnap, witchAction: _witchSnap, knightGuarded: _knightGuarded, swap: _swapSnap, nightLog: _nightLog }&gt;&gt;
 
-&lt;&lt;elseif _kill.special is &#39;saved_by_witch&#39;&gt;&gt;
-&lt;h2&gt;黎明 · 从死亡边缘归来&lt;/h2&gt;
-&lt;p&gt;你冲出房间，没有发现尸体。但叶知秋的房间灯还亮着。&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;渡君预感到了死亡，救了某人。无人死亡。&lt;/p&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：有人被袭击，但叶知秋救了回来。&#39;)&gt;&gt;
-
-&lt;&lt;else&gt;&gt;
-&lt;&lt;run Game.knightReset()&gt;&gt;
-&lt;h2&gt;黎明 · 无人死亡&lt;/h2&gt;
-&lt;p&gt;走廊很安静。你检查了每一扇门，所有人都还活着。&lt;/p&gt;
-&lt;p&gt;但你知道，这只是暂时的。堕仙还在。&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;昨夜无人死亡。但恐惧不会消失。&lt;/p&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：无人死亡。&#39;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-
-/ 渡君诅咒 /
-&lt;&lt;if _witchDecision.action is &#39;bind&#39; and _witchCurseResult.ok&gt;&gt;
-&lt;h3&gt;叶知秋的诅咒&lt;/h3&gt;
-&lt;p&gt;清晨，你发现 &lt;strong&gt;&lt;&lt;print _witchCurseName&gt;&gt;&lt;/strong&gt; 倒在自己的房间里。没有外伤，没有血迹，只是嘴唇发黑——像是被某种看不见的力量夺走了呼吸。&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;渡君叶知秋在夜间诅咒了 &lt;&lt;print _witchCurseName&gt;&gt;。诅咒是神力，幽主的反杀能力无法触发。&lt;/p&gt;
-&lt;&lt;if _witchCurseResult.reason is &#39;broken&#39;&gt;&gt;
-&lt;p class=&quot;danger&quot;&gt;叶知秋靠在墙角，双手抱着头，浑身发抖。她用了最后一次力量——精神已经崩溃了。&lt;/p&gt;
-&lt;&lt;run Game.revealInfo(&#39;ye_zhiqiu&#39;, &#39;witch_exposed&#39;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：叶知秋诅咒了 &#39; + _witchCurseName + &#39;。&#39;)&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-
-/ 伪神夜间记录（仅玩家可见，存为记忆，不直接展示身份） /
-&lt;&lt;if _nightLog.length &gt; 0&gt;&gt;
-&lt;details class=&quot;night-log&quot; open&gt;
-&lt;summary&gt;夜间暗流（你的轮回记忆）&lt;/summary&gt;
-&lt;&lt;for _n to 0; _n lt _nightLog.length; _n++&gt;&gt;
-&lt;p class=&quot;muted&quot;&gt;&lt;&lt;print _nightLog[_n]&gt;&gt;&lt;/p&gt;
-&lt;&lt;/for&gt;&gt;
-&lt;/details&gt;
-&lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间暗流：&#39; + _nightLog.join(&#39;；&#39;))&gt;&gt;
-&lt;&lt;/if&gt;&gt;
-
+/% ========= 夜间状态清理（快照之后） ========= %/
 &lt;&lt;run Game.witchClearSensedDeath()&gt;&gt;
 &lt;&lt;run Game.magicianResetDaily()&gt;&gt;
 &lt;&lt;if _knightGuarded == null&gt;&gt;&lt;&lt;run Game.knightReset()&gt;&gt;&lt;&lt;/if&gt;&gt;
@@ -6477,6 +6399,9 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;run Game.nextLoop()&gt;&gt;
 [[进入下一轮回|Day_Morning]]
 &lt;&lt;else&gt;&gt;
+&lt;h2&gt;夜深了&lt;/h2&gt;
+&lt;p&gt;你回到房间，锁上门。窗外的雪还在下，走廊里渐渐安静下来。&lt;/p&gt;
+&lt;p&gt;你不知道这一夜会发生什么。你只能在不安中睡去。&lt;/p&gt;
 &lt;div class=&quot;choice-list&quot;&gt;
 [[继续新的一天|Common_DayTransition]]
 &lt;/div&gt;
@@ -6529,13 +6454,113 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;set $game.time to &#39;06:00&#39;&gt;&gt;
 &lt;&lt;set _dayLog to []&gt;&gt;
 
-/=== 白天核心循环（D2 起执行；D1 是到达日，无事件） ===/
-/=== 调用顺序对齐 sim_detail.js，改变会导致 AI 决策失常 ===/
+/% 黎明：陈默醒来，得知昨夜发生了什么（读 lastNightSummary） %/
+&lt;&lt;set _ns to $game.lastNightSummary&gt;&gt;
+&lt;&lt;set _nsActualName to &#39;&#39;&gt;&gt;
+&lt;&lt;if _ns and _ns.kill and _ns.kill.actualTarget&gt;&gt;
+&lt;&lt;set _nsActualName to GameState.PROFILES[_ns.kill.actualTarget].name&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+&lt;&lt;if _ns and _ns.kill and _ns.kill.killed&gt;&gt;
+
+&lt;&lt;if _ns.kill.special is &#39;body_removed&#39;&gt;&gt;
+&lt;h2&gt;黎明 · 消失的尸体&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;&lt;&lt;print _nsActualName&gt;&gt;&lt;/strong&gt; 的房间门大开着，但里面没有尸体。只有大量的血迹和拖拽的痕迹，延伸到走廊尽头就消失了。&lt;/p&gt;
+&lt;p class=&quot;danger&quot;&gt;尸体被抹除了。没有尸体，就没有证据。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;&lt;&lt;print _nsActualName&gt;&gt; 被杀，尸体被抹除。&lt;/p&gt;
+&lt;&lt;run Game.changeSan(-10)&gt;&gt;
+
+&lt;&lt;elseif _ns.kill.special is &#39;witch_knight_conflict&#39;&gt;&gt;
+&lt;h2&gt;黎明 · 夜色中的混乱&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;&lt;&lt;print _nsActualName&gt;&gt;&lt;/strong&gt; 倒下了。夜里似乎有人想去救，却扑了空。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;守卫与救人冲突，&lt;&lt;print _nsActualName&gt;&gt; 被杀。&lt;/p&gt;
+&lt;&lt;run Game.changeSan(-15)&gt;&gt;
+
+&lt;&lt;else&gt;&gt;
+&lt;h2&gt;黎明 · 新的死者&lt;/h2&gt;
+&lt;p&gt;尖叫声把你从梦中惊醒。你冲出房间，看到走廊上已经围了一圈人。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;&lt;&lt;print _nsActualName&gt;&gt;&lt;/strong&gt; 倒在自己的房间里。门窗从内部锁死，没有搏斗痕迹。&lt;/p&gt;
+&lt;p&gt;苏晚检查后摇头：「死亡时间大约在凌晨两点。没有外伤，像是……在睡梦中被某种力量夺走了呼吸。」&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;&lt;&lt;print _nsActualName&gt;&gt; 被杀。&lt;/p&gt;
+&lt;&lt;if _ns.kill.actualTarget is &#39;su_wan&#39;&gt;&gt;
+&lt;&lt;run Game.changeSan(-20)&gt;&gt;
+&lt;p class=&quot;danger&quot;&gt;苏晚死了。你的手在发抖。你蹲下来，握住她已经冰冷的手。天花板上水渍的形状开始变化。&lt;/p&gt;
+&lt;&lt;elseif _ns.kill.actualTarget is &#39;jiang_bai&#39;&gt;&gt;
+&lt;&lt;run Game.changeSan(-15)&gt;&gt;
+&lt;p class=&quot;danger&quot;&gt;江白死了。你的室友，你的死党。他右手腕上的旧疤在晨光中格外刺眼。&lt;/p&gt;
+&lt;&lt;else&gt;&gt;
+&lt;&lt;run Game.changeSan(-10)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + _ns.loop + &#39; 轮第 &#39; + _ns.day + &#39; 天夜间：&#39; + _nsActualName + &#39; 被杀。&#39;)&gt;&gt;
+
+&lt;&lt;elseif _ns and _ns.kill and _ns.kill.special is &#39;saved_by_witch&#39;&gt;&gt;
+&lt;h2&gt;黎明 · 从死亡边缘归来&lt;/h2&gt;
+&lt;&lt;if _ns.witchAction and _ns.witchAction.savedTarget&gt;&gt;
+&lt;&lt;set _nsSavedName to GameState.PROFILES[_ns.witchAction.savedTarget].name&gt;&gt;
+&lt;p&gt;你冲向 &lt;strong&gt;&lt;&lt;print _nsSavedName&gt;&gt;&lt;/strong&gt; 的房间，却看到他/她正坐在床边，脸色苍白。&lt;/p&gt;
+&lt;p&gt;叶知秋站在一旁，放下手中的药瓶：「差一点。」&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;&lt;&lt;print _nsSavedName&gt;&gt; 夜里被袭击，但被人救了回来。无人死亡。&lt;/p&gt;
+&lt;&lt;if _ns.witchAction.broken&gt;&gt;
+&lt;p class=&quot;danger&quot;&gt;叶知秋靠在墙角，双手抱着头，浑身发抖——她像是用了最后一次力气。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;run Game.changeSan(5)&gt;&gt;
+&lt;&lt;else&gt;&gt;
+&lt;p&gt;你冲出房间，没有发现尸体。但叶知秋的房间灯还亮着。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;昨夜有人被袭击，但被救了回来。无人死亡。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + _ns.loop + &#39; 轮第 &#39; + _ns.day + &#39; 天夜间：有人被袭击，但被救活。&#39;)&gt;&gt;
+
+&lt;&lt;elseif _ns and _ns.knightGuarded&gt;&gt;
+&lt;h2&gt;黎明 · 无人死亡&lt;/h2&gt;
+&lt;p&gt;你冲出房间时，发现林小满靠在走廊的墙上，手里的小刀上有血。她对你点了点头：&lt;/p&gt;
+&lt;blockquote&gt;林小满：「昨晚有东西想闯进来。我挡住了。」&lt;/blockquote&gt;
+&lt;p class=&quot;system-hint&quot;&gt;昨夜无人死亡。林小满挡住了一次袭击，但她现在很虚弱。&lt;/p&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + _ns.loop + &#39; 轮第 &#39; + _ns.day + &#39; 天夜间：林小满保护了某人，无人死亡。&#39;)&gt;&gt;
+
+&lt;&lt;elseif _ns&gt;&gt;
+&lt;h2&gt;黎明 · 无人死亡&lt;/h2&gt;
+&lt;p&gt;走廊很安静。你检查了每一扇门，所有人都还活着。&lt;/p&gt;
+&lt;p&gt;但你知道，这只是暂时的。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;昨夜无人死亡。&lt;/p&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + _ns.loop + &#39; 轮第 &#39; + _ns.day + &#39; 天夜间：无人死亡。&#39;)&gt;&gt;
+
+&lt;&lt;/if&gt;&gt;
+
+/% 渡君缚魂（bind）—— 封夜间行动，非致死。陈默只能观察到现象 %/
+&lt;&lt;if _ns and _ns.witchAction and _ns.witchAction.type is &#39;bind&#39; and _ns.witchAction.boundTarget&gt;&gt;
+&lt;&lt;set _nsBoundName to GameState.PROFILES[_ns.witchAction.boundTarget].name&gt;&gt;
+&lt;h3&gt;异常的清晨&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;&lt;&lt;print _nsBoundName&gt;&gt;&lt;/strong&gt; 今天状态很不对——脸色发青，说话有气无力，端杯子的手一直在抖。&lt;/p&gt;
+&lt;p&gt;有人问他/她怎么了，他/她含糊地说：「昨晚……像是被什么东西压住了，动弹不得，一整夜。」&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;&lt;&lt;print _nsBoundName&gt;&gt; 昨夜似乎被某种力量束缚，无法行动。&lt;/p&gt;
+&lt;&lt;if _ns.witchAction.broken&gt;&gt;
+&lt;p class=&quot;danger&quot;&gt;叶知秋今天格外憔悴，像是刚耗尽了什么。&lt;/p&gt;
+&lt;&lt;/if&gt;&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + _ns.loop + &#39; 轮第 &#39; + _ns.day + &#39; 天：&#39; + _nsBoundName + &#39; 说昨夜动弹不得，像是被压住了。&#39;)&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/% 夜间暗流（陈默的轮回记忆，仅玩家可见） %/
+&lt;&lt;if _ns and _ns.nightLog and _ns.nightLog.length &gt; 0&gt;&gt;
+&lt;details class=&quot;night-log&quot;&gt;
+&lt;summary&gt;夜间暗流（你的轮回记忆）&lt;/summary&gt;
+&lt;&lt;for _n to 0; _n lt _ns.nightLog.length; _n++&gt;&gt;
+&lt;p class=&quot;muted&quot;&gt;&lt;&lt;print _ns.nightLog[_n]&gt;&gt;&lt;/p&gt;
+&lt;&lt;/for&gt;&gt;
+&lt;/details&gt;
+&lt;&lt;run Game.addMemory(&#39;第 &#39; + _ns.loop + &#39; 轮第 &#39; + _ns.day + &#39; 天夜间暗流：&#39; + _ns.nightLog.join(&#39;；&#39;))&gt;&gt;
+&lt;&lt;/if&gt;&gt;
+
+/% 摘要已消费，清空避免下一天重复显示 %/
+&lt;&lt;if _ns&gt;&gt;&lt;&lt;run $game.lastNightSummary = null&gt;&gt;&lt;&lt;/if&gt;&gt;
+
+/% 白天核心循环（D2 起执行；D1 是到达日，无事件） %/
+/% 调用顺序对齐 sim_detail.js，改变会导致 AI 决策失常 %/
 &lt;&lt;if $game.day gte 2&gt;&gt;
 &lt;&lt;run Game.generateDayEvents()&gt;&gt;
 &lt;&lt;if typeof Game.knightUpdateSuspicion is &#39;function&#39;&gt;&gt;&lt;&lt;run Game.knightUpdateSuspicion()&gt;&gt;&lt;&lt;/if&gt;&gt;
 
-/=== 1. 陷阱晨检（江白） ===/
+/% 1. 陷阱晨检（江白） %/
 &lt;&lt;set _trap to { checked: false, triggered: false, observed: false }&gt;&gt;
 &lt;&lt;if typeof Game.trapMorningCheck is &#39;function&#39;&gt;&gt;
 &lt;&lt;set _trap to Game.trapMorningCheck()&gt;&gt;
@@ -6545,13 +6570,13 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-/=== 2. 放逐博弈（核心） ===/
+/% 2. 放逐博弈（核心） %/
 &lt;&lt;set _exile to null&gt;&gt;
 &lt;&lt;if typeof Game.exileAIPhase is &#39;function&#39;&gt;&gt;
 &lt;&lt;set _exile to Game.exileAIPhase()&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-/=== 3. 苏晚医学观察（仅陈默可见） ===/
+/% 3. 苏晚医学观察（仅陈默可见） %/
 &lt;&lt;set _medic to null&gt;&gt;
 &lt;&lt;if typeof Game.medicAIRun is &#39;function&#39;&gt;&gt;
 &lt;&lt;set _medic to Game.medicAIRun()&gt;&gt;
@@ -6572,7 +6597,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;p class=&quot;muted&quot;&gt;在场人数：&lt;&lt;print Game.activeCount()&gt;&gt;&lt;/p&gt;
 &lt;/div&gt;
 
-/=== 放逐叙事（旁观者视角：只写现象，不写身份） ===/
+/% 放逐叙事（旁观者视角：只写现象，不写身份） %/
 &lt;&lt;if _exile and _exile.ok&gt;&gt;
 &lt;h3&gt;当众指认&lt;/h3&gt;
 &lt;p&gt;早饭时，&lt;strong&gt;&lt;&lt;print GameState.PROFILES[_exile.accuser].name&gt;&gt;&lt;/strong&gt; 突然站起来，手指向 &lt;strong&gt;&lt;&lt;print GameState.PROFILES[_exile.target].name&gt;&gt;&lt;/strong&gt;。&lt;/p&gt;
@@ -6600,7 +6625,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-/=== 苏晚的悄悄话（仅陈默可见，用 isKiller 之外的 detected 现象） ===/
+/% 苏晚的悄悄话（仅陈默可见，用 isKiller 之外的 detected 现象） %/
 &lt;&lt;if _medic and _medic.detected&gt;&gt;
 &lt;details class=&quot;night-log&quot;&gt;
 &lt;summary&gt;苏晚把你拉到一边&lt;/summary&gt;
@@ -6611,7 +6636,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天：苏晚悄悄告诉我，&#39; + GameState.PROFILES[_medic.target].name + &#39; 的脉搏和状态很不对劲。&#39;)&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-/=== 白天暗流（江白陷阱等观察，轮回记忆） ===/
+/% 白天暗流（江白陷阱等观察，轮回记忆） %/
 &lt;&lt;if _dayLog.length gt 0&gt;&gt;
 &lt;details class=&quot;night-log&quot;&gt;
 &lt;summary&gt;白天暗流（你的轮回记忆）&lt;/summary&gt;

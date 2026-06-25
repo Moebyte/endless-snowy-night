@@ -27,6 +27,7 @@
     if (!g.dayEvents) g.dayEvents = fresh.dayEvents;
     if (!g.memories) g.memories = fresh.memories;
     if (g.lastWolfKill === undefined) g.lastWolfKill = fresh.lastWolfKill;
+    if (g.lastNightSummary === undefined) g.lastNightSummary = null;
     return g;
   }
 

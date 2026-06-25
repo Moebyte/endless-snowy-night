@@ -3,13 +3,113 @@
 <<set $game.time to '06:00'>>
 <<set _dayLog to []>>
 
-/=== 白天核心循环（D2 起执行；D1 是到达日，无事件） ===/
-/=== 调用顺序对齐 sim_detail.js，改变会导致 AI 决策失常 ===/
+/% 黎明：陈默醒来，得知昨夜发生了什么（读 lastNightSummary） %/
+<<set _ns to $game.lastNightSummary>>
+<<set _nsActualName to ''>>
+<<if _ns and _ns.kill and _ns.kill.actualTarget>>
+<<set _nsActualName to GameState.PROFILES[_ns.kill.actualTarget].name>>
+<</if>>
+
+<<if _ns and _ns.kill and _ns.kill.killed>>
+
+<<if _ns.kill.special is 'body_removed'>>
+<h2>黎明 · 消失的尸体</h2>
+<p><strong><<print _nsActualName>></strong> 的房间门大开着，但里面没有尸体。只有大量的血迹和拖拽的痕迹，延伸到走廊尽头就消失了。</p>
+<p class="danger">尸体被抹除了。没有尸体，就没有证据。</p>
+<p class="system-hint"><<print _nsActualName>> 被杀，尸体被抹除。</p>
+<<run Game.changeSan(-10)>>
+
+<<elseif _ns.kill.special is 'witch_knight_conflict'>>
+<h2>黎明 · 夜色中的混乱</h2>
+<p><strong><<print _nsActualName>></strong> 倒下了。夜里似乎有人想去救，却扑了空。</p>
+<p class="system-hint">守卫与救人冲突，<<print _nsActualName>> 被杀。</p>
+<<run Game.changeSan(-15)>>
+
+<<else>>
+<h2>黎明 · 新的死者</h2>
+<p>尖叫声把你从梦中惊醒。你冲出房间，看到走廊上已经围了一圈人。</p>
+<p><strong><<print _nsActualName>></strong> 倒在自己的房间里。门窗从内部锁死，没有搏斗痕迹。</p>
+<p>苏晚检查后摇头：「死亡时间大约在凌晨两点。没有外伤，像是……在睡梦中被某种力量夺走了呼吸。」</p>
+<p class="system-hint"><<print _nsActualName>> 被杀。</p>
+<<if _ns.kill.actualTarget is 'su_wan'>>
+<<run Game.changeSan(-20)>>
+<p class="danger">苏晚死了。你的手在发抖。你蹲下来，握住她已经冰冷的手。天花板上水渍的形状开始变化。</p>
+<<elseif _ns.kill.actualTarget is 'jiang_bai'>>
+<<run Game.changeSan(-15)>>
+<p class="danger">江白死了。你的室友，你的死党。他右手腕上的旧疤在晨光中格外刺眼。</p>
+<<else>>
+<<run Game.changeSan(-10)>>
+<</if>>
+<</if>>
+<<run Game.addMemory('第 ' + _ns.loop + ' 轮第 ' + _ns.day + ' 天夜间：' + _nsActualName + ' 被杀。')>>
+
+<<elseif _ns and _ns.kill and _ns.kill.special is 'saved_by_witch'>>
+<h2>黎明 · 从死亡边缘归来</h2>
+<<if _ns.witchAction and _ns.witchAction.savedTarget>>
+<<set _nsSavedName to GameState.PROFILES[_ns.witchAction.savedTarget].name>>
+<p>你冲向 <strong><<print _nsSavedName>></strong> 的房间，却看到他/她正坐在床边，脸色苍白。</p>
+<p>叶知秋站在一旁，放下手中的药瓶：「差一点。」</p>
+<p class="system-hint"><<print _nsSavedName>> 夜里被袭击，但被人救了回来。无人死亡。</p>
+<<if _ns.witchAction.broken>>
+<p class="danger">叶知秋靠在墙角，双手抱着头，浑身发抖——她像是用了最后一次力气。</p>
+<</if>>
+<<run Game.changeSan(5)>>
+<<else>>
+<p>你冲出房间，没有发现尸体。但叶知秋的房间灯还亮着。</p>
+<p class="system-hint">昨夜有人被袭击，但被救了回来。无人死亡。</p>
+<</if>>
+<<run Game.addMemory('第 ' + _ns.loop + ' 轮第 ' + _ns.day + ' 天夜间：有人被袭击，但被救活。')>>
+
+<<elseif _ns and _ns.knightGuarded>>
+<h2>黎明 · 无人死亡</h2>
+<p>你冲出房间时，发现林小满靠在走廊的墙上，手里的小刀上有血。她对你点了点头：</p>
+<blockquote>林小满：「昨晚有东西想闯进来。我挡住了。」</blockquote>
+<p class="system-hint">昨夜无人死亡。林小满挡住了一次袭击，但她现在很虚弱。</p>
+<<run Game.addMemory('第 ' + _ns.loop + ' 轮第 ' + _ns.day + ' 天夜间：林小满保护了某人，无人死亡。')>>
+
+<<elseif _ns>>
+<h2>黎明 · 无人死亡</h2>
+<p>走廊很安静。你检查了每一扇门，所有人都还活着。</p>
+<p>但你知道，这只是暂时的。</p>
+<p class="system-hint">昨夜无人死亡。</p>
+<<run Game.addMemory('第 ' + _ns.loop + ' 轮第 ' + _ns.day + ' 天夜间：无人死亡。')>>
+
+<</if>>
+
+/% 渡君缚魂（bind）—— 封夜间行动，非致死。陈默只能观察到现象 %/
+<<if _ns and _ns.witchAction and _ns.witchAction.type is 'bind' and _ns.witchAction.boundTarget>>
+<<set _nsBoundName to GameState.PROFILES[_ns.witchAction.boundTarget].name>>
+<h3>异常的清晨</h3>
+<p><strong><<print _nsBoundName>></strong> 今天状态很不对——脸色发青，说话有气无力，端杯子的手一直在抖。</p>
+<p>有人问他/她怎么了，他/她含糊地说：「昨晚……像是被什么东西压住了，动弹不得，一整夜。」</p>
+<p class="system-hint"><<print _nsBoundName>> 昨夜似乎被某种力量束缚，无法行动。</p>
+<<if _ns.witchAction.broken>>
+<p class="danger">叶知秋今天格外憔悴，像是刚耗尽了什么。</p>
+<</if>>
+<<run Game.addMemory('第 ' + _ns.loop + ' 轮第 ' + _ns.day + ' 天：' + _nsBoundName + ' 说昨夜动弹不得，像是被压住了。')>>
+<</if>>
+
+/% 夜间暗流（陈默的轮回记忆，仅玩家可见） %/
+<<if _ns and _ns.nightLog and _ns.nightLog.length > 0>>
+<details class="night-log">
+<summary>夜间暗流（你的轮回记忆）</summary>
+<<for _n to 0; _n lt _ns.nightLog.length; _n++>>
+<p class="muted"><<print _ns.nightLog[_n]>></p>
+<</for>>
+</details>
+<<run Game.addMemory('第 ' + _ns.loop + ' 轮第 ' + _ns.day + ' 天夜间暗流：' + _ns.nightLog.join('；'))>>
+<</if>>
+
+/% 摘要已消费，清空避免下一天重复显示 %/
+<<if _ns>><<run $game.lastNightSummary = null>><</if>>
+
+/% 白天核心循环（D2 起执行；D1 是到达日，无事件） %/
+/% 调用顺序对齐 sim_detail.js，改变会导致 AI 决策失常 %/
 <<if $game.day gte 2>>
 <<run Game.generateDayEvents()>>
 <<if typeof Game.knightUpdateSuspicion is 'function'>><<run Game.knightUpdateSuspicion()>><</if>>
 
-/=== 1. 陷阱晨检（江白） ===/
+/% 1. 陷阱晨检（江白） %/
 <<set _trap to { checked: false, triggered: false, observed: false }>>
 <<if typeof Game.trapMorningCheck is 'function'>>
 <<set _trap to Game.trapMorningCheck()>>
@@ -19,13 +119,13 @@
 <</if>>
 <</if>>
 
-/=== 2. 放逐博弈（核心） ===/
+/% 2. 放逐博弈（核心） %/
 <<set _exile to null>>
 <<if typeof Game.exileAIPhase is 'function'>>
 <<set _exile to Game.exileAIPhase()>>
 <</if>>
 
-/=== 3. 苏晚医学观察（仅陈默可见） ===/
+/% 3. 苏晚医学观察（仅陈默可见） %/
 <<set _medic to null>>
 <<if typeof Game.medicAIRun is 'function'>>
 <<set _medic to Game.medicAIRun()>>
@@ -46,7 +146,7 @@
 <p class="muted">在场人数：<<print Game.activeCount()>></p>
 </div>
 
-/=== 放逐叙事（旁观者视角：只写现象，不写身份） ===/
+/% 放逐叙事（旁观者视角：只写现象，不写身份） %/
 <<if _exile and _exile.ok>>
 <h3>当众指认</h3>
 <p>早饭时，<strong><<print GameState.PROFILES[_exile.accuser].name>></strong> 突然站起来，手指向 <strong><<print GameState.PROFILES[_exile.target].name>></strong>。</p>
@@ -74,7 +174,7 @@
 <</if>>
 <</if>>
 
-/=== 苏晚的悄悄话（仅陈默可见，用 isKiller 之外的 detected 现象） ===/
+/% 苏晚的悄悄话（仅陈默可见，用 isKiller 之外的 detected 现象） %/
 <<if _medic and _medic.detected>>
 <details class="night-log">
 <summary>苏晚把你拉到一边</summary>
@@ -85,7 +185,7 @@
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天：苏晚悄悄告诉我，' + GameState.PROFILES[_medic.target].name + ' 的脉搏和状态很不对劲。')>>
 <</if>>
 
-/=== 白天暗流（江白陷阱等观察，轮回记忆） ===/
+/% 白天暗流（江白陷阱等观察，轮回记忆） %/
 <<if _dayLog.length gt 0>>
 <details class="night-log">
 <summary>白天暗流（你的轮回记忆）</summary>

@@ -415,6 +415,14 @@ GameState.getProfile = function (charId) {
       // last wolf kill result
       lastWolfKill: null,
 
+      // Structured summary of last night's resolution, written by
+      // Common_NightResolution and read by Day_Morning to narrate what
+      // Chen Mo learns upon waking. Null during the day after it's consumed.
+      // { day, loop, kill:{killed,actualTarget,special,killer}|null,
+      //   witchAction:{type:'revive'|'bind'|'pass', savedTarget?, broken?}|null,
+      //   knightGuarded: charId|null, swap:{a,b}|null, nightLog: [string,...] }
+      lastNightSummary: null,
+
       // day events generated each morning (conflicts, suspicions, observations)
       // Drives all god-role AI decisions. See day-events.js
       dayEvents: [],
