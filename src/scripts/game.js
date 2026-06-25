@@ -649,7 +649,7 @@ Game.getStatus = function () {
 
       hunger: g.stats.hunger,
 
-      aliveCount: Object.keys(g.alive).filter(function (k) { return g.alive[k]; }).length
+      aliveCount: Game.activeCount()
 
     };
 

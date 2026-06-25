@@ -51,6 +51,8 @@ Game.mechWolfPeekIdentity = function (targetId) {
 
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
 
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: 'target_exiled' };
+
     var targetRole = Game.roleOf(targetId);
 
     var targetName = GameState.PROFILES[targetId] ? GameState.PROFILES[targetId].name : targetId;
@@ -75,6 +77,8 @@ Game.mechWolfCurse = function (targetId) {
 
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
 
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: 'target_exiled' };
+
     Game.kill(targetId);
 
     g.flags.gu_yan_stole_god_power = false;
@@ -97,6 +101,8 @@ Game.mechWolfDuel = function (targetId) {
 
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
 
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: 'target_exiled' };
+
     Game.kill(targetId);
 
     g.flags.gu_yan_stole_god_power = false;
@@ -118,6 +124,8 @@ Game.mechWolfSwap = function (charA, charB) {
     if (!g.alive['gu_yan']) return { ok: false, reason: 'dead' };
 
     if (!g.alive[charA] || !g.alive[charB]) return { ok: false, reason: 'target_dead' };
+
+    if (typeof Game.isExiled === 'function' && (Game.isExiled(charA) || Game.isExiled(charB))) return { ok: false, reason: 'target_exiled' };
 
     if (charA === charB) return { ok: false, reason: 'same_person' };
 
@@ -143,17 +151,11 @@ Game.mechWolfAIActivatePower = function () {
 
     var stolenRole = Game.getMechWolfStolenRole();
 
-    var wolves4 = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+    // Active (non-exiled) good guys as targets. Exiled characters are locked
+    // in the cellar and cannot be targeted by the mech wolf's stolen power.
+    var aliveGood = Game.activeList().filter(function (cid) {
 
-    var aliveGood = [];
-
-    Object.keys(g.alive).forEach(function (cid) {
-
-      if (!g.alive[cid]) return;
-
-      if (cid === 'gu_yan') return;
-
-      if (wolves4.indexOf(g.roles[cid]) === -1) aliveGood.push(cid);
+      return cid !== 'gu_yan' && GameState.WOLF_ROLES.indexOf(g.roles[cid]) === -1;
 
     });
 

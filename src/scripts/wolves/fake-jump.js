@@ -72,12 +72,14 @@
 
     fp.reports.push(report);
 
-    // Distribute the faked info to god-role holders
+    // Distribute the faked info to god-role holders (excluded: exiled gods,
+    // who are locked in the cellar and receive no information).
     ensureFakeProphet(g);
     Object.keys(g.alive).forEach(function (charId) {
       if (!g.alive[charId]) return;
       if (charId === fp.wolfId) return;
       if (GOD_ROLES.indexOf(g.roles[charId]) === -1) return;
+      if (typeof Game.isExiled === 'function' && Game.isExiled(charId)) return;
 
       if (!g.godSkills.prophet.sharedWith[charId]) g.godSkills.prophet.sharedWith[charId] = [];
       g.godSkills.prophet.sharedWith[charId].push({

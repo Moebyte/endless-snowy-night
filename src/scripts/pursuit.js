@@ -31,8 +31,8 @@
 
   Game.canTriggerPursuit = function () {
     var g = ensureState();
-    var alive = Object.keys(g.alive).filter(function (k) { return g.alive[k]; }).length;
-    return alive <= 6 && Game.isNight();
+    var active = Game.activeCount();
+    return active <= 6 && Game.isNight();
   };
 
   Game.startPursuit = function (wolfId) {

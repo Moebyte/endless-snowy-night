@@ -192,11 +192,12 @@
     if (typeof Game.isExiled === 'function' && Game.isExiled('fang_heng')) return null;
     var pr = ensureProphet(g);
 
-    // Candidates: alive, not Fang Heng, not already checked
+    // Candidates: alive, not Fang Heng, not already checked, not exiled
     var candidates = [];
     Object.keys(g.alive).forEach(function (charId) {
       if (!g.alive[charId]) return;
       if (charId === "fang_heng") return;
+      if (typeof Game.isExiled === 'function' && Game.isExiled(charId)) return;
       var alreadyChecked = pr.checks.some(function (c) { return c.target === charId; });
       if (alreadyChecked) return;
       candidates.push(charId);

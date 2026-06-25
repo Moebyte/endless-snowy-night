@@ -43,7 +43,7 @@
 <</if>>
 
 <div class="alive-list">
-<p class="muted">存活人数：<<print Game.aliveCount()>></p>
+<p class="muted">在场人数：<<print Game.activeCount()>></p>
 </div>
 
 /=== 放逐叙事（旁观者视角：只写现象，不写身份） ===/

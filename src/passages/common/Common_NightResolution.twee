@@ -2,7 +2,7 @@
 /% 夜间结算顺序:
  *   1. 幻真致幻交换 (沈慎 AI 选两人)
  *   2. 昭判查验 + 信任分享 (方衡 AI)
- *   3. 镇煚守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
+ *   3. 镇煞守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
  *   4. 堕仙击杀 (堕仙投票 AI)
  *   5. 渡君感知死亡 + 救人/诅咒 AI
  *   6. 机械堕仙窃取神力判定
@@ -11,31 +11,31 @@
 <<set _knightGuarded to null>>
 
 / ============ 1. 幻真致幻 ============ /
-<<if Game.isAlive('shen_shen') and Game.magicianSwapsRemaining() > 0>>
+<<if Game.isAlive('shen_shen') and !Game.isExiled('shen_shen') and Game.magicianSwapsRemaining() > 0>>
 <<set _swapA to null>>
 <<set _swapB to null>>
-<<set _aliveChars to []>>
-<<run Game.aliveList()>>
-<<for _i to 0; _i lt Game.aliveList().length; _i++>>
-<<set _cid to Game.aliveList()[_i]>>
+<<set _activeChars to []>>
+<<run Game.activeList()>>
+<<for _i to 0; _i lt Game.activeList().length; _i++>>
+<<set _cid to Game.activeList()[_i]>>
 <<if _cid != 'shen_shen' and _cid != 'chen_mo'>>
-<<run _aliveChars.push(_cid)>>
+<<run _activeChars.push(_cid)>>
 <</if>>
 <</for>>
-<<if _aliveChars.length >= 2>>
-<<set _swapA to _aliveChars[Math.floor(Math.random() * _aliveChars.length)]>>
+<<if _activeChars.length >= 2>>
+<<set _swapA to _activeChars[Math.floor(Math.random() * _activeChars.length)]>>
 <<set _swapB to null>>
 <<for _j to 0; _j lt 10; _j++>>
-<<set _cand to _aliveChars[Math.floor(Math.random() * _aliveChars.length)]>>
+<<set _cand to _activeChars[Math.floor(Math.random() * _activeChars.length)]>>
 <<if _cand != _swapA and !Game.wasInLastSwap(_swapA) and !Game.wasInLastSwap(_cand)>>
 <<set _swapB to _cand>>
 <<break>>
 <</if>>
 <</for>>
 <<if _swapB == null>>
-<<for _k to 0; _k lt _aliveChars.length; _k++>>
-<<if _aliveChars[_k] != _swapA and !Game.wasInLastSwap(_aliveA)>>
-<<set _swapB to _aliveChars[_k]>>
+<<for _k to 0; _k lt _activeChars.length; _k++>>
+<<if _activeChars[_k] != _swapA and !Game.wasInLastSwap(_swapA)>>
+<<set _swapB to _activeChars[_k]>>
 <<break>>
 <</if>>
 <</for>>
@@ -48,7 +48,7 @@
 <</if>>
 
 / ============ 2. 昭判查验 ============ /
-<<if Game.isAlive('fang_heng')>>
+<<if Game.isAlive('fang_heng') and !Game.isExiled('fang_heng')>>
 <<set _prophetTarget to Game.prophetAIGetCheckTarget()>>
 <<if _prophetTarget>>
 <<set _checkResult to Game.prophetCheck(_prophetTarget)>>
@@ -62,8 +62,8 @@
 <</if>>
 <</if>>
 
-/ ============ 3. 镇煚守卫 ============ /
-<<if Game.isAlive('lin_xiaoman') and !Game.knightWeakened()>>
+/ ============ 3. 镇煞守卫 ============ /
+<<if Game.isAlive('lin_xiaoman') and !Game.isExiled('lin_xiaoman') and !Game.knightWeakened()>>
 <<set _guardTarget to Game.knightAIGetGuardTarget()>>
 <<if _guardTarget>>
 <<set _guardResult to Game.knightGuard(_guardTarget)>>
@@ -81,7 +81,7 @@
 <<run Game.visit()>>
 
 / ============ 5. 渡君决策 ============ /
-<<if Game.isAlive('ye_zhiqiu') and !Game.witchBroken() and Game.witchRemaining() > 0>>
+<<if Game.isAlive('ye_zhiqiu') and !Game.isExiled('ye_zhiqiu') and !Game.witchBroken() and Game.witchRemaining() > 0>>
 <<set _witchDecision to Game.witchAIDecideNightAction()>>
 <<else>>
 <<set _witchDecision to { action: 'pass' }>>
@@ -151,7 +151,7 @@
 <h2>黎明 · 夜色中的混乱</h2>
 <p><strong><<print _actualName>></strong> 倒下了。</p>
 <p>叶知秋站在走廊另一端，神情复杂：「我去了……但有人先到了。她赶走了我，以为安全了——但堕仙还在。」</p>
-<p class="system-hint">镇煚守卫和渡君救人冲突：守卫赶走了渡君，以为目标安全，堕仙趁机杀人。</p>
+<p class="system-hint">镇煞守卫和渡君救人冲突：守卫赶走了渡君，以为目标安全，堕仙趁机杀人。</p>
 <<run Game.changeSan(-15)>>
 <<run Game.addMemory('第 ' + $game.loop + ' 轮第 ' + $game.day + ' 天夜间：' + _actualName + ' 被杀。渡君与守卫冲突。')>>
 

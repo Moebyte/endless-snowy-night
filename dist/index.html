@@ -694,7 +694,7 @@ GameState.ROLE_LABELS = {
     jiang_bai: { name: "江白", firstImpression: "戴耳机的男生，话不多，总坐在靠窗的位置。", age: 22, job: "电气电子工程学院电气工程专业大三学生", personality: "踏实可靠，话少行动力强", talent: "修电路、接发电机、做简单工具", secret: "凡人·雷工。他右手腕的旧瘤不是玻璃划的，来源他一直含糊带过。" },
     fang_heng: { name: "方衡", firstImpression: "四十出头的男人，穿着深色夹克，第一天主动亮明身份：我是警察，在市局工作。话不多，总在观察四周。", age: 41, job: "警察（自称）", personality: "沉稳敏锐，表面温和", talent: "观察微表情、布局审讯、焦点孤立目标", secret: "昭判。实际是市刑警支队副队长（副处级）、黑警。对外只说在市局工作，不提级别和部门。收钱封口，与赵明城做过交易、互知底牌。" },
     shen_shen: { name: "沈慎", firstImpression: "沉默的中年男人，手指修长，动作很轻，几乎不发出声音。", age: 38, job: "网吧网管", personality: "沉默寡言，动作利落", talent: "手速快、操控感知、观察人心", secret: "伪神·幻真。他曾是地下赌场荷官兼老千，出千害得别人家破人亡。" },
-    ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，不爱说话。", age: 32, job: "止仪馆入殓师", personality: "沉静温柔，不爱多言", talent: "医疗护理、急救包扎、配制药剂", secret: "渡君。她能感知生命流逝，还魂夺命，但超过3次就会崩溃。" },
+    ye_zhiqiu: { name: "叶知秋", firstImpression: "安静的女人，捧着热水杯，指尖发白，不爱说话。", age: 32, job: "殡仪馆入殓师", personality: "沉静温柔，不爱多言", talent: "医疗护理、急救包扎、配制药剂", secret: "渡君。她能感知生命流逝，还魂夺命，但超过3次就会崩溃。" },
     zheng_shoushan: { name: "郑守山", firstImpression: "年纪最大的男人，自称老郑，说自己是这次旅行的导游。", age: 58, job: "大巴司机", personality: "热情能说会道，熟悉山路", talent: "野外生存、认路、讲故事", secret: "引路人。他开了20年这条山路，有模糊的既视感，似乎知道山庄的某些真相。" },
     lin_xiaoman: { name: "林小满", firstImpression: "染着浅色头发的女生，一直护着身边的唐小棠，眼神带刺。", age: 20, job: "艺术学院绘画专业学生", personality: "冲动仗义，护短，外刚内软", talent: "体能好、保护他人、观察细节", secret: "伪神·镇煞。她有太妹背景，为了保护唐小棠可以不择手段。" },
     zhou_yang: { name: "周阳", firstImpression: "高个子体育生，笑容阳光，喜欢和人打招呼。", age: 23, job: "体育学院田径专业研究生", personality: "阳光开朗，人缘好", talent: "奔跑、体能好、带动气氛", secret: "堕仙·幽主。他好胜心极强，享受在竞争中把对手压垮。被杀时可以同归于尽。" },
@@ -1514,7 +1514,7 @@ Game.getStatus = function () {
 
       hunger: g.stats.hunger,
 
-      aliveCount: Object.keys(g.alive).filter(function (k) { return g.alive[k]; }).length
+      aliveCount: Game.activeCount()
 
     };
 
@@ -1880,8 +1880,8 @@ Game.getStatus = function () {
 
   Game.canTriggerPursuit = function () {
     var g = ensureState();
-    var alive = Object.keys(g.alive).filter(function (k) { return g.alive[k]; }).length;
-    return alive <= 6 && Game.isNight();
+    var active = Game.activeCount();
+    return active <= 6 && Game.isNight();
   };
 
   Game.startPursuit = function (wolfId) {
@@ -4252,11 +4252,12 @@ var protect = {
     if (typeof Game.isExiled === 'function' && Game.isExiled('fang_heng')) return null;
     var pr = ensureProphet(g);
 
-    // Candidates: alive, not Fang Heng, not already checked
+    // Candidates: alive, not Fang Heng, not already checked, not exiled
     var candidates = [];
     Object.keys(g.alive).forEach(function (charId) {
       if (!g.alive[charId]) return;
       if (charId === "fang_heng") return;
+      if (typeof Game.isExiled === 'function' && Game.isExiled(charId)) return;
       var alreadyChecked = pr.checks.some(function (c) { return c.target === charId; });
       if (alreadyChecked) return;
       candidates.push(charId);
@@ -5025,12 +5026,14 @@ var protect = {
 
     fp.reports.push(report);
 
-    // Distribute the faked info to god-role holders
+    // Distribute the faked info to god-role holders (excluded: exiled gods,
+    // who are locked in the cellar and receive no information).
     ensureFakeProphet(g);
     Object.keys(g.alive).forEach(function (charId) {
       if (!g.alive[charId]) return;
       if (charId === fp.wolfId) return;
       if (GOD_ROLES.indexOf(g.roles[charId]) === -1) return;
+      if (typeof Game.isExiled === 'function' && Game.isExiled(charId)) return;
 
       if (!g.godSkills.prophet.sharedWith[charId]) g.godSkills.prophet.sharedWith[charId] = [];
       g.godSkills.prophet.sharedWith[charId].push({
@@ -5273,6 +5276,8 @@ Game.mechWolfPeekIdentity = function (targetId) {
 
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
 
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: 'target_exiled' };
+
     var targetRole = Game.roleOf(targetId);
 
     var targetName = GameState.PROFILES[targetId] ? GameState.PROFILES[targetId].name : targetId;
@@ -5297,6 +5302,8 @@ Game.mechWolfCurse = function (targetId) {
 
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
 
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: 'target_exiled' };
+
     Game.kill(targetId);
 
     g.flags.gu_yan_stole_god_power = false;
@@ -5319,6 +5326,8 @@ Game.mechWolfDuel = function (targetId) {
 
     if (!g.alive[targetId]) return { ok: false, reason: 'target_dead' };
 
+    if (typeof Game.isExiled === 'function' && Game.isExiled(targetId)) return { ok: false, reason: 'target_exiled' };
+
     Game.kill(targetId);
 
     g.flags.gu_yan_stole_god_power = false;
@@ -5340,6 +5349,8 @@ Game.mechWolfSwap = function (charA, charB) {
     if (!g.alive['gu_yan']) return { ok: false, reason: 'dead' };
 
     if (!g.alive[charA] || !g.alive[charB]) return { ok: false, reason: 'target_dead' };
+
+    if (typeof Game.isExiled === 'function' && (Game.isExiled(charA) || Game.isExiled(charB))) return { ok: false, reason: 'target_exiled' };
 
     if (charA === charB) return { ok: false, reason: 'same_person' };
 
@@ -5365,17 +5376,11 @@ Game.mechWolfAIActivatePower = function () {
 
     var stolenRole = Game.getMechWolfStolenRole();
 
-    var wolves4 = ['wolf_king', 'hidden_wolf', 'wolf', 'mechanical_wolf'];
+    // Active (non-exiled) good guys as targets. Exiled characters are locked
+    // in the cellar and cannot be targeted by the mech wolf's stolen power.
+    var aliveGood = Game.activeList().filter(function (cid) {
 
-    var aliveGood = [];
-
-    Object.keys(g.alive).forEach(function (cid) {
-
-      if (!g.alive[cid]) return;
-
-      if (cid === 'gu_yan') return;
-
-      if (wolves4.indexOf(g.roles[cid]) === -1) aliveGood.push(cid);
+      return cid !== 'gu_yan' && GameState.WOLF_ROLES.indexOf(g.roles[cid]) === -1;
 
     });
 
@@ -6233,7 +6238,7 @@ Game.mechWolfAIActivatePower = function () {
   <tw-passagedata pid="5" name="Common_NightResolution" tags="" position="100,100" size="100,100">/% 夜间结算顺序:
  *   1. 幻真致幻交换 (沈慎 AI 选两人)
  *   2. 昭判查验 + 信任分享 (方衡 AI)
- *   3. 镇煚守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
+ *   3. 镇煞守卫 (林小满 AI 选守卫对象) / 决斗在白天发动
  *   4. 堕仙击杀 (堕仙投票 AI)
  *   5. 渡君感知死亡 + 救人/诅咒 AI
  *   6. 机械堕仙窃取神力判定
@@ -6242,31 +6247,31 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;set _knightGuarded to null&gt;&gt;
 
 / ============ 1. 幻真致幻 ============ /
-&lt;&lt;if Game.isAlive(&#39;shen_shen&#39;) and Game.magicianSwapsRemaining() &gt; 0&gt;&gt;
+&lt;&lt;if Game.isAlive(&#39;shen_shen&#39;) and !Game.isExiled(&#39;shen_shen&#39;) and Game.magicianSwapsRemaining() &gt; 0&gt;&gt;
 &lt;&lt;set _swapA to null&gt;&gt;
 &lt;&lt;set _swapB to null&gt;&gt;
-&lt;&lt;set _aliveChars to []&gt;&gt;
-&lt;&lt;run Game.aliveList()&gt;&gt;
-&lt;&lt;for _i to 0; _i lt Game.aliveList().length; _i++&gt;&gt;
-&lt;&lt;set _cid to Game.aliveList()[_i]&gt;&gt;
+&lt;&lt;set _activeChars to []&gt;&gt;
+&lt;&lt;run Game.activeList()&gt;&gt;
+&lt;&lt;for _i to 0; _i lt Game.activeList().length; _i++&gt;&gt;
+&lt;&lt;set _cid to Game.activeList()[_i]&gt;&gt;
 &lt;&lt;if _cid != &#39;shen_shen&#39; and _cid != &#39;chen_mo&#39;&gt;&gt;
-&lt;&lt;run _aliveChars.push(_cid)&gt;&gt;
+&lt;&lt;run _activeChars.push(_cid)&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/for&gt;&gt;
-&lt;&lt;if _aliveChars.length &gt;= 2&gt;&gt;
-&lt;&lt;set _swapA to _aliveChars[Math.floor(Math.random() * _aliveChars.length)]&gt;&gt;
+&lt;&lt;if _activeChars.length &gt;= 2&gt;&gt;
+&lt;&lt;set _swapA to _activeChars[Math.floor(Math.random() * _activeChars.length)]&gt;&gt;
 &lt;&lt;set _swapB to null&gt;&gt;
 &lt;&lt;for _j to 0; _j lt 10; _j++&gt;&gt;
-&lt;&lt;set _cand to _aliveChars[Math.floor(Math.random() * _aliveChars.length)]&gt;&gt;
+&lt;&lt;set _cand to _activeChars[Math.floor(Math.random() * _activeChars.length)]&gt;&gt;
 &lt;&lt;if _cand != _swapA and !Game.wasInLastSwap(_swapA) and !Game.wasInLastSwap(_cand)&gt;&gt;
 &lt;&lt;set _swapB to _cand&gt;&gt;
 &lt;&lt;break&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/for&gt;&gt;
 &lt;&lt;if _swapB == null&gt;&gt;
-&lt;&lt;for _k to 0; _k lt _aliveChars.length; _k++&gt;&gt;
-&lt;&lt;if _aliveChars[_k] != _swapA and !Game.wasInLastSwap(_aliveA)&gt;&gt;
-&lt;&lt;set _swapB to _aliveChars[_k]&gt;&gt;
+&lt;&lt;for _k to 0; _k lt _activeChars.length; _k++&gt;&gt;
+&lt;&lt;if _activeChars[_k] != _swapA and !Game.wasInLastSwap(_swapA)&gt;&gt;
+&lt;&lt;set _swapB to _activeChars[_k]&gt;&gt;
 &lt;&lt;break&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/for&gt;&gt;
@@ -6279,7 +6284,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 
 / ============ 2. 昭判查验 ============ /
-&lt;&lt;if Game.isAlive(&#39;fang_heng&#39;)&gt;&gt;
+&lt;&lt;if Game.isAlive(&#39;fang_heng&#39;) and !Game.isExiled(&#39;fang_heng&#39;)&gt;&gt;
 &lt;&lt;set _prophetTarget to Game.prophetAIGetCheckTarget()&gt;&gt;
 &lt;&lt;if _prophetTarget&gt;&gt;
 &lt;&lt;set _checkResult to Game.prophetCheck(_prophetTarget)&gt;&gt;
@@ -6293,8 +6298,8 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 &lt;&lt;/if&gt;&gt;
 
-/ ============ 3. 镇煚守卫 ============ /
-&lt;&lt;if Game.isAlive(&#39;lin_xiaoman&#39;) and !Game.knightWeakened()&gt;&gt;
+/ ============ 3. 镇煞守卫 ============ /
+&lt;&lt;if Game.isAlive(&#39;lin_xiaoman&#39;) and !Game.isExiled(&#39;lin_xiaoman&#39;) and !Game.knightWeakened()&gt;&gt;
 &lt;&lt;set _guardTarget to Game.knightAIGetGuardTarget()&gt;&gt;
 &lt;&lt;if _guardTarget&gt;&gt;
 &lt;&lt;set _guardResult to Game.knightGuard(_guardTarget)&gt;&gt;
@@ -6312,7 +6317,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;run Game.visit()&gt;&gt;
 
 / ============ 5. 渡君决策 ============ /
-&lt;&lt;if Game.isAlive(&#39;ye_zhiqiu&#39;) and !Game.witchBroken() and Game.witchRemaining() &gt; 0&gt;&gt;
+&lt;&lt;if Game.isAlive(&#39;ye_zhiqiu&#39;) and !Game.isExiled(&#39;ye_zhiqiu&#39;) and !Game.witchBroken() and Game.witchRemaining() &gt; 0&gt;&gt;
 &lt;&lt;set _witchDecision to Game.witchAIDecideNightAction()&gt;&gt;
 &lt;&lt;else&gt;&gt;
 &lt;&lt;set _witchDecision to { action: &#39;pass&#39; }&gt;&gt;
@@ -6382,7 +6387,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;h2&gt;黎明 · 夜色中的混乱&lt;/h2&gt;
 &lt;p&gt;&lt;strong&gt;&lt;&lt;print _actualName&gt;&gt;&lt;/strong&gt; 倒下了。&lt;/p&gt;
 &lt;p&gt;叶知秋站在走廊另一端，神情复杂：「我去了……但有人先到了。她赶走了我，以为安全了——但堕仙还在。」&lt;/p&gt;
-&lt;p class=&quot;system-hint&quot;&gt;镇煚守卫和渡君救人冲突：守卫赶走了渡君，以为目标安全，堕仙趁机杀人。&lt;/p&gt;
+&lt;p class=&quot;system-hint&quot;&gt;镇煞守卫和渡君救人冲突：守卫赶走了渡君，以为目标安全，堕仙趁机杀人。&lt;/p&gt;
 &lt;&lt;run Game.changeSan(-15)&gt;&gt;
 &lt;&lt;run Game.addMemory(&#39;第 &#39; + $game.loop + &#39; 轮第 &#39; + $game.day + &#39; 天夜间：&#39; + _actualName + &#39; 被杀。渡君与守卫冲突。&#39;)&gt;&gt;
 
@@ -6564,7 +6569,7 @@ Game.mechWolfAIActivatePower = function () {
 &lt;&lt;/if&gt;&gt;
 
 &lt;div class=&quot;alive-list&quot;&gt;
-&lt;p class=&quot;muted&quot;&gt;存活人数：&lt;&lt;print Game.aliveCount()&gt;&gt;&lt;/p&gt;
+&lt;p class=&quot;muted&quot;&gt;在场人数：&lt;&lt;print Game.activeCount()&gt;&gt;&lt;/p&gt;
 &lt;/div&gt;
 
 /=== 放逐叙事（旁观者视角：只写现象，不写身份） ===/
