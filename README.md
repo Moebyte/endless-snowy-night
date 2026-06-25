@@ -1,5 +1,7 @@
 # 无尽雪夜（Endless Snow Night）
 
+> 在线游玩：https://moebyte.github.io/endless-snowy-night/
+
 基于 Twine 2 + SugarCube 2 的文字冒险游戏。十二名陌生人在暴风雪中被困于落雁山庄，每七天一个轮回——只有陈默记得发生过的一切。
 
 ## 快速开始
@@ -103,7 +105,7 @@ node tools/sim_detail.js 42
 
 1. `npm run build`
 2. 推送 `dist/index.html` 到 `gh-pages` 分支（或配置 GitHub Actions 自动部署，见 `.github/workflows/deploy.yml`）
-3. 访问 `https://<username>.github.io/<repo>/`
+3. 访问 https://moebyte.github.io/endless-snowy-night/
 
 ## 技术栈
 
